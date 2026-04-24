@@ -1,0 +1,30 @@
+# Go
+sdk/go/bin/
+sdk/go/vendor/
+*.test
+*.out
+
+# Node / TypeScript
+node_modules/
+sdk/typescript/dist/
+sdk/typescript/node_modules/
+*.tsbuildinfo
+
+# Python
+sdk/python/.venv/
+sdk/python/build/
+sdk/python/dist/
+sdk/python/*.egg-info/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# OS / editors
+.DS_Store
+.vscode/
+.idea/
+
+# Env
+.env
+.env.local
+.env.*.local

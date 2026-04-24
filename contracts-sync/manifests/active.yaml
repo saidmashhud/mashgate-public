@@ -1,0 +1,24 @@
+# Pinned contract snapshot — SoT lives in mashgate/contracts/.
+# This file declares which snapshot version this SDK release targets.
+#
+# Update workflow:
+#   1. Core monorepo tags a contracts snapshot (e.g. `contracts-2026-04-24`).
+#   2. Run `./contracts-sync/scripts/sync.sh` which downloads + regenerates.
+#   3. CI verifies generated artefacts didn't drift from the tag.
+
+version: 1
+
+snapshot:
+  tag: contracts-2026-04-24
+  source: github.com/saidmashhud/mashgate
+  source_path: contracts
+  fetched_at: null     # populated by sync.sh
+
+sdk_versions:
+  go: "0.1.0"
+  typescript: "0.1.0"
+  python: "0.1.0"
+
+platform_compatibility:
+  min: "mashgate@v2.0.0"   # Wave 2 control-plane release
+  max: ""                    # no upper bound yet

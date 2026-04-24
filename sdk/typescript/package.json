@@ -1,0 +1,37 @@
+{
+  "name": "@mashgate/sdk",
+  "version": "1.0.0",
+  "description": "Official TypeScript SDK for the Mashgate Payment Gateway API",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "mashgate",
+    "payments",
+    "payment-gateway",
+    "central-asia",
+    "uzbekistan",
+    "sdk"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}
