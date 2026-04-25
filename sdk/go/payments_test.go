@@ -56,6 +56,33 @@ func TestCreatePayment_success(t *testing.T) {
 	}
 }
 
+func TestClientUsesAPIKeyHeader(t *testing.T) {
+	var apiKey string
+	var authorization string
+
+	_, client := newTestServerFn(t, func(w http.ResponseWriter, r *http.Request) {
+		apiKey = r.Header.Get("X-API-Key")
+		authorization = r.Header.Get("Authorization")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(Payment{PaymentID: "pay_header", Status: "pending"})
+	})
+
+	_, err := client.CreatePayment(context.Background(), CreatePaymentRequest{
+		Amount:  Money{Amount: "150000.00", Currency: "UZS"},
+		OrderID: "order_header",
+	})
+	if err != nil {
+		t.Fatalf("CreatePayment returned error: %v", err)
+	}
+	if apiKey != "mg_test_key" {
+		t.Fatalf("expected X-API-Key mg_test_key, got %q", apiKey)
+	}
+	if authorization != "" {
+		t.Fatalf("expected no Authorization header for API key auth, got %q", authorization)
+	}
+}
+
 func TestCreatePayment_unauthorized(t *testing.T) {
 	_, client := newTestServer(t, http.StatusUnauthorized, map[string]string{
 		"message": "invalid api key",
@@ -66,9 +93,12 @@ func TestCreatePayment_unauthorized(t *testing.T) {
 		OrderID: "order_002",
 	})
 
-	var authErr *UnauthorizedError
-	if !isErrorType(err, &authErr) {
-		t.Fatalf("expected *UnauthorizedError, got: %T %v", err, err)
+	apiErr, ok := err.(*Error)
+	if !ok {
+		t.Fatalf("expected *Error, got: %T %v", err, err)
+	}
+	if apiErr.Code != "unauthorized" || apiErr.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("unexpected error: %#v", apiErr)
 	}
 }
 
@@ -79,9 +109,12 @@ func TestGetPayment_notFound(t *testing.T) {
 
 	_, err := client.GetPayment(context.Background(), "pay_does_not_exist")
 
-	var nfe *NotFoundError
-	if !isErrorType(err, &nfe) {
-		t.Fatalf("expected *NotFoundError, got: %T %v", err, err)
+	apiErr, ok := err.(*Error)
+	if !ok {
+		t.Fatalf("expected *Error, got: %T %v", err, err)
+	}
+	if apiErr.Code != "not_found" || apiErr.StatusCode != http.StatusNotFound {
+		t.Fatalf("unexpected error: %#v", apiErr)
 	}
 }
 
@@ -188,25 +221,11 @@ func TestAPIError_serverError(t *testing.T) {
 
 	_, err := client.GetPayment(context.Background(), "pay_xyz")
 
-	var apiErr *APIError
-	if !isErrorType(err, &apiErr) {
-		t.Fatalf("expected *APIError, got: %T %v", err, err)
+	apiErr, ok := err.(*Error)
+	if !ok {
+		t.Fatalf("expected *Error, got: %T %v", err, err)
 	}
 	if apiErr.StatusCode != 500 {
 		t.Errorf("expected StatusCode 500, got %d", apiErr.StatusCode)
 	}
-}
-
-// isErrorType checks if err is assignable to target (a pointer to a pointer-to-error-type).
-// Usage: isErrorType(err, &myErr) where myErr is *SomeError.
-func isErrorType[T error](err error, target *T) bool {
-	if err == nil {
-		return false
-	}
-	// Use a type assertion approach
-	if e, ok := err.(T); ok {
-		*target = e
-		return true
-	}
-	return false
 }

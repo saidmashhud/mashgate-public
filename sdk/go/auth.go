@@ -25,7 +25,7 @@ func (c *Client) Login(ctx context.Context, email, password string) (*TokenPair,
 func (c *Client) RefreshToken(ctx context.Context, refreshToken string) (*TokenPair, error) {
 	var out TokenPair
 	body := struct {
-		RefreshToken string `json:"refresh_token"`
+		RefreshToken string `json:"refreshToken"`
 	}{RefreshToken: refreshToken}
 	if err := c.do(ctx, "POST", "/v1/auth/refresh", body, &out); err != nil {
 		return nil, err
@@ -38,7 +38,7 @@ func (c *Client) RefreshToken(ctx context.Context, refreshToken string) (*TokenP
 // Calls POST /v1/auth/logout.
 func (c *Client) Logout(ctx context.Context, refreshToken string) error {
 	body := struct {
-		RefreshToken string `json:"refresh_token"`
+		RefreshToken string `json:"refreshToken"`
 	}{RefreshToken: refreshToken}
 	return c.do(ctx, "POST", "/v1/auth/logout", body, nil)
 }

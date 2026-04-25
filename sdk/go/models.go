@@ -23,7 +23,7 @@ type Money struct {
 type Payment struct {
 	PaymentID   string `json:"paymentId"`
 	TenantID    string `json:"tenantId"`
-	Status      string `json:"status"`      // pending, authorized, captured, refunded, voided, failed
+	Status      string `json:"status"` // pending, authorized, captured, refunded, voided, failed
 	Amount      Money  `json:"amount"`
 	OrderID     string `json:"orderId"`
 	CaptureMode string `json:"captureMode"` // "AUTO" | "MANUAL"
@@ -38,7 +38,7 @@ type Payment struct {
 // CheckoutSession represents a hosted checkout session.
 type CheckoutSession struct {
 	SessionID     string `json:"sessionId"`
-	Status        string `json:"status"`     // pending, completed, expired, cancelled
+	Status        string `json:"status"` // pending, completed, expired, cancelled
 	TotalAmount   Money  `json:"totalAmount"`
 	CheckoutURL   string `json:"checkoutUrl"`
 	SuccessURL    string `json:"successUrl"`
@@ -81,12 +81,12 @@ type WebhookEndpoint struct {
 // Payload; PayloadBytes() picks the right one transparently.
 type WebhookEvent struct {
 	// Envelope v1 canonical fields.
-	ID         string          `json:"id,omitempty"`
-	Topic      string          `json:"topic,omitempty"`
-	CreatedAt  int64           `json:"created_at,omitempty"`
-	Payload    json.RawMessage `json:"payload,omitempty"`
-	Source     string          `json:"source,omitempty"`
-	Trace      *TraceContext   `json:"_trace,omitempty"`
+	ID        string          `json:"id,omitempty"`
+	Topic     string          `json:"topic,omitempty"`
+	CreatedAt int64           `json:"created_at,omitempty"`
+	Payload   json.RawMessage `json:"payload,omitempty"`
+	Source    string          `json:"source,omitempty"`
+	Trace     *TraceContext   `json:"_trace,omitempty"`
 
 	// Fields present in both legacy and envelope v1 emissions.
 	EventID      string `json:"event_id"`
@@ -96,8 +96,8 @@ type WebhookEvent struct {
 	EventVersion int    `json:"event_version,omitempty"`
 
 	// Legacy fields (pre-envelope; kept for back-compat).
-	CorrelationID string          `json:"correlation_id,omitempty"`
-	AggregateID   string          `json:"aggregate_id,omitempty"`
+	CorrelationID string `json:"correlation_id,omitempty"`
+	AggregateID   string `json:"aggregate_id,omitempty"`
 	// Data is the pre-envelope flat payload. Deprecated: use Payload.
 	Data json.RawMessage `json:"data,omitempty"`
 }
@@ -177,8 +177,8 @@ type LoginRequest struct {
 
 // TokenPair is returned by Login and RefreshToken.
 type TokenPair struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -187,13 +187,13 @@ type TokenPair struct {
 
 // APIKey represents a programmatic access key (for machine-to-machine auth).
 type APIKey struct {
-	KeyID       string `json:"keyId"`
-	Name        string `json:"name"`
-	TenantID    string `json:"tenantId"`
-	Prefix      string `json:"prefix"` // first 8 chars of the key, for display
+	KeyID       string   `json:"keyId"`
+	Name        string   `json:"name"`
+	TenantID    string   `json:"tenantId"`
+	Prefix      string   `json:"prefix"` // first 8 chars of the key, for display
 	Permissions []string `json:"permissions"`
-	CreatedAt   int64  `json:"createdAt"`
-	ExpiresAt   int64  `json:"expiresAt,omitempty"` // 0 = never
+	CreatedAt   int64    `json:"createdAt"`
+	ExpiresAt   int64    `json:"expiresAt,omitempty"` // 0 = never
 }
 
 // APIKeyCreated is returned on CreateAPIKey — includes the full secret (shown once).
@@ -230,7 +230,7 @@ type Delivery struct {
 	ID             string `json:"id"`
 	EndpointID     string `json:"endpointId"`
 	EventID        string `json:"eventId"`
-	Status         string `json:"status"`         // "pending" | "succeeded" | "failed"
+	Status         string `json:"status"` // "pending" | "succeeded" | "failed"
 	AttemptCount   int    `json:"attemptCount"`
 	ResponseStatus int    `json:"responseStatus"` // HTTP status returned by the endpoint
 	NextRetryAt    int64  `json:"nextRetryAt,omitempty"`
@@ -255,12 +255,12 @@ type UpdateEndpointRequest struct {
 
 // WebhookSubscription binds an endpoint to a set of event types.
 type WebhookSubscription struct {
-	ID          string   `json:"id"`
-	EndpointID  string   `json:"endpointId"`
-	TenantID    string   `json:"tenantId"`
-	EventTypes  []string `json:"eventTypes"`
-	Status      string   `json:"status"` // "active" | "paused"
-	CreatedAt   int64    `json:"createdAt"`
+	ID         string   `json:"id"`
+	EndpointID string   `json:"endpointId"`
+	TenantID   string   `json:"tenantId"`
+	EventTypes []string `json:"eventTypes"`
+	Status     string   `json:"status"` // "active" | "paused"
+	CreatedAt  int64    `json:"createdAt"`
 }
 
 // DLQEntry is a failed delivery in the dead-letter queue.
@@ -282,7 +282,7 @@ type DLQEntry struct {
 // CardPaymentMethod describes a tokenized card for use in a payment.
 type CardPaymentMethod struct {
 	Token     string `json:"token"`
-	Brand     string `json:"brand"`     // "uzcard" | "humo" | "visa" | "mastercard" etc.
+	Brand     string `json:"brand"` // "uzcard" | "humo" | "visa" | "mastercard" etc.
 	Last4     string `json:"last4"`
 	BIN       string `json:"bin"`
 	LuhnValid bool   `json:"luhnValid"`

@@ -77,6 +77,12 @@ func TestCreateEndpoint_MashgateMode(t *testing.T) {
 		if r.Method != http.MethodPost || r.URL.Path != "/v1/events/endpoints" {
 			t.Errorf("unexpected %s %s", r.Method, r.URL.Path)
 		}
+		if r.Header.Get("X-API-Key") != "mg-key" {
+			t.Errorf("wrong X-API-Key header: %s", r.Header.Get("X-API-Key"))
+		}
+		if r.Header.Get("Authorization") != "" {
+			t.Errorf("unexpected Authorization header: %s", r.Header.Get("Authorization"))
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte(`{

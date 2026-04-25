@@ -18,6 +18,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "prepare": "npx --yes --package typescript tsc",
     "test": "vitest run",
     "test:watch": "vitest"
   },

@@ -506,7 +506,7 @@ func decodeProtoTimestampMillis(raw json.RawMessage) int64 {
 
 func (e *EventsClient) mgDo(ctx context.Context, method, path string, body, out any) error {
 	return withRetry(ctx, func() error {
-		return e.doOnce(ctx, method, e.mgBase+path, e.mgKey, nil, body, out)
+		return e.doOnce(ctx, method, e.mgBase+path, "", map[string]string{"X-API-Key": e.mgKey}, body, out)
 	})
 }
 
@@ -536,7 +536,9 @@ func (e *EventsClient) doOnce(ctx context.Context, method, url, apiKey string, e
 		return fmt.Errorf("events: build request: %w", err)
 	}
 
-	req.Header.Set("Authorization", "Bearer "+apiKey)
+	if apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+apiKey)
+	}
 	req.Header.Set("Accept", "application/json")
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")

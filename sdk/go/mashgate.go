@@ -128,15 +128,15 @@ type Client struct {
 }
 
 func initClients(c *Client) {
-	c.Chat          = &ChatClient{c: c}
-	c.Notify        = &NotifyClient{c: c}
-	c.Storage       = &StorageClient{c: c}
-	c.Flags         = &FlagsClient{c: c}
-	c.Logs          = &LogsClient{c: c}
+	c.Chat = &ChatClient{c: c}
+	c.Notify = &NotifyClient{c: c}
+	c.Storage = &StorageClient{c: c}
+	c.Flags = &FlagsClient{c: c}
+	c.Logs = &LogsClient{c: c}
 	c.Subscriptions = &SubscriptionsClient{c: c}
-	c.Invoices      = &InvoicesClient{c: c}
-	c.PaymentLinks  = &PaymentLinksClient{c: c}
-	c.Guard         = &GuardClient{c: c}
+	c.Invoices = &InvoicesClient{c: c}
+	c.PaymentLinks = &PaymentLinksClient{c: c}
+	c.Guard = &GuardClient{c: c}
 }
 
 // New creates a Mashgate API client.
@@ -235,7 +235,9 @@ func (c *Client) doRequest(ctx context.Context, method, path string, extraHeader
 			return fmt.Errorf("mashgate: build request: %w", err)
 		}
 
-		req.Header.Set("Authorization", "Bearer "+c.apiKey)
+		if c.apiKey != "" {
+			req.Header.Set("X-API-Key", c.apiKey)
+		}
 		req.Header.Set("Accept", "application/json")
 		if bodyBytes != nil {
 			req.Header.Set("Content-Type", "application/json")
@@ -292,6 +294,7 @@ func parseAPIError(status int, body []byte, requestID string) error {
 		Error   string `json:"error"`
 		Code    string `json:"code"`
 		Param   string `json:"param"`
+		Field   string `json:"field"`
 	}
 	_ = json.Unmarshal(body, &envelope)
 
@@ -324,8 +327,17 @@ func parseAPIError(status int, body []byte, requestID string) error {
 		Message:    msg,
 		StatusCode: status,
 		RequestID:  requestID,
-		Param:      envelope.Param,
+		Param:      firstNonEmpty(envelope.Param, envelope.Field),
 	}
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if value != "" {
+			return value
+		}
+	}
+	return ""
 }
 
 // ────────────────────────────────────────────────────────────────────────────

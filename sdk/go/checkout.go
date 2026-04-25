@@ -2,6 +2,8 @@ package mashgate
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	"github.com/google/uuid"
 )
@@ -30,7 +32,7 @@ type CreateCheckoutRequest struct {
 // hosted checkout handles this automatically.
 type CompleteCheckoutRequest struct {
 	PaymentMethodToken string               `json:"paymentMethodToken,omitempty"`
-	PaymentMethodType  string               `json:"paymentMethodType"`            // "card" | "wallet"
+	PaymentMethodType  string               `json:"paymentMethodType"` // "card" | "wallet"
 	PaymentMethodBrand string               `json:"paymentMethodBrand,omitempty"`
 	PaymentMethodLast4 string               `json:"paymentMethodLast4,omitempty"`
 	Wallet             *WalletPaymentMethod `json:"wallet,omitempty"`
@@ -70,7 +72,7 @@ func (c *Client) CreateCheckout(ctx context.Context, req CreateCheckoutRequest) 
 		key = uuid.NewString()
 	}
 
-	var raw createCheckoutResponse
+	var raw json.RawMessage
 	err := c.doWithHeader(ctx, "POST", "/v1/checkout/sessions",
 		map[string]string{"Idempotency-Key": key},
 		req, &raw,
@@ -80,21 +82,25 @@ func (c *Client) CreateCheckout(ctx context.Context, req CreateCheckoutRequest) 
 	}
 
 	// API may return the session directly or nested under "session"
-	if raw.Session != nil {
-		if raw.Session.CheckoutURL == "" && raw.CheckoutURL != "" {
-			raw.Session.CheckoutURL = raw.CheckoutURL
+	var wrapped createCheckoutResponse
+	if err := json.Unmarshal(raw, &wrapped); err != nil {
+		return nil, fmt.Errorf("mashgate: decode checkout response: %w", err)
+	}
+	if wrapped.Session != nil {
+		if wrapped.Session.CheckoutURL == "" && wrapped.CheckoutURL != "" {
+			wrapped.Session.CheckoutURL = wrapped.CheckoutURL
 		}
-		return raw.Session, nil
+		return wrapped.Session, nil
 	}
 
-	// Fallback: the response itself is a CheckoutSession
+	// Fallback: the response itself is a CheckoutSession. Do not retry the POST:
+	// a second request could create a duplicate checkout for non-idempotent gateways.
 	var session CheckoutSession
-	err = c.doWithHeader(ctx, "POST", "/v1/checkout/sessions",
-		map[string]string{"Idempotency-Key": uuid.NewString()},
-		req, &session,
-	)
-	if err != nil {
-		return nil, err
+	if err := json.Unmarshal(raw, &session); err != nil {
+		return nil, fmt.Errorf("mashgate: decode checkout session: %w", err)
+	}
+	if session.SessionID == "" {
+		return nil, fmt.Errorf("mashgate: checkout response missing session")
 	}
 	return &session, nil
 }
