@@ -67,7 +67,7 @@ type Wallet struct {
 	SubjectType  string       `json:"subject_type"` // "user" | "merchant"
 	WalletType   WalletType   `json:"wallet_type"`
 	Status       WalletStatus `json:"status"`
-	Currency     string       `json:"currency"`
+	Currency     Currency     `json:"currency"`
 	Balance      string       `json:"balance"`
 	Pending      string       `json:"pending"`
 	FreezeReason string       `json:"freeze_reason"`
@@ -85,7 +85,7 @@ type WalletTransaction struct {
 	Status        TransactionStatus `json:"status"`
 	Reason        TransactionReason `json:"reason"`
 	Amount        string            `json:"amount"`
-	Currency      string            `json:"currency"`
+	Currency      Currency          `json:"currency"`
 	BalanceAfter  string            `json:"balance_after"`
 	ReferenceID   string            `json:"reference_id"`
 	ReferenceType string            `json:"reference_type"`
@@ -97,12 +97,12 @@ type WalletTransaction struct {
 }
 
 type DepositAddress struct {
-	WalletID  string  `json:"wallet_id"`
-	Currency  string  `json:"currency"`
-	Network   string  `json:"network"`
-	Address   string  `json:"address"`
-	Memo      *string `json:"memo,omitempty"`
-	ExpiresAt *string `json:"expires_at,omitempty"`
+	WalletID  string   `json:"wallet_id"`
+	Currency  Currency `json:"currency"`
+	Network   Network  `json:"network"`
+	Address   string   `json:"address"`
+	Memo      *string  `json:"memo,omitempty"`
+	ExpiresAt *string  `json:"expires_at,omitempty"`
 }
 
 // Request types
@@ -112,7 +112,7 @@ type CreateWalletRequest struct {
 	SubjectID      string     `json:"subject_id"`
 	SubjectType    string     `json:"subject_type"`
 	WalletType     WalletType `json:"wallet_type"`
-	Currency       string     `json:"currency"`
+	Currency       Currency   `json:"currency"`
 	IdempotencyKey string     `json:"idempotency_key,omitempty"`
 }
 
@@ -130,14 +130,47 @@ type CreditRequest struct {
 type DebitRequest = CreditRequest
 
 type WithdrawRequest struct {
-	TenantID        string `json:"tenant_id"`
-	WalletID        string `json:"wallet_id"`
-	Amount          string `json:"amount"`
-	DestinationType string `json:"destination_type"`
-	DestinationID  string `json:"destination_id"`
-	Network        string `json:"network,omitempty"`
-	Description    string `json:"description,omitempty"`
-	IdempotencyKey string `json:"idempotency_key,omitempty"`
+	TenantID        string  `json:"tenant_id"`
+	WalletID        string  `json:"wallet_id"`
+	Amount          string  `json:"amount"`
+	DestinationType string  `json:"destination_type"`
+	DestinationID   string  `json:"destination_id"`
+	Network         Network `json:"network,omitempty"`
+	Description     string  `json:"description,omitempty"`
+	IdempotencyKey  string  `json:"idempotency_key,omitempty"`
+	// SPL token mint (base58). Empty = native SOL. Required for SPL token
+	// withdrawals; ignored for bank_account destinations. L2 of ADR-0016.
+	Mint Mint `json:"mint,omitempty"`
+}
+
+// CreateChainWalletRequest creates a non-custodial on-chain wallet — BIP-39
+// mnemonic is generated server-side and returned ONCE in the response.
+// Caller MUST surface the mnemonic to the end user and never persist it.
+// Currently SOLANA only.
+type CreateChainWalletRequest struct {
+	TenantID       string   `json:"tenant_id"`
+	SubjectID      string   `json:"subject_id"`
+	SubjectType    string   `json:"subject_type"` // "user" | "merchant"
+	Currency       Currency `json:"currency"`
+	Network        Network  `json:"network"`
+	IdempotencyKey string   `json:"idempotency_key,omitempty"`
+}
+
+type CreateChainWalletResponse struct {
+	Wallet   Wallet `json:"wallet"`
+	Mnemonic string `json:"mnemonic"` // shown to user once; do NOT persist
+}
+
+type FreezeWalletRequest struct {
+	TenantID     string `json:"tenant_id"`
+	WalletID     string `json:"wallet_id"`
+	FreezeReason string `json:"freeze_reason"`
+}
+
+type UnfreezeWalletRequest struct {
+	TenantID string `json:"tenant_id"`
+	WalletID string `json:"wallet_id"`
+	Note     string `json:"note,omitempty"`
 }
 
 type ListTransactionsResponse struct {
@@ -236,9 +269,75 @@ func (s *WalletService) ListTransactions(ctx context.Context, walletID string, l
 	return &out, nil
 }
 
-func (s *WalletService) DepositAddress(ctx context.Context, walletID, network string) (*DepositAddress, error) {
-	path := fmt.Sprintf("/v1/wallets/%s/deposit-address?tenant_id=%s&network=%s", walletID, s.c.tenantID, network)
+// DepositAddress returns the on-chain deposit target for a wallet. Pass
+// a non-empty `mint` (SPL token mint) on Solana to get the Associated
+// Token Account derived from (wallet_owner, mint); pass empty `mint` for
+// the native asset (SOL etc.) — the wallet owner address is returned.
+// L3 of ADR-0016.
+func (s *WalletService) DepositAddress(ctx context.Context, walletID string, network Network, mint Mint) (*DepositAddress, error) {
+	qs := url.Values{}
+	qs.Set("tenant_id", s.c.tenantID)
+	qs.Set("network", string(network))
+	if mint != "" {
+		qs.Set("mint", string(mint))
+	}
+	path := fmt.Sprintf("/v1/wallets/%s/deposit-address?%s", walletID, qs.Encode())
 	var out DepositAddress
+	if err := s.c.do(ctx, http.MethodGet, path, nil, "", &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// CreateChain generates a non-custodial on-chain wallet (BIP-39 mnemonic +
+// SLIP-0010 derivation, AES-encrypted private key stored server-side). The
+// returned mnemonic is shown to the end user ONCE — caller MUST display it
+// and never persist it; the server keeps only a SHA-256 hash for duplicate
+// detection. Currently SOLANA only. L1 of ADR-0016.
+func (s *WalletService) CreateChain(ctx context.Context, req CreateChainWalletRequest, idempotencyKey string) (*CreateChainWalletResponse, error) {
+	req.TenantID = s.c.tenantID
+	var out CreateChainWalletResponse
+	if err := s.c.do(ctx, http.MethodPost, "/v1/wallets/chain", req, idempotencyKey, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Freeze halts all debits on a wallet (compliance / fraud trigger).
+// `reason` is required and recorded in the wallet for audit.
+func (s *WalletService) Freeze(ctx context.Context, walletID, reason string) (*Wallet, error) {
+	req := FreezeWalletRequest{
+		TenantID:     s.c.tenantID,
+		WalletID:     walletID,
+		FreezeReason: reason,
+	}
+	path := fmt.Sprintf("/v1/wallets/%s/freeze", walletID)
+	var out Wallet
+	if err := s.c.do(ctx, http.MethodPost, path, req, "", &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Unfreeze restores a frozen wallet. `note` is optional — recorded for audit.
+func (s *WalletService) Unfreeze(ctx context.Context, walletID, note string) (*Wallet, error) {
+	req := UnfreezeWalletRequest{
+		TenantID: s.c.tenantID,
+		WalletID: walletID,
+		Note:     note,
+	}
+	path := fmt.Sprintf("/v1/wallets/%s/unfreeze", walletID)
+	var out Wallet
+	if err := s.c.do(ctx, http.MethodPost, path, req, "", &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetTransaction fetches a single wallet transaction by ID.
+func (s *WalletService) GetTransaction(ctx context.Context, walletID, transactionID string) (*WalletTransaction, error) {
+	path := fmt.Sprintf("/v1/wallets/%s/transactions/%s?tenant_id=%s", walletID, transactionID, s.c.tenantID)
+	var out WalletTransaction
 	if err := s.c.do(ctx, http.MethodGet, path, nil, "", &out); err != nil {
 		return nil, err
 	}

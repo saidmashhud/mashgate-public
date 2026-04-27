@@ -23,6 +23,7 @@ import { IamResource } from "./resources/iam.js";
 import { MeteringResource } from "./resources/metering.js";
 import { BillingResource } from "./resources/billing.js";
 import { AnalyticsResource } from "./resources/analytics.js";
+import { WalletAdminResource } from "./resources/walletAdmin.js";
 
 export class MashgateClient {
   private readonly baseUrl: string;
@@ -56,6 +57,13 @@ export class MashgateClient {
   readonly metering: MeteringResource;
   readonly billing: BillingResource;
   readonly analytics: AnalyticsResource;
+  /**
+   * Admin/merchant-side WalletService — full `wallet.v1.WalletService` for
+   * tenant-scoped operations (create/freeze/credit/debit/withdraw, on-chain
+   * wallet creation, deposit-address resolution with SPL ATA support).
+   * For end-user wallet operations (saved cards, balance), see `wallet`.
+   */
+  readonly walletAdmin: WalletAdminResource;
 
   constructor(options: MashgateClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/+$/, "");
@@ -94,6 +102,7 @@ export class MashgateClient {
     this.metering = new MeteringResource(this);
     this.billing = new BillingResource(this);
     this.analytics = new AnalyticsResource(this);
+    this.walletAdmin = new WalletAdminResource(this);
   }
 
   setAccessToken(token: string | undefined): void {

@@ -190,13 +190,76 @@ err = mg.VerifySignature(secret, timestamp, body, signature)
 event, err := mg.ParseEvent(body)
 ```
 
-### Wallet
+### Wallet (end-user view, top-level package)
 
 ```go
 balance, err := client.GetWalletBalance(ctx, "UZS")
 methods, err := client.ListSavedPaymentMethods(ctx)
 err = client.SetDefaultPaymentMethod(ctx, paymentMethodID)
 err = client.RemoveSavedPaymentMethod(ctx, paymentMethodID)
+```
+
+### Wallet (admin/merchant API, `fintech` subpackage)
+
+The full `wallet.v1.WalletService` from
+[`mashgate/contracts/proto/v1/wallet.proto`](https://github.com/saidmashhud/mashgate/blob/main/contracts/proto/v1/wallet.proto),
+including on-chain (mgCrypto) flows. Auth is tenant-scoped — pass an admin
+JWT or service-account API key.
+
+`Currency`, `Network`, `Mint` are typed string aliases with predefined
+constants (`fintech.CurrencyUSDC`, `fintech.NetworkSolana`,
+`fintech.MintUSDCSolanaMainnet`, …). They serialize as plain JSON strings
+on the wire, so callers using string literals stay compatible.
+
+```go
+import "github.com/saidmashhud/mashgate-public/sdk/go/fintech"
+
+c := fintech.New("https://api.mashgate.io", tenantID, apiKey)
+
+// Off-chain wallet
+w, err := c.Wallet.Create(ctx, fintech.CreateWalletRequest{
+    SubjectID: "user-123", SubjectType: "user",
+    WalletType: fintech.WalletTypeFiat,
+    Currency:   fintech.CurrencyUZS,
+}, "idem-create-1")
+
+// On-chain wallet (BIP-39 mnemonic returned ONCE — surface to user, never persist)
+chain, err := c.Wallet.CreateChain(ctx, fintech.CreateChainWalletRequest{
+    SubjectID: "user-123", SubjectType: "user",
+    Currency: fintech.CurrencyUSDC,
+    Network:  fintech.NetworkSolana,
+}, "idem-chain-1")
+showOnceToEndUser(chain.Mnemonic)
+
+// Deposit address — pass `Mint` to get an SPL Associated Token Account.
+// Empty mint returns the wallet owner address (native SOL).
+ata, err := c.Wallet.DepositAddress(ctx, w.WalletID,
+    fintech.NetworkSolana, fintech.MintUSDCSolanaMainnet)
+sol, err := c.Wallet.DepositAddress(ctx, w.WalletID,
+    fintech.NetworkSolana, "")
+
+// Withdraw — `Mint` selects SPL token, empty = native SOL.
+tx, err := c.Wallet.Withdraw(ctx, fintech.WithdrawRequest{
+    WalletID: w.WalletID, Amount: "10.50",
+    DestinationType: "crypto_address",
+    DestinationID:   "RecipientSolanaAddr",
+    Network:         fintech.NetworkSolana,
+    Mint:            fintech.MintUSDCSolanaMainnet,
+}, "idem-w-1")
+
+// Compliance / fraud
+_, err = c.Wallet.Freeze(ctx, w.WalletID, "fraud-investigation")
+_, err = c.Wallet.Unfreeze(ctx, w.WalletID, "case-resolved")
+
+// Pagination — opaque cursor, empty page_token = first page.
+resp, err := c.Wallet.List(ctx, "user-123", 50, "")
+for resp.NextCursor != nil && *resp.NextCursor != "" {
+    resp, err = c.Wallet.List(ctx, "user-123", 50, *resp.NextCursor)
+    // ...
+}
+
+// Single transaction lookup
+single, err := c.Wallet.GetTransaction(ctx, w.WalletID, "tx-xxx")
 ```
 
 ### Error handling

@@ -28,6 +28,31 @@ export { IamResource } from "./resources/iam.js";
 export { MeteringResource } from "./resources/metering.js";
 export { BillingResource } from "./resources/billing.js";
 export { AnalyticsResource } from "./resources/analytics.js";
+export {
+  WalletAdminResource,
+  Currency,
+  Network,
+  Mint,
+  WalletType,
+  WalletStatus,
+  TransactionType,
+  TransactionStatus,
+  TransactionReason,
+} from "./resources/walletAdmin.js";
+export type {
+  Wallet as AdminWallet,
+  WalletTransaction as AdminWalletTransaction,
+  DepositAddress,
+  CreateWalletRequest as AdminCreateWalletRequest,
+  CreateChainWalletRequest,
+  CreateChainWalletResponse,
+  CreditDebitRequest,
+  InitiateWithdrawalRequest,
+  ListWalletsQuery,
+  ListWalletsResponse as AdminListWalletsResponse,
+  ListTransactionsQuery,
+  ListTransactionsResponse as AdminListTransactionsResponse,
+} from "./resources/walletAdmin.js";
 
 // Types
 export type {
