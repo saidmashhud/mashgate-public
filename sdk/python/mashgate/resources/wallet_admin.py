@@ -1,0 +1,359 @@
+"""Admin/merchant-side WalletService client.
+
+Mirrors ``wallet.v1.WalletService`` from
+``mashgate/contracts/proto/v1/wallet.proto``, exposed over the gateway as
+REST via google.api.http transcoding. End-user wallet operations
+(saved cards, balance, movements) live in :class:`WalletResource`.
+
+Auth here is tenant-scoped — pass an admin JWT or service-account API
+key when constructing the client.
+"""
+
+from __future__ import annotations
+
+from enum import Enum
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from mashgate.client import MashgateClient
+
+
+# ── Typed string enums ──────────────────────────────────────────────────
+#
+# We inherit from ``str`` so members serialise transparently to JSON
+# (json.dumps treats them as their string value), and so callers may pass
+# either ``Currency.USDC`` or the plain string ``"USDC"`` — both are
+# accepted by the server, and our resource methods cast to ``str(...)``
+# at the wire boundary so internal None-stripping works either way.
+
+
+class Currency(str, Enum):
+    """Unit of account a wallet holds.
+
+    Fiat values follow ISO 4217. Crypto values use the ticker symbol
+    used across the Mashgate stack.
+    """
+
+    # Fiat
+    UZS = "UZS"
+    KZT = "KZT"
+    KGS = "KGS"
+    TJS = "TJS"
+    RUB = "RUB"
+    USD = "USD"
+    EUR = "EUR"
+    # Crypto / stablecoin tickers
+    USDT = "USDT"
+    USDC = "USDC"
+    SOL = "SOL"
+    ETH = "ETH"
+    TRX = "TRX"
+    BNB = "BNB"
+    TON = "TON"
+
+
+class Network(str, Enum):
+    """Blockchain network for crypto wallet operations."""
+
+    SOLANA = "SOLANA"
+    ETHEREUM = "ETHEREUM"
+    BASE = "BASE"
+    POLYGON = "POLYGON"
+    BSC = "BSC"
+    TRON = "TRON"
+    TON = "TON"
+
+
+class Mint(str, Enum):
+    """SPL token mint addresses on Solana mainnet.
+
+    Empty mint (``""``) means native SOL transfer path. Members listed
+    here are well-known stablecoin mints; for tokens not in this enum
+    pass the plain base58 string.
+    """
+
+    USDC_SOLANA_MAINNET = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    USDT_SOLANA_MAINNET = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+
+
+class WalletType(str, Enum):
+    FIAT = "WALLET_TYPE_FIAT"
+    CRYPTO = "WALLET_TYPE_CRYPTO"
+    OMNIBUS = "WALLET_TYPE_OMNIBUS"
+
+
+class WalletStatus(str, Enum):
+    ACTIVE = "WALLET_STATUS_ACTIVE"
+    FROZEN = "WALLET_STATUS_FROZEN"
+    CLOSED = "WALLET_STATUS_CLOSED"
+
+
+class TransactionType(str, Enum):
+    CREDIT = "TRANSACTION_TYPE_CREDIT"
+    DEBIT = "TRANSACTION_TYPE_DEBIT"
+
+
+class TransactionStatus(str, Enum):
+    PENDING = "TRANSACTION_STATUS_PENDING"
+    SETTLED = "TRANSACTION_STATUS_SETTLED"
+    FAILED = "TRANSACTION_STATUS_FAILED"
+    REVERSED = "TRANSACTION_STATUS_REVERSED"
+
+
+class TransactionReason(str, Enum):
+    DEPOSIT = "TRANSACTION_REASON_DEPOSIT"
+    WITHDRAWAL = "TRANSACTION_REASON_WITHDRAWAL"
+    PAYMENT = "TRANSACTION_REASON_PAYMENT"
+    REFUND = "TRANSACTION_REASON_REFUND"
+    SETTLEMENT = "TRANSACTION_REASON_SETTLEMENT"
+    FEE = "TRANSACTION_REASON_FEE"
+    ADJUSTMENT = "TRANSACTION_REASON_ADJUSTMENT"
+    CONVERSION = "TRANSACTION_REASON_CONVERSION"
+
+
+def _opt_str(v: Any) -> str | None:
+    """Coerce enum / None / str to plain string. Returns None for None."""
+    if v is None:
+        return None
+    return str(v.value) if isinstance(v, Enum) else str(v)
+
+
+class WalletAdminResource:
+    """Admin/merchant client for the full ``wallet.v1.WalletService``.
+
+    Auth: tenant-scoped. Requires an admin JWT (preferred) or service
+    account API key on the parent client.
+    """
+
+    def __init__(self, client: MashgateClient) -> None:
+        self._c = client
+
+    # ── Off-chain wallet ──────────────────────────────────────────────
+
+    def create(
+        self,
+        *,
+        subject_id: str,
+        subject_type: str,
+        wallet_type: WalletType | str,
+        currency: Currency | str,
+        idempotency_key: str | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "subject_id": subject_id,
+            "subject_type": subject_type,
+            "wallet_type": _opt_str(wallet_type),
+            "currency": _opt_str(currency),
+        }
+        if idempotency_key:
+            body["idempotency_key"] = idempotency_key
+        return self._c.request("POST", "/v1/wallets", body=body)
+
+    # ── On-chain wallet (L1 of ADR-0016) ──────────────────────────────
+
+    def create_chain(
+        self,
+        *,
+        subject_id: str,
+        subject_type: str,
+        currency: Currency | str,
+        network: Network | str,
+        idempotency_key: str | None = None,
+    ) -> dict[str, Any]:
+        """Generate a non-custodial on-chain wallet.
+
+        Returns ``{"wallet": {...}, "mnemonic": "..."}``. The ``mnemonic``
+        is shown to the end user ONCE — surface it immediately and never
+        persist it server-side. Currently SOLANA only.
+        """
+        body: dict[str, Any] = {
+            "subject_id": subject_id,
+            "subject_type": subject_type,
+            "currency": _opt_str(currency),
+            "network": _opt_str(network),
+        }
+        if idempotency_key:
+            body["idempotency_key"] = idempotency_key
+        return self._c.request("POST", "/v1/wallets/chain", body=body)
+
+    # ── Read ──────────────────────────────────────────────────────────
+
+    def get(self, wallet_id: str) -> dict[str, Any]:
+        return self._c.request("GET", f"/v1/wallets/{wallet_id}")
+
+    def list(
+        self,
+        *,
+        subject_id: str | None = None,
+        status: WalletStatus | str | None = None,
+        wallet_type: WalletType | str | None = None,
+        limit: int | None = None,
+        cursor: str | None = None,
+    ) -> dict[str, Any]:
+        return self._c.request(
+            "GET",
+            "/v1/wallets",
+            query={
+                "subject_id": subject_id,
+                "status": _opt_str(status),
+                "wallet_type": _opt_str(wallet_type),
+                "limit": limit,
+                "cursor": cursor,
+            },
+        )
+
+    # ── Compliance ────────────────────────────────────────────────────
+
+    def freeze(self, wallet_id: str, *, reason: str) -> dict[str, Any]:
+        """Halt all debits on a wallet (compliance / fraud trigger)."""
+        return self._c.request(
+            "POST",
+            f"/v1/wallets/{wallet_id}/freeze",
+            body={"freeze_reason": reason},
+        )
+
+    def unfreeze(self, wallet_id: str, *, note: str = "") -> dict[str, Any]:
+        return self._c.request(
+            "POST",
+            f"/v1/wallets/{wallet_id}/unfreeze",
+            body={"note": note},
+        )
+
+    # ── Money movements ───────────────────────────────────────────────
+
+    def credit(
+        self,
+        wallet_id: str,
+        *,
+        amount: str,
+        reason: TransactionReason | str,
+        reference_id: str | None = None,
+        reference_type: str | None = None,
+        description: str | None = None,
+        idempotency_key: str | None = None,
+        merchant_id: str | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {"amount": amount, "reason": _opt_str(reason)}
+        for k, v in [
+            ("reference_id", reference_id),
+            ("reference_type", reference_type),
+            ("description", description),
+            ("idempotency_key", idempotency_key),
+            ("merchant_id", merchant_id),
+        ]:
+            if v is not None:
+                body[k] = v
+        return self._c.request("POST", f"/v1/wallets/{wallet_id}/credit", body=body)
+
+    def debit(
+        self,
+        wallet_id: str,
+        *,
+        amount: str,
+        reason: TransactionReason | str,
+        reference_id: str | None = None,
+        reference_type: str | None = None,
+        description: str | None = None,
+        idempotency_key: str | None = None,
+        merchant_id: str | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {"amount": amount, "reason": _opt_str(reason)}
+        for k, v in [
+            ("reference_id", reference_id),
+            ("reference_type", reference_type),
+            ("description", description),
+            ("idempotency_key", idempotency_key),
+            ("merchant_id", merchant_id),
+        ]:
+            if v is not None:
+                body[k] = v
+        return self._c.request("POST", f"/v1/wallets/{wallet_id}/debit", body=body)
+
+    def withdraw(
+        self,
+        wallet_id: str,
+        *,
+        amount: str,
+        destination_type: str,
+        destination_id: str,
+        network: Network | str | None = None,
+        mint: Mint | str | None = None,
+        description: str | None = None,
+        idempotency_key: str | None = None,
+    ) -> dict[str, Any]:
+        """Initiate a withdrawal.
+
+        Pass ``mint`` for SPL tokens, leave None for native SOL. L2 of
+        ADR-0016 — the ``mint`` field replaces the legacy ``mint=...;``
+        prefix in ``description``.
+        """
+        body: dict[str, Any] = {
+            "amount": amount,
+            "destination_type": destination_type,
+            "destination_id": destination_id,
+        }
+        for k, v in [
+            ("network", _opt_str(network)),
+            ("mint", _opt_str(mint)),
+            ("description", description),
+            ("idempotency_key", idempotency_key),
+        ]:
+            if v is not None and v != "":
+                body[k] = v
+        return self._c.request("POST", f"/v1/wallets/{wallet_id}/withdraw", body=body)
+
+    # ── Transactions ──────────────────────────────────────────────────
+
+    def list_transactions(
+        self,
+        wallet_id: str,
+        *,
+        type: TransactionType | str | None = None,
+        status: TransactionStatus | str | None = None,
+        reason: TransactionReason | str | None = None,
+        limit: int | None = None,
+        cursor: str | None = None,
+    ) -> dict[str, Any]:
+        return self._c.request(
+            "GET",
+            f"/v1/wallets/{wallet_id}/transactions",
+            query={
+                "type": _opt_str(type),
+                "status": _opt_str(status),
+                "reason": _opt_str(reason),
+                "limit": limit,
+                "cursor": cursor,
+            },
+        )
+
+    def get_transaction(self, wallet_id: str, transaction_id: str) -> dict[str, Any]:
+        return self._c.request(
+            "GET",
+            f"/v1/wallets/{wallet_id}/transactions/{transaction_id}",
+        )
+
+    # ── Deposit address (L3 of ADR-0016) ─────────────────────────────
+
+    def deposit_address(
+        self,
+        wallet_id: str,
+        *,
+        network: Network | str,
+        mint: Mint | str | None = None,
+    ) -> dict[str, Any]:
+        """Resolve the on-chain deposit target for a wallet.
+
+        Pass a non-empty ``mint`` (SPL token mint) on Solana to get the
+        Associated Token Account derived from ``(wallet_owner, mint)``.
+        Empty / None ``mint`` returns the wallet owner address (native
+        asset path — SOL etc.).
+        """
+        mint_str = _opt_str(mint)
+        return self._c.request(
+            "GET",
+            f"/v1/wallets/{wallet_id}/deposit-address",
+            query={
+                "network": _opt_str(network),
+                "mint": mint_str if mint_str else None,
+            },
+        )

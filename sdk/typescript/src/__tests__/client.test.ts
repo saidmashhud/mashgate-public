@@ -11,6 +11,7 @@ function createMockFetch(response: {
     ok: (response.status ?? 200) >= 200 && (response.status ?? 200) < 300,
     status: response.status ?? 200,
     statusText: response.statusText ?? "OK",
+    headers: new Headers(),
     json: () => Promise.resolve(response.body ?? {}),
   });
 }

@@ -1,0 +1,342 @@
+// Admin/merchant-side WalletService client.
+//
+// Mirrors `wallet.v1.WalletService` from
+// mashgate/contracts/proto/v1/wallet.proto, exposed over the gateway as
+// REST via google.api.http transcoding. End-user wallet operations
+// (balance, saved payment methods) live in `WalletResource` / wallet.ts.
+//
+// Auth here is tenant-scoped — pass an admin JWT or service-account API
+// key when constructing the client.
+
+import type { MashgateClient } from "../client.js";
+
+// ── Typed constants ──────────────────────────────────────────────────────────
+//
+// Pattern: const-as-object + derived union type. Gives autocomplete on
+// known values, compile-time type check, and a wire format identical to
+// plain strings ("USDC" not {value:"USDC"}). Untyped string literals
+// stay assignable, so existing callers using "USDC" don't break.
+
+export const Currency = {
+  // Fiat (ISO 4217)
+  UZS: "UZS",
+  KZT: "KZT",
+  KGS: "KGS",
+  TJS: "TJS",
+  RUB: "RUB",
+  USD: "USD",
+  EUR: "EUR",
+  // Crypto / stablecoin tickers
+  USDT: "USDT",
+  USDC: "USDC",
+  SOL: "SOL",
+  ETH: "ETH",
+  TRX: "TRX",
+  BNB: "BNB",
+  TON: "TON",
+} as const;
+export type Currency = (typeof Currency)[keyof typeof Currency];
+
+export const Network = {
+  Solana: "SOLANA",
+  Ethereum: "ETHEREUM",
+  Base: "BASE",
+  Polygon: "POLYGON",
+  BSC: "BSC",
+  Tron: "TRON",
+  TON: "TON",
+} as const;
+export type Network = (typeof Network)[keyof typeof Network];
+
+// SPL token mint addresses (Solana mainnet). Empty `Mint` = native SOL
+// transfer path.
+export const Mint = {
+  USDCSolanaMainnet: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  USDTSolanaMainnet: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+} as const;
+export type Mint = (typeof Mint)[keyof typeof Mint] | "" | string;
+
+// ── Enum-like string types from wallet.proto ────────────────────────────────
+
+export const WalletType = {
+  Fiat: "WALLET_TYPE_FIAT",
+  Crypto: "WALLET_TYPE_CRYPTO",
+  Omnibus: "WALLET_TYPE_OMNIBUS",
+} as const;
+export type WalletType = (typeof WalletType)[keyof typeof WalletType];
+
+export const WalletStatus = {
+  Active: "WALLET_STATUS_ACTIVE",
+  Frozen: "WALLET_STATUS_FROZEN",
+  Closed: "WALLET_STATUS_CLOSED",
+} as const;
+export type WalletStatus = (typeof WalletStatus)[keyof typeof WalletStatus];
+
+export const TransactionType = {
+  Credit: "TRANSACTION_TYPE_CREDIT",
+  Debit: "TRANSACTION_TYPE_DEBIT",
+} as const;
+export type TransactionType = (typeof TransactionType)[keyof typeof TransactionType];
+
+export const TransactionStatus = {
+  Pending: "TRANSACTION_STATUS_PENDING",
+  Settled: "TRANSACTION_STATUS_SETTLED",
+  Failed: "TRANSACTION_STATUS_FAILED",
+  Reversed: "TRANSACTION_STATUS_REVERSED",
+} as const;
+export type TransactionStatus = (typeof TransactionStatus)[keyof typeof TransactionStatus];
+
+export const TransactionReason = {
+  Deposit: "TRANSACTION_REASON_DEPOSIT",
+  Withdrawal: "TRANSACTION_REASON_WITHDRAWAL",
+  Payment: "TRANSACTION_REASON_PAYMENT",
+  Refund: "TRANSACTION_REASON_REFUND",
+  Settlement: "TRANSACTION_REASON_SETTLEMENT",
+  Fee: "TRANSACTION_REASON_FEE",
+  Adjustment: "TRANSACTION_REASON_ADJUSTMENT",
+  Conversion: "TRANSACTION_REASON_CONVERSION",
+} as const;
+export type TransactionReason = (typeof TransactionReason)[keyof typeof TransactionReason];
+
+// ── Domain types ────────────────────────────────────────────────────────────
+
+export interface Wallet {
+  wallet_id: string;
+  tenant_id: string;
+  subject_id: string;
+  subject_type: "user" | "merchant";
+  wallet_type: WalletType;
+  status: WalletStatus;
+  currency: Currency;
+  // Money fields are decimal strings to avoid JS Number precision loss.
+  balance: string;
+  pending: string;
+  freeze_reason?: string;
+  frozen_by?: string;
+  created_at: string;
+  updated_at: string;
+  frozen_at?: string;
+}
+
+export interface WalletTransaction {
+  transaction_id: string;
+  wallet_id: string;
+  tenant_id: string;
+  type: TransactionType;
+  status: TransactionStatus;
+  reason: TransactionReason;
+  amount: string;
+  currency: Currency;
+  balance_after: string;
+  reference_id?: string;
+  reference_type?: string;
+  description?: string;
+  external_ref?: string;
+  metadata?: Record<string, string>;
+  created_at: string;
+  settled_at?: string;
+}
+
+export interface DepositAddress {
+  wallet_id: string;
+  currency: Currency;
+  network: Network;
+  address: string;
+  memo?: string;
+  expires_at?: string;
+}
+
+// ── Request shapes ──────────────────────────────────────────────────────────
+
+export interface CreateWalletRequest {
+  subject_id: string;
+  subject_type: "user" | "merchant";
+  wallet_type: WalletType;
+  currency: Currency;
+  idempotency_key?: string;
+}
+
+// L1 of ADR-0016. Returns `{wallet, mnemonic}` — `mnemonic` is shown to
+// the end user ONCE; never persisted server-side beyond a SHA-256 hash.
+export interface CreateChainWalletRequest {
+  subject_id: string;
+  subject_type: "user" | "merchant";
+  currency: Currency;
+  network: Network;
+  idempotency_key?: string;
+}
+
+export interface CreateChainWalletResponse {
+  wallet: Wallet;
+  mnemonic: string;
+}
+
+export interface CreditDebitRequest {
+  amount: string; // decimal string — e.g. "100.50"
+  reason: TransactionReason;
+  reference_id?: string;
+  reference_type?: string;
+  description?: string;
+  idempotency_key?: string;
+  merchant_id?: string;
+}
+
+export interface InitiateWithdrawalRequest {
+  amount: string;
+  destination_type: "crypto_address" | "bank_account";
+  destination_id: string;
+  network?: Network;
+  description?: string;
+  idempotency_key?: string;
+  // SPL token mint. Empty / undefined = native SOL. L2 of ADR-0016.
+  mint?: Mint;
+}
+
+export interface ListWalletsQuery {
+  subject_id?: string;
+  status?: WalletStatus;
+  wallet_type?: WalletType;
+  limit?: number;
+  cursor?: string; // opaque, from a previous response
+}
+
+export interface ListWalletsResponse {
+  wallets: Wallet[];
+  next_cursor?: string;
+}
+
+export interface ListTransactionsQuery {
+  type?: TransactionType;
+  status?: TransactionStatus;
+  reason?: TransactionReason;
+  limit?: number;
+  cursor?: string;
+}
+
+export interface ListTransactionsResponse {
+  transactions: WalletTransaction[];
+  next_cursor?: string;
+}
+
+// ── Resource ────────────────────────────────────────────────────────────────
+
+export class WalletAdminResource {
+  constructor(private readonly client: MashgateClient) {}
+
+  /** Create an off-chain wallet (fiat / omnibus). */
+  create(req: CreateWalletRequest): Promise<Wallet> {
+    return this.client.request<Wallet>("POST", "/v1/wallets", { body: req });
+  }
+
+  /**
+   * Create a non-custodial on-chain wallet. The returned `mnemonic` is
+   * shown to the end user ONCE; surface it immediately and never persist
+   * it. Currently SOLANA only. L1 of ADR-0016.
+   */
+  createChain(req: CreateChainWalletRequest): Promise<CreateChainWalletResponse> {
+    return this.client.request<CreateChainWalletResponse>("POST", "/v1/wallets/chain", {
+      body: req,
+    });
+  }
+
+  get(walletId: string): Promise<Wallet> {
+    return this.client.request<Wallet>("GET", `/v1/wallets/${walletId}`);
+  }
+
+  list(query?: ListWalletsQuery): Promise<ListWalletsResponse> {
+    return this.client.request<ListWalletsResponse>("GET", "/v1/wallets", {
+      query: {
+        subject_id: query?.subject_id,
+        status: query?.status,
+        wallet_type: query?.wallet_type,
+        limit: query?.limit,
+        cursor: query?.cursor,
+      },
+    });
+  }
+
+  /** Halt all debits (compliance / fraud trigger). `reason` is required and audited. */
+  freeze(walletId: string, reason: string): Promise<Wallet> {
+    return this.client.request<Wallet>("POST", `/v1/wallets/${walletId}/freeze`, {
+      body: { freeze_reason: reason },
+    });
+  }
+
+  /** Restore a frozen wallet. `note` is optional, audited. */
+  unfreeze(walletId: string, note?: string): Promise<Wallet> {
+    return this.client.request<Wallet>("POST", `/v1/wallets/${walletId}/unfreeze`, {
+      body: { note: note ?? "" },
+    });
+  }
+
+  credit(walletId: string, req: CreditDebitRequest): Promise<WalletTransaction> {
+    return this.client.request<WalletTransaction>("POST", `/v1/wallets/${walletId}/credit`, {
+      body: req,
+    });
+  }
+
+  debit(walletId: string, req: CreditDebitRequest): Promise<WalletTransaction> {
+    return this.client.request<WalletTransaction>("POST", `/v1/wallets/${walletId}/debit`, {
+      body: req,
+    });
+  }
+
+  /**
+   * Initiate a withdrawal. Pass `mint` for SPL tokens, leave empty for
+   * native SOL. L2 of ADR-0016.
+   */
+  withdraw(walletId: string, req: InitiateWithdrawalRequest): Promise<WalletTransaction> {
+    return this.client.request<WalletTransaction>("POST", `/v1/wallets/${walletId}/withdraw`, {
+      body: req,
+    });
+  }
+
+  listTransactions(
+    walletId: string,
+    query?: ListTransactionsQuery,
+  ): Promise<ListTransactionsResponse> {
+    return this.client.request<ListTransactionsResponse>(
+      "GET",
+      `/v1/wallets/${walletId}/transactions`,
+      {
+        query: {
+          type: query?.type,
+          status: query?.status,
+          reason: query?.reason,
+          limit: query?.limit,
+          cursor: query?.cursor,
+        },
+      },
+    );
+  }
+
+  getTransaction(walletId: string, transactionId: string): Promise<WalletTransaction> {
+    return this.client.request<WalletTransaction>(
+      "GET",
+      `/v1/wallets/${walletId}/transactions/${transactionId}`,
+    );
+  }
+
+  /**
+   * Deposit address resolver. For SPL tokens pass a non-empty `mint` and
+   * the gateway returns the Associated Token Account derived from
+   * (wallet_owner, mint). For native assets leave `mint` empty —
+   * the wallet owner address is returned. L3 of ADR-0016.
+   */
+  depositAddress(
+    walletId: string,
+    network: Network,
+    mint?: Mint,
+  ): Promise<DepositAddress> {
+    return this.client.request<DepositAddress>(
+      "GET",
+      `/v1/wallets/${walletId}/deposit-address`,
+      {
+        query: {
+          network,
+          mint: mint && mint.length > 0 ? (mint as string) : undefined,
+        },
+      },
+    );
+  }
+}

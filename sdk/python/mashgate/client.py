@@ -20,6 +20,7 @@ from mashgate.resources.notify import NotifyResource
 from mashgate.resources.storage import StorageResource
 from mashgate.resources.logs import LogsResource
 from mashgate.resources.flags import FlagsResource
+from mashgate.resources.wallet_admin import WalletAdminResource
 
 
 class MashgateClient:
@@ -71,6 +72,9 @@ class MashgateClient:
         self.storage = StorageResource(self)
         self.logs = LogsResource(self)
         self.flags = FlagsResource(self)
+        # Admin/merchant-side WalletService — full wallet.v1.WalletService.
+        # End-user wallet ops (saved cards, balance) live on `self.wallet`.
+        self.wallet_admin = WalletAdminResource(self)
 
     # ── Token management ──────────────────────────────────────────────
 

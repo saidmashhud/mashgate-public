@@ -10,12 +10,32 @@ from mashgate.events import (
     event_key,
     event_payload,
 )
+from mashgate.resources.wallet_admin import (
+    Currency,
+    Mint,
+    Network,
+    TransactionReason,
+    TransactionStatus,
+    TransactionType,
+    WalletAdminResource,
+    WalletStatus,
+    WalletType,
+)
 from mashgate.webhooks import verify_webhook_signature
 
 __all__ = [
+    "Currency",
     "MashgateClient",
     "MashgateError",
+    "Mint",
+    "Network",
     "TraceContext",
+    "TransactionReason",
+    "TransactionStatus",
+    "TransactionType",
+    "WalletAdminResource",
+    "WalletStatus",
+    "WalletType",
     "WebhookEvent",
     "WebhookTopic",
     "event_id",
