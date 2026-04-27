@@ -119,6 +119,11 @@ type Client struct {
 	Storage *StorageClient
 	Flags   *FlagsClient
 	Logs    *LogsClient
+	// Mail capability — Mashgate core primitive (ADR-0019). Mailbox / message
+	// CRUD plus admin tenant operations (mailboxes, domains, DKIM rotation).
+	// Subscribe to mail.received / mail.sent / mail.delivered / mail.bounced
+	// events via webhooks.
+	Mail *MailClient
 
 	// Part 4 service clients — available after calling New().
 	Subscriptions *SubscriptionsClient
@@ -133,6 +138,7 @@ func initClients(c *Client) {
 	c.Storage = &StorageClient{c: c}
 	c.Flags = &FlagsClient{c: c}
 	c.Logs = &LogsClient{c: c}
+	c.Mail = &MailClient{c: c}
 	c.Subscriptions = &SubscriptionsClient{c: c}
 	c.Invoices = &InvoicesClient{c: c}
 	c.PaymentLinks = &PaymentLinksClient{c: c}
