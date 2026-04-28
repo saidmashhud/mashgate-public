@@ -24,6 +24,7 @@ import { MeteringResource } from "./resources/metering.js";
 import { BillingResource } from "./resources/billing.js";
 import { AnalyticsResource } from "./resources/analytics.js";
 import { WalletAdminResource } from "./resources/walletAdmin.js";
+import { MailResource } from "./resources/mail.js";
 
 export class MashgateClient {
   private readonly baseUrl: string;
@@ -64,6 +65,14 @@ export class MashgateClient {
    * For end-user wallet operations (saved cards, balance), see `wallet`.
    */
   readonly walletAdmin: WalletAdminResource;
+  /**
+   * Mail capability — `mail.v1.MailService` (ADR-0019). Self-service mailbox
+   * operations (read/send/update/delete) and admin-scoped tenant operations
+   * (mailboxes, domains, DKIM rotation). Backed by Mashgate
+   * `mail-service` in `services/orchestration/`. Subscribe to `mail.received`
+   * / `mail.sent` / `mail.delivered` / `mail.bounced` events via webhooks.
+   */
+  readonly mail: MailResource;
 
   constructor(options: MashgateClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/+$/, "");
@@ -103,6 +112,7 @@ export class MashgateClient {
     this.billing = new BillingResource(this);
     this.analytics = new AnalyticsResource(this);
     this.walletAdmin = new WalletAdminResource(this);
+    this.mail = new MailResource(this);
   }
 
   setAccessToken(token: string | undefined): void {

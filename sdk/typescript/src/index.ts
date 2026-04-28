@@ -39,6 +39,32 @@ export {
   TransactionStatus,
   TransactionReason,
 } from "./resources/walletAdmin.js";
+export {
+  MailResource,
+  MessageFolder,
+  MailboxStatus,
+  DomainStatus,
+  SendStatus,
+} from "./resources/mail.js";
+export type {
+  Mailbox,
+  MessagePreview,
+  Message as MailMessage,
+  MessageAttachment as MailAttachment,
+  Domain as MailDomain,
+  ListMessagesQuery,
+  ListMessagesResponse,
+  SendMessageRequest as SendMailRequest,
+  SendMessageResponse as SendMailResponse,
+  UpdateMessageRequest as UpdateMailMessageRequest,
+  ListMailboxesQuery,
+  ListMailboxesResponse,
+  CreateMailboxRequest,
+  ListDomainsQuery,
+  ListDomainsResponse,
+  CreateDomainRequest as CreateMailDomainRequest,
+  RotateDKIMRequest,
+} from "./resources/mail.js";
 export type {
   Wallet as AdminWallet,
   WalletTransaction as AdminWalletTransaction,
