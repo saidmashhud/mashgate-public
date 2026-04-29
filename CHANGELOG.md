@@ -15,6 +15,27 @@ Top-level entry is the aggregate snapshot.
 
 ---
 
+## [sdk/go/v1.2.0] — 2026-04-30
+
+### Added — Go SDK only: `iam.ListTenants`
+
+Closes Phase C of [ADR-0020 — Tenant identity SoT в Mashgate IAM](https://github.com/saidmashhud/mashgate/blob/main/docs/adr/0020-tenant-identity-sot.md)
+на стороне Go SDK (TypeScript SDK уже имел эту функциональность в v1.1.0).
+
+- **Go (`sdk/go`)**:
+  - New `(*Client).ListTenants(ctx, opts *ListTenantsOptions) ([]Tenant, error)` —
+    `GET /v1/iam/tenants`. Used by downstream verticals для cold-start backfill
+    перед subscription к Kafka `tenant-events` (см. ADR-0020 Phase B.3).
+  - New types `Tenant` + `ListTenantsOptions` (Status/Search/Page/PageSize/SortBy/SortOrder).
+  - 3 httptest-mock unit tests added.
+
+### Compatibility
+
+Pure additive. Existing IAM methods (`ListAPIKeys`, `CreateAPIKey`,
+`DeleteAPIKey`, `CheckPermission`) unchanged.
+
+---
+
 ## [v1.1.0] — 2026-04-27
 
 ### Added — Wallet admin / on-chain (mgCrypto BaaS surface)

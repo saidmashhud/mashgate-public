@@ -9,6 +9,28 @@ Aggregate changelog for all languages: [`../../CHANGELOG.md`](../../CHANGELOG.md
 
 ---
 
+## [v1.2.0] — 2026-04-30 — `sdk/go/v1.2.0`
+
+### Added — `iam` resource: ListTenants
+
+Closes Phase C of [ADR-0020 — Tenant identity SoT в Mashgate IAM](https://github.com/saidmashhud/mashgate/blob/main/docs/adr/0020-tenant-identity-sot.md)
+на стороне Go SDK. Mirrors TypeScript SDK `iam.listTenants()` shipped в v1.1.0.
+
+- New method `(*Client).ListTenants(ctx, opts *ListTenantsOptions) ([]Tenant, error)`.
+  Calls `GET /v1/iam/tenants`. Used by downstream verticals (mail, kiro, grid, crm)
+  для cold-start backfill перед subscription к Kafka `tenant-events` topic.
+- New types: `Tenant` (clean non-pointer struct — TenantID/Code/Name/Mode/Status/PlanID/Metadata/UserCount/timestamps),
+  `ListTenantsOptions` (Status/Search/Page/PageSize/SortBy/SortOrder filters mirroring proto `ListTenantsRequest`).
+- 3 httptest-mock unit tests (`iam_test.go`): no-options / all-options
+  query construction / empty response.
+
+### Compatibility
+
+Source-compatible. Pure additive — existing `ListAPIKeys`, `CreateAPIKey`,
+`DeleteAPIKey`, `CheckPermission` unchanged.
+
+---
+
 ## [v1.1.0] — 2026-04-27 — `sdk/go/v1.1.0`
 
 ### Added — `fintech` package (admin / merchant Wallet API)
