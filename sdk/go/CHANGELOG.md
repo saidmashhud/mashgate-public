@@ -9,6 +9,34 @@ Aggregate changelog for all languages: [`../../CHANGELOG.md`](../../CHANGELOG.md
 
 ---
 
+## [v1.3.0] — 2026-05-04 — `sdk/go/v1.3.0`
+
+### Added — `auth` resource: Register, SendOtp, VerifyOtp + extended TokenPair
+
+Closes proper phone-auth path для downstream verticals (qr-app first consumer).
+Replaces ad-hoc `pseudoEmail/pseudoPass + raw HTTP` workaround в qr-app
+backend.
+
+- `(*Client).Register(ctx, RegisterRequest) (*RegisterResponse, error)` —
+  `POST /v1/auth/register`. New types `RegisterRequest` (snake_case body
+  fields) + `RegisterResponse`. **SECURITY NOTE** (см. models.go): Mashgate
+  upstream `/v1/auth/register` сейчас не валидирует `role` field — known
+  upstream bug, будет закрыто whitelist'ом. Use `Role: "merchant"` для
+  customer flows.
+- `(*Client).SendOtp(ctx, SendOtpRequest) error` — `POST /v1/auth/otp/send`.
+  New type `SendOtpRequest{UserID|Phone, Purpose}`. Purpose ∈ {"login",
+  "password_reset", "phone_verify"}.
+- `(*Client).VerifyOtp(ctx, VerifyOtpRequest) (bool, error)` —
+  `POST /v1/auth/otp/verify`. New type `VerifyOtpRequest{UserID, Code, Purpose}`.
+- **`TokenPair` extended** — added optional `ExpiresAt int64` + `User *AuthUserInfo`
+  (UserID/Email/FullName/TenantID/Role/Roles). Backward-compatible: existing
+  consumers ignore new fields; populated only when upstream response includes
+  them. New type `AuthUserInfo`.
+- 4 httptest-mock unit tests: Login parses User/ExpiresAt, Register sends
+  snake_case body, SendOtp posts expected body, VerifyOtp returns valid bool.
+
+---
+
 ## [v1.2.0] — 2026-04-30 — `sdk/go/v1.2.0`
 
 ### Added — `iam` resource: ListTenants

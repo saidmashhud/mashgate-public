@@ -176,9 +176,69 @@ type LoginRequest struct {
 }
 
 // TokenPair is returned by Login and RefreshToken.
+//
+// User and ExpiresAt are populated when the auth-service includes them
+// (Login + chained Register flows). RefreshToken/Logout responses may
+// not carry User; check for nil.
 type TokenPair struct {
-	AccessToken  string `json:"accessToken"`
-	RefreshToken string `json:"refreshToken"`
+	AccessToken  string         `json:"accessToken"`
+	RefreshToken string         `json:"refreshToken"`
+	ExpiresAt    int64          `json:"expiresAt,omitempty"`
+	User         *AuthUserInfo  `json:"user,omitempty"`
+}
+
+// AuthUserInfo carries identity claims surfaced by Mashgate auth-service
+// alongside a TokenPair (when the upstream response includes a user object).
+type AuthUserInfo struct {
+	UserID   string   `json:"userId"`
+	Email    string   `json:"email"`
+	FullName string   `json:"fullName,omitempty"`
+	TenantID string   `json:"tenantId,omitempty"`
+	Role     string   `json:"role,omitempty"`
+	Roles    []string `json:"roles,omitempty"`
+}
+
+// RegisterRequest creates a new user via POST /v1/auth/register.
+//
+// SECURITY NOTE: Mashgate auth-service /v1/auth/register currently accepts
+// `Role` без sanitization — кто угодно может self-register с role=platform_admin.
+// Это известная проблема upstream (issue открыт), будет закрыто валидацией
+// whitelist'а ролей. Используйте Role="merchant" по умолчанию для merchant
+// flows; admin-grade роли пусть выдаёт админ через AssignRole.
+type RegisterRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	FullName string `json:"full_name,omitempty"`
+	TenantID string `json:"tenant_id,omitempty"`
+	// Role is one of: "merchant" | "admin" | "viewer" | "platform_admin".
+	// Empty string defaults to "admin" upstream.
+	Role string `json:"role,omitempty"`
+}
+
+// RegisterResponse carries the new user record (no tokens — caller must
+// chain Login to obtain a session).
+type RegisterResponse struct {
+	UserID    string `json:"userId"`
+	Email     string `json:"email"`
+	TenantID  string `json:"tenantId"`
+	CreatedAt int64  `json:"createdAt"`
+}
+
+// SendOtpRequest triggers an OTP delivery via Mashgate notify-service.
+//
+// Exactly one of UserID or Phone must be set. Purpose ∈
+// {"login" | "password_reset" | "phone_verify"}.
+type SendOtpRequest struct {
+	UserID  string `json:"user_id,omitempty"`
+	Phone   string `json:"phone,omitempty"`
+	Purpose string `json:"purpose"`
+}
+
+// VerifyOtpRequest checks an OTP previously sent.
+type VerifyOtpRequest struct {
+	UserID  string `json:"user_id"`
+	Code    string `json:"code"`
+	Purpose string `json:"purpose"`
 }
 
 // ────────────────────────────────────────────────────────────────────────────

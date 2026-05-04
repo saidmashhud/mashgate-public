@@ -15,6 +15,33 @@ Top-level entry is the aggregate snapshot.
 
 ---
 
+## [sdk/go/v1.3.0] — 2026-05-04
+
+### Added — Go SDK: `auth.Register` + `auth.SendOtp` + `auth.VerifyOtp` + extended `TokenPair`
+
+Unblocks proper phone-auth path в downstream verticals — qr-app первый
+консьюмер. Replaces ad-hoc `pseudoEmail/pseudoPass + raw HTTP` workaround.
+
+- **Go (`sdk/go`)**:
+  - `(*Client).Register(ctx, RegisterRequest) (*RegisterResponse, error)` →
+    `POST /v1/auth/register`.
+  - `(*Client).SendOtp(ctx, SendOtpRequest) error` → `POST /v1/auth/otp/send`.
+  - `(*Client).VerifyOtp(ctx, VerifyOtpRequest) (bool, error)` →
+    `POST /v1/auth/otp/verify`.
+  - `TokenPair` extended с `ExpiresAt int64` + `User *AuthUserInfo` (optional;
+    backward-compat).
+  - 4 new httptest-mock tests.
+
+См. подробно: [`sdk/go/CHANGELOG.md`](sdk/go/CHANGELOG.md#v130--2026-05-04--sdkgov130).
+
+**SECURITY NOTE**: Mashgate upstream `/v1/auth/register` сейчас принимает
+`role` field без sanitization — known upstream bug, fix запланирован
+(whitelist допустимых ролей при self-service signup). Используйте
+`Role: "merchant"` для customer flows; admin-grade роли пусть выдаёт
+admin через `IamService.AssignRole`.
+
+---
+
 ## [sdk/go/v1.2.0] — 2026-04-30
 
 ### Added — Go SDK only: `iam.ListTenants`
