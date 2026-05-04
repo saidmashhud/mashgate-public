@@ -180,11 +180,26 @@ type LoginRequest struct {
 // User and ExpiresAt are populated when the auth-service includes them
 // (Login + chained Register flows). RefreshToken/Logout responses may
 // not carry User; check for nil.
+//
+// ExpiresAt is unix-seconds. Mashgate currently emits it as a string —
+// json.Number transparently handles both number и string forms.
 type TokenPair struct {
-	AccessToken  string         `json:"accessToken"`
-	RefreshToken string         `json:"refreshToken"`
-	ExpiresAt    int64          `json:"expiresAt,omitempty"`
-	User         *AuthUserInfo  `json:"user,omitempty"`
+	AccessToken  string        `json:"accessToken"`
+	RefreshToken string        `json:"refreshToken"`
+	ExpiresAt    json.Number   `json:"expiresAt,omitempty"`
+	User         *AuthUserInfo `json:"user,omitempty"`
+}
+
+// ExpiresAtUnix returns ExpiresAt parsed as int64 unix seconds, or 0 если empty.
+func (t *TokenPair) ExpiresAtUnix() int64 {
+	if t == nil || t.ExpiresAt == "" {
+		return 0
+	}
+	v, err := t.ExpiresAt.Int64()
+	if err != nil {
+		return 0
+	}
+	return v
 }
 
 // AuthUserInfo carries identity claims surfaced by Mashgate auth-service
@@ -217,11 +232,26 @@ type RegisterRequest struct {
 
 // RegisterResponse carries the new user record (no tokens — caller must
 // chain Login to obtain a session).
+//
+// CreatedAt is unix-seconds, encoded as string upstream — exposed as
+// json.Number for transparent parsing.
 type RegisterResponse struct {
-	UserID    string `json:"userId"`
-	Email     string `json:"email"`
-	TenantID  string `json:"tenantId"`
-	CreatedAt int64  `json:"createdAt"`
+	UserID    string      `json:"userId"`
+	Email     string      `json:"email"`
+	TenantID  string      `json:"tenantId"`
+	CreatedAt json.Number `json:"createdAt"`
+}
+
+// CreatedAtUnix returns CreatedAt parsed as int64 unix seconds.
+func (r *RegisterResponse) CreatedAtUnix() int64 {
+	if r == nil || r.CreatedAt == "" {
+		return 0
+	}
+	v, err := r.CreatedAt.Int64()
+	if err != nil {
+		return 0
+	}
+	return v
 }
 
 // SendOtpRequest triggers an OTP delivery via Mashgate notify-service.

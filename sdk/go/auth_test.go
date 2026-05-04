@@ -41,10 +41,11 @@ func TestLoginParsesUserAndExpires(t *testing.T) {
 			t.Fatalf("unexpected path %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
+		// Mashgate auth-service emits expiresAt and createdAt as strings.
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"accessToken":  "a",
 			"refreshToken": "r",
-			"expiresAt":    1777839438,
+			"expiresAt":    "1777839438",
 			"user": map[string]any{
 				"userId":   "u-1",
 				"email":    "x@y.z",
@@ -61,8 +62,8 @@ func TestLoginParsesUserAndExpires(t *testing.T) {
 	if pair.User == nil || pair.User.UserID != "u-1" {
 		t.Fatalf("user not parsed: %#v", pair.User)
 	}
-	if pair.ExpiresAt != 1777839438 {
-		t.Fatalf("expiresAt: %d", pair.ExpiresAt)
+	if pair.ExpiresAtUnix() != 1777839438 {
+		t.Fatalf("expiresAt: %d", pair.ExpiresAtUnix())
 	}
 }
 
@@ -75,7 +76,7 @@ func TestRegisterPostsSnakeCaseFields(t *testing.T) {
 			"userId":    "new-user",
 			"email":     "x@y.z",
 			"tenantId":  "t-1",
-			"createdAt": 123,
+			"createdAt": "123",
 		})
 	})
 	out, err := client.Register(context.Background(), RegisterRequest{
