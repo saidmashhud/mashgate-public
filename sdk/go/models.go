@@ -264,9 +264,11 @@ type SendOtpRequest struct {
 	Purpose string `json:"purpose"`
 }
 
-// VerifyOtpRequest checks an OTP previously sent.
+// VerifyOtpRequest checks an OTP previously sent. Exactly one of UserID
+// or Phone must be set — match the way SendOtpRequest was called.
 type VerifyOtpRequest struct {
-	UserID  string `json:"user_id"`
+	UserID  string `json:"user_id,omitempty"`
+	Phone   string `json:"phone,omitempty"`
 	Code    string `json:"code"`
 	Purpose string `json:"purpose"`
 }
