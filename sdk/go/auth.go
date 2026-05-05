@@ -99,3 +99,124 @@ func (c *Client) VerifyOtp(ctx context.Context, req VerifyOtpRequest) (bool, err
 	}
 	return out.Valid, nil
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+// Password lifecycle (v1.4.0+)
+// ────────────────────────────────────────────────────────────────────────────
+
+// ChangePasswordRequest — authenticated password change. User proves
+// possession of the current password.
+type ChangePasswordRequest struct {
+	UserID          string `json:"user_id"`
+	CurrentPassword string `json:"current_password"`
+	NewPassword     string `json:"new_password"`
+}
+
+// ChangePassword updates the password for an already-authenticated user.
+// Calls POST /v1/auth/password/change.
+func (c *Client) ChangePassword(ctx context.Context, req ChangePasswordRequest) error {
+	return c.do(ctx, "POST", "/v1/auth/password/change", req, nil)
+}
+
+// ResetPasswordRequest — forgot-password completion. Caller already ran
+// SendOtp(purpose="password_reset") and got back a 6-digit code.
+type ResetPasswordRequest struct {
+	Email       string `json:"email,omitempty"`
+	Phone       string `json:"phone,omitempty"`
+	Code        string `json:"code"`
+	NewPassword string `json:"new_password"`
+}
+
+// ResetPassword exchanges a valid OTP for a new password.
+// Calls POST /v1/auth/password/reset.
+func (c *Client) ResetPassword(ctx context.Context, req ResetPasswordRequest) error {
+	return c.do(ctx, "POST", "/v1/auth/password/reset", req, nil)
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Email verification (v1.4.0+)
+// ────────────────────────────────────────────────────────────────────────────
+
+// SendEmailVerificationRequest — trigger an email-verify OTP for a user.
+type SendEmailVerificationRequest struct {
+	UserID string `json:"user_id"`
+	Email  string `json:"email,omitempty"` // optional override
+}
+
+// SendEmailVerification sends an OTP to the user's email for verification.
+// Calls POST /v1/auth/email/verify/send.
+func (c *Client) SendEmailVerification(ctx context.Context, req SendEmailVerificationRequest) error {
+	return c.do(ctx, "POST", "/v1/auth/email/verify/send", req, nil)
+}
+
+// ConfirmEmailVerificationRequest — completes the verification flow.
+type ConfirmEmailVerificationRequest struct {
+	UserID string `json:"user_id"`
+	Code   string `json:"code"`
+}
+
+// ConfirmEmailVerificationResult is the boolean outcome.
+type ConfirmEmailVerificationResult struct {
+	Success       bool `json:"success"`
+	EmailVerified bool `json:"email_verified"`
+}
+
+// ConfirmEmailVerification finalizes email verification.
+// Calls POST /v1/auth/email/verify/confirm.
+func (c *Client) ConfirmEmailVerification(ctx context.Context, req ConfirmEmailVerificationRequest) (*ConfirmEmailVerificationResult, error) {
+	var out ConfirmEmailVerificationResult
+	if err := c.do(ctx, "POST", "/v1/auth/email/verify/confirm", req, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Profile mutations (v1.4.0+)
+// ────────────────────────────────────────────────────────────────────────────
+
+// UpdateUserPhoneRequest — change the user's phone, gated by an OTP that
+// the caller already ran SendOtp(phone=NEW, purpose="phone_verify") for.
+type UpdateUserPhoneRequest struct {
+	UserID   string `json:"user_id"`
+	NewPhone string `json:"new_phone"`
+	Code     string `json:"code"`
+}
+
+// UpdateUserPhone applies a verified phone change.
+// Calls POST /v1/auth/profile/phone.
+func (c *Client) UpdateUserPhone(ctx context.Context, req UpdateUserPhoneRequest) error {
+	return c.do(ctx, "POST", "/v1/auth/profile/phone", req, nil)
+}
+
+// UpdateUserEmailRequest — change the user's email, gated by an OTP that
+// the caller already ran SendOtp(user_id, purpose="phone_verify") for the
+// existing email; new_email is then set.
+type UpdateUserEmailRequest struct {
+	UserID   string `json:"user_id"`
+	NewEmail string `json:"new_email"`
+	Code     string `json:"code"`
+}
+
+// UpdateUserEmail applies a verified email change.
+// Calls POST /v1/auth/profile/email.
+func (c *Client) UpdateUserEmail(ctx context.Context, req UpdateUserEmailRequest) error {
+	return c.do(ctx, "POST", "/v1/auth/profile/email", req, nil)
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Account erasure (v1.4.0+)
+// ────────────────────────────────────────────────────────────────────────────
+
+// DeleteAccountRequest — irreversible (soft-delete on auth-service side,
+// downstream products consume `user.deleted` event).
+type DeleteAccountRequest struct {
+	UserID          string `json:"user_id"`
+	CurrentPassword string `json:"current_password"`
+}
+
+// DeleteAccount soft-deletes the user from Mashgate auth.
+// Calls DELETE /v1/auth/account.
+func (c *Client) DeleteAccount(ctx context.Context, req DeleteAccountRequest) error {
+	return c.do(ctx, "DELETE", "/v1/auth/account", req, nil)
+}
