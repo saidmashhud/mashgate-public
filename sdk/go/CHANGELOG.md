@@ -9,6 +9,35 @@ Aggregate changelog for all languages: [`../../CHANGELOG.md`](../../CHANGELOG.md
 
 ---
 
+## [v1.7.0] — 2026-05-12 — `sdk/go/v1.7.0`
+
+### Added — eight resources closing TS-SDK gap
+
+All resources mirror existing TS counterparts and use the same `ResourceClient` sub-client pattern as Billing.
+
+- **`AnalyticsClient`** (10 RPCs) — payment metrics, volume time-series, transaction counts, payment-method/geo breakdowns, failure analysis, customer cohorts, segments, top customers.
+- **`ChainClient`** (12 RPCs) — addresses CRUD, balance, transactions list/get, fee estimate, send, blocks, networks (subset of 21 from chain.proto).
+- **`DeveloperClient`** (6 RPCs) — self-service portal: API keys CRUD, webhook endpoints listing, activity + integration health.
+- **`LocalPaymentsClient`** (6 RPCs) — country-specific providers (TJ Tcell/Korti Milli/Alif, UZ Click/Payme): initiate, confirm, get status, cancel, list, supported methods.
+- **`MeteringClient`** (3 RPCs) — usage event recording, list, summary. Idempotent.
+- **`RiskClient`** (8 RPCs) — transaction assessment, assessments list/get, blocklist CRUD, rules read, identifier risk profile.
+- **`SettingsClient`** (5 RPCs) — tenant config blob: get/list/set/delete + bulk patch.
+- **`WalletAdminClient`** (7 RPCs) — privileged wallet ops: list, get, freeze, unfreeze, adjust-balance, close, audit-log. RBAC-gated.
+
+### Removed
+
+- `_todo_resources.go` — все resources implemented; documentation no longer needed.
+
+### Migration notes
+
+No breaking changes. Existing `client.Billing.*`, `client.Storage.*`, etc. continue working. New resources accessible via `client.Analytics.*`, `client.Chain.*`, etc.
+
+### Tested
+
+`go vet ./...` ✓  `go build ./...` ✓  `go test ./...` ✓ (both `sdk/go` and `sdk/go/fintech` packages).
+
+---
+
 ## [v1.5.0] — 2026-05-12 — `sdk/go/v1.5.0`
 
 ### Added — `Billing` resource: 15 RPCs on `BillingClient` sub-client

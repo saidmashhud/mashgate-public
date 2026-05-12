@@ -130,6 +130,16 @@ type Client struct {
 	Invoices      *InvoicesClient
 	PaymentLinks  *PaymentLinksClient
 	Guard         *GuardClient
+
+	// v1.7.0 — eight resources added to close TS-SDK gap.
+	Analytics     *AnalyticsClient
+	Chain         *ChainClient
+	Developer     *DeveloperClient
+	LocalPayments *LocalPaymentsClient
+	Metering      *MeteringClient
+	Risk          *RiskClient
+	Settings      *SettingsClient
+	WalletAdmin   *WalletAdminClient
 }
 
 func initClients(c *Client) {
@@ -143,6 +153,16 @@ func initClients(c *Client) {
 	c.Invoices = &InvoicesClient{c: c}
 	c.PaymentLinks = &PaymentLinksClient{c: c}
 	c.Guard = &GuardClient{c: c}
+
+	// v1.7.0 resources
+	c.Analytics = &AnalyticsClient{c: c}
+	c.Chain = &ChainClient{c: c}
+	c.Developer = &DeveloperClient{c: c}
+	c.LocalPayments = &LocalPaymentsClient{c: c}
+	c.Metering = &MeteringClient{c: c}
+	c.Risk = &RiskClient{c: c}
+	c.Settings = &SettingsClient{c: c}
+	c.WalletAdmin = &WalletAdminClient{c: c}
 }
 
 // New creates a Mashgate API client.
