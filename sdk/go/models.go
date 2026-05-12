@@ -1,6 +1,9 @@
 package mashgate
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"time"
+)
 
 // ────────────────────────────────────────────────────────────────────────────
 // Money
@@ -384,4 +387,134 @@ type CardPaymentMethod struct {
 type WalletPaymentMethod struct {
 	Provider string `json:"provider"` // "click" | "payme" | "oson"
 	Phone    string `json:"phone"`    // Uzbekistan phone: +998XXXXXXXXX
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Billing types — mirror BillingService schema from contracts/proto/v1/billing.proto.
+// Append to models.go on next regen.
+// ────────────────────────────────────────────────────────────────────────────
+
+// BillingPlan describes a platform subscription plan available to tenants.
+type BillingPlan struct {
+	ID            string            `json:"id"`
+	Code          string            `json:"code"`
+	Name          string            `json:"name"`
+	Description   string            `json:"description,omitempty"`
+	PriceCents    int64             `json:"priceCents"`
+	Currency      string            `json:"currency"`
+	BillingPeriod string            `json:"billingPeriod"` // "monthly" | "yearly"
+	Tier          string            `json:"tier,omitempty"`
+	Features      []string          `json:"features,omitempty"`
+	Limits        map[string]int64  `json:"limits,omitempty"`
+	Metadata      map[string]string `json:"metadata,omitempty"`
+	IsActive      bool              `json:"isActive"`
+}
+
+// BillingSubscription is the tenant's active subscription state.
+type BillingSubscription struct {
+	ID                 string            `json:"id"`
+	TenantID           string            `json:"tenantId"`
+	PlanID             string            `json:"planId"`
+	Status             string            `json:"status"` // active | past_due | canceled | trialing
+	CurrentPeriodStart time.Time         `json:"currentPeriodStart"`
+	CurrentPeriodEnd   time.Time         `json:"currentPeriodEnd"`
+	CancelAtPeriodEnd  bool              `json:"cancelAtPeriodEnd"`
+	CanceledAt         *time.Time        `json:"canceledAt,omitempty"`
+	TrialEnd           *time.Time        `json:"trialEnd,omitempty"`
+	Metadata           map[string]string `json:"metadata,omitempty"`
+}
+
+// ChangePlanRequest switches the active subscription to a new plan.
+// Prorate=true (default) → prorated charge for remaining period.
+// Effective="immediate" | "period_end".
+type ChangePlanRequest struct {
+	NewPlanID string `json:"newPlanId"`
+	Prorate   bool   `json:"prorate"`
+	Effective string `json:"effective,omitempty"`
+}
+
+// CancelPlanRequest cancels the active subscription.
+type CancelPlanRequest struct {
+	Reason            string `json:"reason,omitempty"`
+	CancelImmediately bool   `json:"cancelImmediately,omitempty"`
+}
+
+// PreviewPlanChangeRequest computes hypothetical proration for a plan switch.
+type PreviewPlanChangeRequest struct {
+	NewPlanID string `json:"newPlanId"`
+	Effective string `json:"effective,omitempty"`
+}
+
+// PreviewPlanChangeResponse holds proration details.
+type PreviewPlanChangeResponse struct {
+	NewPlan          *BillingPlan `json:"newPlan"`
+	OldPlan          *BillingPlan `json:"oldPlan,omitempty"`
+	ProrationCents   int64        `json:"prorationCents"`
+	CreditCents      int64        `json:"creditCents"`
+	NextChargeCents  int64        `json:"nextChargeCents"`
+	NextChargeAt     time.Time    `json:"nextChargeAt"`
+	EffectiveAt      time.Time    `json:"effectiveAt"`
+}
+
+// BillingPaymentMethod represents a payment method on file for billing.
+type BillingPaymentMethod struct {
+	ID         string            `json:"id"`
+	Type       string            `json:"type"` // "card" | "wallet" | "bank"
+	IsDefault  bool              `json:"isDefault"`
+	CreatedAt  time.Time         `json:"createdAt"`
+	Card       *CardPaymentMethod   `json:"card,omitempty"`
+	Wallet     *WalletPaymentMethod `json:"wallet,omitempty"`
+	Metadata   map[string]string `json:"metadata,omitempty"`
+}
+
+// AddBillingPaymentMethodRequest registers a new billing payment method.
+// Set Card OR Wallet (not both).
+type AddBillingPaymentMethodRequest struct {
+	Type      string               `json:"type"`
+	Card      *CardPaymentMethod   `json:"card,omitempty"`
+	Wallet    *WalletPaymentMethod `json:"wallet,omitempty"`
+	IsDefault bool                 `json:"isDefault,omitempty"`
+}
+
+// BillingInvoice is an issued invoice for a tenant.
+type BillingInvoice struct {
+	ID            string            `json:"id"`
+	TenantID      string            `json:"tenantId"`
+	Number        string            `json:"number"`
+	Status        string            `json:"status"` // draft | open | paid | void | uncollectible
+	AmountCents   int64             `json:"amountCents"`
+	Currency      string            `json:"currency"`
+	IssuedAt      time.Time         `json:"issuedAt"`
+	DueAt         time.Time         `json:"dueAt"`
+	PaidAt        *time.Time        `json:"paidAt,omitempty"`
+	HostedPageURL string            `json:"hostedPageUrl,omitempty"`
+	PDFURL        string            `json:"pdfUrl,omitempty"`
+	Lines         []BillingInvoiceLine `json:"lines,omitempty"`
+	Metadata      map[string]string `json:"metadata,omitempty"`
+}
+
+// BillingInvoiceLine is one line item on an invoice.
+type BillingInvoiceLine struct {
+	Description string `json:"description"`
+	Quantity    int64  `json:"quantity"`
+	UnitCents   int64  `json:"unitCents"`
+	AmountCents int64  `json:"amountCents"`
+	PeriodStart *time.Time `json:"periodStart,omitempty"`
+	PeriodEnd   *time.Time `json:"periodEnd,omitempty"`
+}
+
+// CreditBalance is the tenant's available credit (applied to future invoices).
+type CreditBalance struct {
+	AmountCents int64  `json:"amountCents"`
+	Currency    string `json:"currency"`
+}
+
+// RedeemPromoCodeResponse is returned after applying a promo code.
+type RedeemPromoCodeResponse struct {
+	Applied      bool          `json:"applied"`
+	CreditCents  int64         `json:"creditCents,omitempty"`
+	Currency     string        `json:"currency,omitempty"`
+	ValidUntil   *time.Time    `json:"validUntil,omitempty"`
+	Balance      *CreditBalance `json:"balance,omitempty"`
+	ErrorMessage string        `json:"errorMessage,omitempty"`
 }

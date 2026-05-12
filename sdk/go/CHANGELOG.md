@@ -9,6 +9,35 @@ Aggregate changelog for all languages: [`../../CHANGELOG.md`](../../CHANGELOG.md
 
 ---
 
+## [v1.5.0] — 2026-05-12 — `sdk/go/v1.5.0`
+
+### Added — `Billing` resource: 15 RPCs on `BillingClient` sub-client
+
+Closes the largest contract-drift gap with TypeScript SDK. Wraps
+`BillingService` from `contracts/proto/v1/billing.proto` (29 RPCs).
+
+Methods on `client.Billing`:
+- Plans: `ListPlans`, `GetPlan`
+- Subscription: `GetSubscription`, `ChangePlan`, `CancelPlan`, `PreviewPlanChange`
+- Payment methods: `ListPaymentMethods`, `AddPaymentMethod`, `SetDefaultPaymentMethod`, `RemovePaymentMethod`
+- Invoices: `ListInvoices`, `GetInvoice`, `PayInvoice`
+- Credit/promo: `GetCreditBalance`, `RedeemPromoCode`
+
+New types in `models.go`: `BillingPlan`, `BillingSubscription`, `ChangePlanRequest`,
+`CancelPlanRequest`, `PreviewPlanChangeRequest/Response`, `BillingPaymentMethod`,
+`AddBillingPaymentMethodRequest`, `BillingInvoice`, `BillingInvoiceLine`,
+`CreditBalance`, `RedeemPromoCodeResponse`.
+
+### Documented — `_todo_resources.go`
+
+Explicit TODO file marking 8 resources still missing vs TypeScript SDK:
+`analytics`, `chain`, `developer`, `local_payments`, `metering`,
+`risk`, `settings`, `wallet_admin`. Generated types already exist in
+`_generated/types.gen.go` — only idiomatic Go wrappers pending.
+
+---
+
+
 ## [v1.3.0] — 2026-05-04 — `sdk/go/v1.3.0`
 
 ### Added — `auth` resource: Register, SendOtp, VerifyOtp + extended TokenPair

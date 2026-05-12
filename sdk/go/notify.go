@@ -125,3 +125,37 @@ func (n *NotifyClient) ListLogs(ctx context.Context, tenantID string, page int) 
 	}
 	return out, nil
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+// Telegram channel (added v1.6.0)
+// ────────────────────────────────────────────────────────────────────────────
+
+// SendTelegramRequest sends a Telegram message via notify-service.
+// Either TemplateKey OR Text is required.
+type SendTelegramRequest struct {
+	TenantID    string            `json:"tenantId"`
+	ChatID      string            `json:"chatId"`
+	TemplateKey string            `json:"templateKey,omitempty"`
+	Vars        map[string]string `json:"vars,omitempty"`
+	Text        string            `json:"text,omitempty"`
+}
+
+// SendTelegramResponse contains notification log id + provider message id.
+type SendTelegramResponse struct {
+	NotificationID string `json:"notificationId"`
+	ProviderMsgID  string `json:"providerMsgId,omitempty"`
+	Status         string `json:"status"` // "sent" | "failed"
+}
+
+// SendTelegram sends a Telegram message via mashgate notify-service.
+//
+// Replaces vertical-local Telegram clients (e.g. qrapp/internal/telegram/).
+// Pairing flow (chat_id lookup from /start <token>) stays in the calling vertical;
+// notify-service is delivery-only.
+func (n *NotifyClient) SendTelegram(ctx context.Context, req SendTelegramRequest) (*SendTelegramResponse, error) {
+	var out SendTelegramResponse
+	if err := n.c.do(ctx, "POST", "/v1/notify/telegram", req, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}

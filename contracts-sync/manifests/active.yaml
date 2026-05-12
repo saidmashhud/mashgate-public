@@ -15,7 +15,7 @@ snapshot:
   fetched_at: null     # populated by sync.sh
 
 sdk_versions:
-  go: "0.1.0"
+  go: "1.5.0"
   typescript: "0.1.0"
   python: "0.1.0"
 
