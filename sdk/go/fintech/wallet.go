@@ -161,6 +161,21 @@ type CreateChainWalletResponse struct {
 	Mnemonic string `json:"mnemonic"` // shown to user once; do NOT persist
 }
 
+// ImportChainWalletRequest imports an existing non-custodial wallet from a
+// caller-provided BIP-39 mnemonic. Server validates, derives address
+// (SLIP-0010), AES-encrypts the private key, and stores it. Idempotent on
+// mnemonic_hash UNIQUE — re-importing same phrase для одного subject returns
+// the existing wallet. Mnemonic never logged / never persisted plaintext.
+type ImportChainWalletRequest struct {
+	TenantID       string   `json:"tenant_id"`
+	SubjectID      string   `json:"subject_id"`
+	SubjectType    string   `json:"subject_type"` // "user" | "merchant"
+	Currency       Currency `json:"currency"`
+	Network        Network  `json:"network"`
+	Mnemonic       string   `json:"mnemonic"`
+	IdempotencyKey string   `json:"idempotency_key,omitempty"`
+}
+
 type FreezeWalletRequest struct {
 	TenantID     string `json:"tenant_id"`
 	WalletID     string `json:"wallet_id"`
@@ -298,6 +313,22 @@ func (s *WalletService) CreateChain(ctx context.Context, req CreateChainWalletRe
 	req.TenantID = s.c.tenantID
 	var out CreateChainWalletResponse
 	if err := s.c.do(ctx, http.MethodPost, "/v1/wallets/chain", req, idempotencyKey, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ImportChain restores a non-custodial wallet from a user-provided BIP-39
+// mnemonic. Returns just the wallet (no mnemonic round-trip). Idempotent on
+// mnemonic_hash UNIQUE. Currently SOLANA only.
+//
+// **Caller MUST clear the mnemonic from memory after this call** — the
+// mnemonic touches process memory of both caller and server briefly; it is
+// never stored plaintext server-side (SHA-256 hash for dedup only).
+func (s *WalletService) ImportChain(ctx context.Context, req ImportChainWalletRequest, idempotencyKey string) (*Wallet, error) {
+	req.TenantID = s.c.tenantID
+	var out Wallet
+	if err := s.c.do(ctx, http.MethodPost, "/v1/wallets/chain/import", req, idempotencyKey, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
