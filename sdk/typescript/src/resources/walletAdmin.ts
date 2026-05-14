@@ -218,6 +218,32 @@ export interface ListTransactionsResponse {
   next_cursor?: string;
 }
 
+// Atomic inter-wallet transfer (same tenant, same currency). v1 of
+// `wallet.v1.WalletService.TransferBetweenWallets`. The server commits
+// a single Postgres tx: balance delta on both wallets + two
+// wallet_transactions rows + three outbox events (wallet.debit,
+// wallet.credit, wallet.transfer). Idempotent via `idempotency_key`.
+export interface TransferBetweenWalletsRequest {
+  to_wallet_id: string;
+  // Decimal string. Must be > 0.
+  amount: string;
+  // Defaults to TRANSACTION_REASON_ADJUSTMENT if omitted.
+  reason?: TransactionReason;
+  description?: string;
+  idempotency_key?: string;
+  // Surfaced in the paired wallet.{credit,debit} envelope events. Empty
+  // skips merchant_id on those events (money state still commits).
+  merchant_id?: string;
+  // Optional free-text on the wallet.transfer envelope.
+  note?: string;
+}
+
+export interface TransferBetweenWalletsResponse {
+  transfer_id: string;
+  debit: WalletTransaction;
+  credit: WalletTransaction;
+}
+
 // ── Resource ────────────────────────────────────────────────────────────────
 
 export class WalletAdminResource {
@@ -314,6 +340,26 @@ export class WalletAdminResource {
     return this.client.request<WalletTransaction>(
       "GET",
       `/v1/wallets/${walletId}/transactions/${transactionId}`,
+    );
+  }
+
+  /**
+   * Atomically transfer `req.amount` from `fromWalletId` to
+   * `req.to_wallet_id`. Both wallets must belong to the same tenant and
+   * share currency. Server errors mapped from gRPC status:
+   * - INVALID_ARGUMENT — same wallet IDs, currency mismatch, non-positive amount.
+   * - FAILED_PRECONDITION — source or destination frozen, insufficient balance.
+   * - PERMISSION_DENIED — wallets belong to different tenants.
+   * - NOT_FOUND — wallet does not exist.
+   */
+  transfer(
+    fromWalletId: string,
+    req: TransferBetweenWalletsRequest,
+  ): Promise<TransferBetweenWalletsResponse> {
+    return this.client.request<TransferBetweenWalletsResponse>(
+      "POST",
+      `/v1/wallets/${fromWalletId}/transfer`,
+      { body: req },
     );
   }
 

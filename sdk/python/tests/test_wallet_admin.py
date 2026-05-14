@@ -178,6 +178,72 @@ def test_credit_serialises_reason_enum(client):
     assert sent["amount"] == "100.00"
 
 
+@respx.mock
+def test_transfer_posts_to_from_wallet_path_with_body(client):
+    route = respx.post(f"{BASE}/v1/wallets/w-from/transfer").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "transfer_id": "xfer-uuid",
+                "debit": {
+                    "transaction_id": "tx-debit",
+                    "wallet_id": "w-from",
+                    "type": "TRANSACTION_TYPE_DEBIT",
+                    "amount": "25.50",
+                    "currency": "USDC",
+                    "balance_after": "74.50",
+                },
+                "credit": {
+                    "transaction_id": "tx-credit",
+                    "wallet_id": "w-to",
+                    "type": "TRANSACTION_TYPE_CREDIT",
+                    "amount": "25.50",
+                    "currency": "USDC",
+                    "balance_after": "125.50",
+                },
+            },
+        )
+    )
+    resp = client.wallet_admin.transfer(
+        "w-from",
+        to_wallet_id="w-to",
+        amount="25.50",
+        reason=TransactionReason.SETTLEMENT,
+        description="monthly close",
+        idempotency_key="idem-xfer-1",
+        merchant_id="m-1",
+        note="Q2 settlement",
+    )
+    assert resp["transfer_id"] == "xfer-uuid"
+    assert resp["debit"]["wallet_id"] == "w-from"
+    assert resp["credit"]["wallet_id"] == "w-to"
+
+    sent = json.loads(route.calls.last.request.content)
+    assert sent["to_wallet_id"] == "w-to"
+    assert sent["amount"] == "25.50"
+    assert sent["reason"] == "TRANSACTION_REASON_SETTLEMENT"
+    assert sent["idempotency_key"] == "idem-xfer-1"
+    assert sent["merchant_id"] == "m-1"
+    assert sent["note"] == "Q2 settlement"
+    assert sent["description"] == "monthly close"
+    # `from_wallet_id` lives in the URL path, not the body.
+    assert "from_wallet_id" not in sent
+
+
+@respx.mock
+def test_transfer_strips_optional_fields_when_absent(client):
+    route = respx.post(f"{BASE}/v1/wallets/w-from/transfer").mock(
+        return_value=httpx.Response(
+            200, json={"transfer_id": "x", "debit": {}, "credit": {}}
+        )
+    )
+    client.wallet_admin.transfer(
+        "w-from", to_wallet_id="w-to", amount="1"
+    )
+    sent = json.loads(route.calls.last.request.content)
+    assert sent == {"to_wallet_id": "w-to", "amount": "1"}
+
+
 def test_typed_constants_have_expected_wire_values():
     """Sanity — the server-side parsers expect plain enum strings."""
     assert Currency.USDC.value == "USDC"

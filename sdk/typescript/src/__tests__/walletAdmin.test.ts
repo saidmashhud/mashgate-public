@@ -171,6 +171,54 @@ describe("WalletAdminResource", () => {
     expect(url).toContain("cursor=prev-token");
   });
 
+  it("transfer POSTs /v1/wallets/{from}/transfer and returns both legs", async () => {
+    mockFetch = mockFetchReturning({
+      transfer_id: "xfer-uuid",
+      debit: {
+        transaction_id: "tx-debit",
+        wallet_id: "w-from",
+        type: "TRANSACTION_TYPE_DEBIT",
+        amount: "25.50",
+        currency: "USDC",
+        balance_after: "74.50",
+      },
+      credit: {
+        transaction_id: "tx-credit",
+        wallet_id: "w-to",
+        type: "TRANSACTION_TYPE_CREDIT",
+        amount: "25.50",
+        currency: "USDC",
+        balance_after: "125.50",
+      },
+    });
+    client = new MashgateClient({
+      baseUrl: "https://api.mashgate.uz",
+      apiKey: "mg_test_key",
+      fetch: mockFetch,
+    });
+    const resp = await client.walletAdmin.transfer("w-from", {
+      to_wallet_id: "w-to",
+      amount: "25.50",
+      reason: "TRANSACTION_REASON_SETTLEMENT",
+      description: "monthly close",
+      idempotency_key: "idem-xfer-1",
+      merchant_id: "m-1",
+      note: "Q2 settlement",
+    });
+    expect(resp.transfer_id).toBe("xfer-uuid");
+    expect(resp.debit.wallet_id).toBe("w-from");
+    expect(resp.credit.wallet_id).toBe("w-to");
+
+    const { url, init } = lastCall(mockFetch);
+    expect(url).toBe("https://api.mashgate.uz/v1/wallets/w-from/transfer");
+    expect(init.method).toBe("POST");
+    const body = JSON.parse(String(init.body));
+    expect(body.to_wallet_id).toBe("w-to");
+    expect(body.amount).toBe("25.50");
+    expect(body.note).toBe("Q2 settlement");
+    expect(body.idempotency_key).toBe("idem-xfer-1");
+  });
+
   it("typed constants have the expected wire values", () => {
     // Server-side parsers expect plain uppercase enum strings.
     expect(Currency.USDC).toBe("USDC");

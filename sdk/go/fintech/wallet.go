@@ -129,6 +129,41 @@ type CreditRequest struct {
 
 type DebitRequest = CreditRequest
 
+// TransferRequest moves funds atomically between two wallets in the same
+// tenant. Same-currency only in v1 (cross-currency FX out of scope).
+// The server enforces: both wallets exist, share the tenant, share the
+// currency, neither is frozen, source has sufficient balance. Backed by
+// a single Postgres transaction — either the entire transfer commits
+// (both balances updated + two wallet_transactions rows + three outbox
+// events: wallet.debit, wallet.credit, wallet.transfer) or none of it.
+type TransferRequest struct {
+	TenantID       string            `json:"tenant_id"`
+	FromWalletID   string            `json:"from_wallet_id"`
+	ToWalletID     string            `json:"to_wallet_id"`
+	Amount         string            `json:"amount"`
+	Reason         TransactionReason `json:"reason,omitempty"`
+	Description    string            `json:"description,omitempty"`
+	IdempotencyKey string            `json:"idempotency_key,omitempty"`
+	// MerchantID is included in the paired wallet.debit / wallet.credit
+	// envelope events. Required if those events must be contract-valid
+	// per contracts/events/wallet.{credit,debit}.json. Empty = movement
+	// events are emitted without merchant_id and dropped by consumers
+	// that require it (money state still commits).
+	MerchantID string `json:"merchant_id,omitempty"`
+	// Note is optional free-text attached to the wallet.transfer envelope.
+	Note string `json:"note,omitempty"`
+}
+
+// TransferResponse carries the synthetic transfer_id plus both
+// wallet_transactions rows (debit on source, credit on destination).
+// transfer_id correlates with `transfer_id` in the wallet.transfer
+// outbox event and with `reference_id` on both wallet_transactions rows.
+type TransferResponse struct {
+	TransferID string            `json:"transfer_id"`
+	Debit      WalletTransaction `json:"debit"`
+	Credit     WalletTransaction `json:"credit"`
+}
+
 type WithdrawRequest struct {
 	TenantID        string  `json:"tenant_id"`
 	WalletID        string  `json:"wallet_id"`
@@ -360,6 +395,33 @@ func (s *WalletService) Unfreeze(ctx context.Context, walletID, note string) (*W
 	path := fmt.Sprintf("/v1/wallets/%s/unfreeze", walletID)
 	var out Wallet
 	if err := s.c.do(ctx, http.MethodPost, path, req, "", &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Transfer moves `amount` from `req.FromWalletID` to `req.ToWalletID`
+// atomically. Both wallets must belong to the same tenant and share the
+// same currency. Idempotent via `req.IdempotencyKey`. Returns the
+// synthetic transfer_id plus both wallet_transactions rows.
+//
+// Errors mapped from gRPC status:
+//   - INVALID_ARGUMENT — same wallet IDs, currency mismatch, non-positive amount.
+//   - FAILED_PRECONDITION — source/destination frozen, insufficient balance.
+//   - PERMISSION_DENIED — wallets belong to different tenants.
+//   - NOT_FOUND — wallet does not exist.
+func (s *WalletService) Transfer(ctx context.Context, req TransferRequest, idempotencyKey string) (*TransferResponse, error) {
+	req.TenantID = s.c.tenantID
+	if idempotencyKey != "" && req.IdempotencyKey == "" {
+		// Mirror the header into the body so the server picks up either
+		// form (existing wallet methods rely on the header alone, but
+		// transfer namespaces the key per leg internally — surface both
+		// to keep callers' lives easy).
+		req.IdempotencyKey = idempotencyKey
+	}
+	path := fmt.Sprintf("/v1/wallets/%s/transfer", req.FromWalletID)
+	var out TransferResponse
+	if err := s.c.do(ctx, http.MethodPost, path, req, idempotencyKey, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil

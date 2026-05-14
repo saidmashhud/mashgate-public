@@ -9,6 +9,33 @@ Aggregate changelog for all languages: [`../../CHANGELOG.md`](../../CHANGELOG.md
 
 ---
 
+## [1.3.0] — 2026-05-15
+
+### Added — `WalletAdminResource.transfer` (atomic inter-wallet movement)
+
+Mirrors new `wallet.v1.WalletService.TransferBetweenWallets` RPC
+(ledger-core handler landed in `mashgate@af67d653`, 2026-05-15).
+Same-currency v1.
+
+- `client.walletAdmin.transfer(fromWalletId, req)` →
+  `POST /v1/wallets/{fromWalletId}/transfer`. Returns
+  `{ transfer_id, debit, credit }` with both `WalletTransaction` rows.
+- New types: `TransferBetweenWalletsRequest`, `TransferBetweenWalletsResponse`.
+- 1 new vitest mock-fetch test.
+
+Server-side guarantees (per-tenant atomic): balance delta on both wallets
++ two `wallet_transactions` rows + three outbox events
+(`wallet.debit`, `wallet.credit`, `wallet.transfer`) commit in one
+Postgres tx. Idempotency key namespaced per leg server-side.
+
+Errors mapped from gRPC status:
+- `INVALID_ARGUMENT` — same wallet IDs, currency mismatch, non-positive amount.
+- `FAILED_PRECONDITION` — source/destination frozen, insufficient balance.
+- `PERMISSION_DENIED` — wallets belong to different tenants.
+- `NOT_FOUND` — wallet does not exist.
+
+---
+
 ## [1.1.0] — 2026-04-27
 
 ### Added — `WalletAdminResource` (admin / merchant Wallet API)

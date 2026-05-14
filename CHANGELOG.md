@@ -15,6 +15,28 @@ Top-level entry is the aggregate snapshot.
 
 ---
 
+## [2026-05-15] — wallet.transfer (atomic inter-wallet movement)
+
+- **`sdk/go/v1.9.0`** — `(*WalletService).Transfer(ctx, TransferRequest, idempotencyKey)`.
+- **`@mashgate/sdk@1.3.0`** — `client.walletAdmin.transfer(fromWalletId, req)`.
+- **`mashgate@0.3.0`** — `client.wallet_admin.transfer(from_wallet_id, *, ...)`.
+
+All three SDKs mirror new `wallet.v1.WalletService.TransferBetweenWallets`
+RPC (ledger-core handler в `mashgate@af67d653`, same date). Same-currency
+v1 — cross-currency FX is out of scope until a future Convert RPC.
+
+Server commits one Postgres tx: balance delta on both wallets + two
+`wallet_transactions` rows (debit on source, credit on dest, both
+referencing the synthetic `transfer_id`) + three outbox events
+(`wallet.debit`, `wallet.credit`, `wallet.transfer`).
+
+Per-language details:
+- [`sdk/go/CHANGELOG.md`](sdk/go/CHANGELOG.md#v190--2026-05-15--sdkgov190).
+- [`sdk/typescript/CHANGELOG.md`](sdk/typescript/CHANGELOG.md#130--2026-05-15).
+- [`sdk/python/CHANGELOG.md`](sdk/python/CHANGELOG.md#030--2026-05-15).
+
+---
+
 ## [sdk/go/v1.3.0] — 2026-05-04
 
 ### Added — Go SDK: `auth.Register` + `auth.SendOtp` + `auth.VerifyOtp` + extended `TokenPair`

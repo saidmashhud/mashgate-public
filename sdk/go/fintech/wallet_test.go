@@ -311,6 +311,129 @@ func TestTypedConstantsMarshalAsPlainStrings(t *testing.T) {
 	}
 }
 
+func TestWalletService_Transfer_SendsExpectedShape(t *testing.T) {
+	cap := &capture{}
+	resp := TransferResponse{
+		TransferID: "xfer-uuid",
+		Debit: WalletTransaction{
+			TransactionID: "tx-debit",
+			WalletID:      "w-from",
+			Type:          TransactionDebit,
+			Amount:        "25.50",
+			Currency:      "USDC",
+			BalanceAfter:  "74.50",
+		},
+		Credit: WalletTransaction{
+			TransactionID: "tx-credit",
+			WalletID:      "w-to",
+			Type:          TransactionCredit,
+			Amount:        "25.50",
+			Currency:      "USDC",
+			BalanceAfter:  "125.50",
+		},
+	}
+	srv := mockServer(t, http.StatusOK, mustJSON(t, resp), cap)
+	defer srv.Close()
+
+	c := New(srv.URL, "tenant-A", "key-xyz")
+	out, err := c.Wallet.Transfer(context.Background(), TransferRequest{
+		FromWalletID: "w-from",
+		ToWalletID:   "w-to",
+		Amount:       "25.50",
+		Reason:       ReasonSettlement,
+		Description:  "monthly close",
+		MerchantID:   "m-1",
+		Note:         "Q2 settlement",
+	}, "idem-xfer-1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if out.TransferID != "xfer-uuid" {
+		t.Errorf("transfer_id mismatch: %s", out.TransferID)
+	}
+	if out.Debit.WalletID != "w-from" || out.Credit.WalletID != "w-to" {
+		t.Errorf("leg wallets mismatch: debit=%s credit=%s", out.Debit.WalletID, out.Credit.WalletID)
+	}
+	if cap.method != http.MethodPost {
+		t.Errorf("expected POST, got %s", cap.method)
+	}
+	if cap.path != "/v1/wallets/w-from/transfer" {
+		t.Errorf("path mismatch: %s", cap.path)
+	}
+	if cap.idempotencyKey != "idem-xfer-1" {
+		t.Errorf("idempotency header missing: %q", cap.idempotencyKey)
+	}
+	// Body must echo the tenant_id (client overwrites) and carry the
+	// caller-provided fields verbatim.
+	var sent map[string]any
+	if err := json.Unmarshal(cap.body, &sent); err != nil {
+		t.Fatalf("decode body: %v", err)
+	}
+	if sent["tenant_id"] != "tenant-A" {
+		t.Errorf("tenant_id mismatch in body: %v", sent["tenant_id"])
+	}
+	if sent["from_wallet_id"] != "w-from" || sent["to_wallet_id"] != "w-to" {
+		t.Errorf("wallet ids mismatch: %v", sent)
+	}
+	if sent["amount"] != "25.50" {
+		t.Errorf("amount mismatch: %v", sent["amount"])
+	}
+	if sent["note"] != "Q2 settlement" {
+		t.Errorf("note mismatch: %v", sent["note"])
+	}
+}
+
+func TestWalletService_Transfer_PropagatesServerError(t *testing.T) {
+	cap := &capture{}
+	srv := mockServer(t, http.StatusPreconditionFailed, `{"message":"insufficient balance on source"}`, cap)
+	defer srv.Close()
+
+	c := New(srv.URL, "tenant-A", "key-xyz")
+	_, err := c.Wallet.Transfer(context.Background(), TransferRequest{
+		FromWalletID: "w-from",
+		ToWalletID:   "w-to",
+		Amount:       "1000000",
+	}, "")
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("expected *APIError, got %T", err)
+	}
+	if apiErr.Status != http.StatusPreconditionFailed {
+		t.Errorf("expected 412, got %d", apiErr.Status)
+	}
+}
+
+func TestWalletService_Transfer_MirrorsIdempotencyKeyIntoBody(t *testing.T) {
+	// Caller passed the key via the helper arg only — Transfer should also
+	// surface it in the body so server-side per-leg namespacing works
+	// regardless of whether the gateway preserves the header.
+	cap := &capture{}
+	srv := mockServer(t, http.StatusOK, `{"transfer_id":"x","debit":{},"credit":{}}`, cap)
+	defer srv.Close()
+
+	c := New(srv.URL, "tenant-A", "key-xyz")
+	_, err := c.Wallet.Transfer(context.Background(), TransferRequest{
+		FromWalletID: "w-from",
+		ToWalletID:   "w-to",
+		Amount:       "1",
+	}, "via-header-arg")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var sent map[string]any
+	_ = json.Unmarshal(cap.body, &sent)
+	if sent["idempotency_key"] != "via-header-arg" {
+		t.Errorf("idempotency_key not mirrored into body: %v", sent["idempotency_key"])
+	}
+	if cap.idempotencyKey != "via-header-arg" {
+		t.Errorf("idempotency header missing: %q", cap.idempotencyKey)
+	}
+}
+
 func mustJSON(t *testing.T, v any) string {
 	t.Helper()
 	b, err := json.Marshal(v)

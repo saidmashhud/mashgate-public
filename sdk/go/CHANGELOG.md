@@ -9,6 +9,36 @@ Aggregate changelog for all languages: [`../../CHANGELOG.md`](../../CHANGELOG.md
 
 ---
 
+## [v1.9.0] — 2026-05-15 — `sdk/go/v1.9.0`
+
+### Added — `WalletService.Transfer` (atomic inter-wallet movement)
+
+Mirrors new `wallet.v1.WalletService.TransferBetweenWallets` RPC (proto +
+ledger-core handler landed in `mashgate@af67d653`, 2026-05-15). Same-currency
+v1: cross-currency FX out of scope.
+
+- **Go (`sdk/go/fintech`)**:
+  - `(*WalletService).Transfer(ctx, TransferRequest, idempotencyKey) (*TransferResponse, error)`
+    → `POST /v1/wallets/{from_wallet_id}/transfer`.
+  - New types `TransferRequest` + `TransferResponse` (mirror proto messages).
+  - 3 new httptest-mock tests (`SendsExpectedShape`,
+    `PropagatesServerError`, `MirrorsIdempotencyKeyIntoBody`).
+
+Server-side guarantees (per-tenant atomic): both balances + two
+`wallet_transactions` rows + three outbox events (`wallet.debit`,
+`wallet.credit`, `wallet.transfer`) commit in one Postgres tx, or none
+at all. Idempotency key is namespaced per leg server-side
+(`<key>:debit` / `<key>:credit`) so the global UNIQUE on
+`idempotency_key` covers both rows; replay returns the cached pair.
+
+Errors mapped from gRPC status:
+- `INVALID_ARGUMENT` — same wallet IDs, currency mismatch, non-positive amount.
+- `FAILED_PRECONDITION` — source/destination frozen, insufficient balance.
+- `PERMISSION_DENIED` — wallets belong to different tenants.
+- `NOT_FOUND` — wallet does not exist.
+
+---
+
 ## [v1.7.0] — 2026-05-12 — `sdk/go/v1.7.0`
 
 ### Added — eight resources closing TS-SDK gap

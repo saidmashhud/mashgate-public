@@ -269,6 +269,73 @@ class WalletAdminResource:
                 body[k] = v
         return self._c.request("POST", f"/v1/wallets/{wallet_id}/debit", body=body)
 
+    def transfer(
+        self,
+        from_wallet_id: str,
+        *,
+        to_wallet_id: str,
+        amount: str,
+        reason: TransactionReason | str | None = None,
+        description: str | None = None,
+        idempotency_key: str | None = None,
+        merchant_id: str | None = None,
+        note: str | None = None,
+    ) -> dict[str, Any]:
+        """Atomically transfer ``amount`` between two wallets in the same tenant.
+
+        Mirrors ``wallet.v1.WalletService.TransferBetweenWallets``.
+        Same-currency only in v1; cross-currency FX is out of scope.
+
+        The server commits a single Postgres transaction: balance delta on
+        both wallets + two ``wallet_transactions`` rows (debit on source,
+        credit on destination, both referencing the synthetic
+        ``transfer_id``) + three outbox events (``wallet.debit``,
+        ``wallet.credit``, ``wallet.transfer``). Either the entire transfer
+        commits or none of it.
+
+        :param from_wallet_id: Source wallet UUID.
+        :param to_wallet_id: Destination wallet UUID. Must be distinct.
+        :param amount: Decimal string. Must be > 0.
+        :param reason: Defaults to ``TRANSACTION_REASON_ADJUSTMENT`` if omitted.
+        :param idempotency_key: Optional. Replay-safe; the server namespaces
+            the key per leg internally so the global ``wallet_transactions``
+            UNIQUE index covers both rows.
+        :param merchant_id: Surfaced in the paired ``wallet.{credit,debit}``
+            envelope events. Empty = those events emit without ``merchant_id``
+            and consumers requiring it drop them (money state still commits).
+        :param note: Optional free-text attached to the ``wallet.transfer``
+            envelope event.
+
+        :returns: ``{"transfer_id": str, "debit": WalletTransaction,
+            "credit": WalletTransaction}``.
+
+        :raises mashgate.errors.APIError: server-side rejection — distinct
+            HTTP statuses surface the gRPC status:
+
+            - ``400 INVALID_ARGUMENT`` — same wallet IDs, currency mismatch,
+              non-positive amount.
+            - ``403 PERMISSION_DENIED`` — wallets belong to different tenants.
+            - ``404 NOT_FOUND`` — wallet does not exist.
+            - ``412 FAILED_PRECONDITION`` — source/destination frozen,
+              insufficient balance.
+        """
+        body: dict[str, Any] = {
+            "to_wallet_id": to_wallet_id,
+            "amount": amount,
+        }
+        for k, v in [
+            ("reason", _opt_str(reason)),
+            ("description", description),
+            ("idempotency_key", idempotency_key),
+            ("merchant_id", merchant_id),
+            ("note", note),
+        ]:
+            if v is not None and v != "":
+                body[k] = v
+        return self._c.request(
+            "POST", f"/v1/wallets/{from_wallet_id}/transfer", body=body
+        )
+
     def withdraw(
         self,
         wallet_id: str,
