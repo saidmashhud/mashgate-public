@@ -8246,7 +8246,7 @@ paths:
         get:
             tags:
                 - IamService
-            operationId: IamService_GetGlobalQuotas
+            operationId: IamService_GetGlobalQuotasAlias
             responses:
                 "200":
                     description: OK
@@ -8384,7 +8384,7 @@ paths:
             tags:
                 - IamService
             description: Admin tenant management
-            operationId: IamService_ListTenants
+            operationId: IamService_ListTenantsAlias
             parameters:
                 - name: page
                   in: query
@@ -8429,7 +8429,7 @@ paths:
         post:
             tags:
                 - IamService
-            operationId: IamService_BulkTenantAction
+            operationId: IamService_BulkTenantActionAlias
             requestBody:
                 content:
                     application/json:
@@ -8453,7 +8453,7 @@ paths:
         get:
             tags:
                 - IamService
-            operationId: IamService_GetTenant
+            operationId: IamService_GetTenantAlias
             parameters:
                 - name: tenantId
                   in: path
@@ -8476,7 +8476,7 @@ paths:
         put:
             tags:
                 - IamService
-            operationId: IamService_UpdateTenant
+            operationId: IamService_UpdateTenantAlias
             parameters:
                 - name: tenantId
                   in: path
@@ -8506,7 +8506,7 @@ paths:
         get:
             tags:
                 - IamService
-            operationId: IamService_ListTenantQuotas
+            operationId: IamService_ListTenantQuotasAlias
             parameters:
                 - name: tenantId
                   in: path
@@ -8530,7 +8530,7 @@ paths:
         put:
             tags:
                 - IamService
-            operationId: IamService_UpdateTenantQuota
+            operationId: IamService_UpdateTenantQuotaAlias
             parameters:
                 - name: tenantId
                   in: path
@@ -8565,7 +8565,7 @@ paths:
         post:
             tags:
                 - IamService
-            operationId: IamService_SuspendTenant
+            operationId: IamService_SuspendTenantAlias
             parameters:
                 - name: tenantId
                   in: path

@@ -5306,8 +5306,8 @@ type PlatformServiceGetServiceHistoryParams struct {
 	Range *string `form:"range,omitempty" json:"range,omitempty"`
 }
 
-// IamServiceListTenantsParams defines parameters for IamServiceListTenants.
-type IamServiceListTenantsParams struct {
+// IamServiceListTenantsAliasParams defines parameters for IamServiceListTenantsAlias.
+type IamServiceListTenantsAliasParams struct {
 	Page      *int32  `form:"page,omitempty" json:"page,omitempty"`
 	PageSize  *int32  `form:"pageSize,omitempty" json:"pageSize,omitempty"`
 	Search    *string `form:"search,omitempty" json:"search,omitempty"`
@@ -5960,17 +5960,17 @@ type PlatformServiceUpdateGlobalLimitsJSONRequestBody = UpdateGlobalLimitsReques
 // PlatformServiceUpdateServiceToggleJSONRequestBody defines body for PlatformServiceUpdateServiceToggle for application/json ContentType.
 type PlatformServiceUpdateServiceToggleJSONRequestBody = UpdateServiceToggleRequest
 
-// IamServiceBulkTenantActionJSONRequestBody defines body for IamServiceBulkTenantAction for application/json ContentType.
-type IamServiceBulkTenantActionJSONRequestBody = BulkTenantActionRequest
+// IamServiceBulkTenantActionAliasJSONRequestBody defines body for IamServiceBulkTenantActionAlias for application/json ContentType.
+type IamServiceBulkTenantActionAliasJSONRequestBody = BulkTenantActionRequest
 
-// IamServiceUpdateTenantJSONRequestBody defines body for IamServiceUpdateTenant for application/json ContentType.
-type IamServiceUpdateTenantJSONRequestBody = UpdateTenantRequest
+// IamServiceUpdateTenantAliasJSONRequestBody defines body for IamServiceUpdateTenantAlias for application/json ContentType.
+type IamServiceUpdateTenantAliasJSONRequestBody = UpdateTenantRequest
 
-// IamServiceUpdateTenantQuotaJSONRequestBody defines body for IamServiceUpdateTenantQuota for application/json ContentType.
-type IamServiceUpdateTenantQuotaJSONRequestBody = UpdateTenantQuotaRequest
+// IamServiceUpdateTenantQuotaAliasJSONRequestBody defines body for IamServiceUpdateTenantQuotaAlias for application/json ContentType.
+type IamServiceUpdateTenantQuotaAliasJSONRequestBody = UpdateTenantQuotaRequest
 
-// IamServiceSuspendTenantJSONRequestBody defines body for IamServiceSuspendTenant for application/json ContentType.
-type IamServiceSuspendTenantJSONRequestBody = SuspendTenantRequest
+// IamServiceSuspendTenantAliasJSONRequestBody defines body for IamServiceSuspendTenantAlias for application/json ContentType.
+type IamServiceSuspendTenantAliasJSONRequestBody = SuspendTenantRequest
 
 // ReportsServiceGenerateReportJSONRequestBody defines body for ReportsServiceGenerateReport for application/json ContentType.
 type ReportsServiceGenerateReportJSONRequestBody = GenerateReportRequest

@@ -3905,7 +3905,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["IamService_GetGlobalQuotas"];
+        get: operations["IamService_GetGlobalQuotasAlias"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4003,7 +4003,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Admin tenant management */
-        get: operations["IamService_ListTenants"];
+        get: operations["IamService_ListTenantsAlias"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4021,7 +4021,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["IamService_BulkTenantAction"];
+        post: operations["IamService_BulkTenantActionAlias"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4035,8 +4035,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["IamService_GetTenant"];
-        put: operations["IamService_UpdateTenant"];
+        get: operations["IamService_GetTenantAlias"];
+        put: operations["IamService_UpdateTenantAlias"];
         post?: never;
         delete?: never;
         options?: never;
@@ -4051,7 +4051,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["IamService_ListTenantQuotas"];
+        get: operations["IamService_ListTenantQuotasAlias"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4068,7 +4068,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put: operations["IamService_UpdateTenantQuota"];
+        put: operations["IamService_UpdateTenantQuotaAlias"];
         post?: never;
         delete?: never;
         options?: never;
@@ -4085,7 +4085,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["IamService_SuspendTenant"];
+        post: operations["IamService_SuspendTenantAlias"];
         delete?: never;
         options?: never;
         head?: never;
@@ -18360,7 +18360,7 @@ export interface operations {
             };
         };
     };
-    IamService_GetGlobalQuotas: {
+    IamService_GetGlobalQuotasAlias: {
         parameters: {
             query?: never;
             header?: never;
@@ -18550,7 +18550,7 @@ export interface operations {
             };
         };
     };
-    IamService_ListTenants: {
+    IamService_ListTenantsAlias: {
         parameters: {
             query?: {
                 page?: number;
@@ -18586,7 +18586,7 @@ export interface operations {
             };
         };
     };
-    IamService_BulkTenantAction: {
+    IamService_BulkTenantActionAlias: {
         parameters: {
             query?: never;
             header?: never;
@@ -18619,7 +18619,7 @@ export interface operations {
             };
         };
     };
-    IamService_GetTenant: {
+    IamService_GetTenantAlias: {
         parameters: {
             query?: never;
             header?: never;
@@ -18650,7 +18650,7 @@ export interface operations {
             };
         };
     };
-    IamService_UpdateTenant: {
+    IamService_UpdateTenantAlias: {
         parameters: {
             query?: never;
             header?: never;
@@ -18685,7 +18685,7 @@ export interface operations {
             };
         };
     };
-    IamService_ListTenantQuotas: {
+    IamService_ListTenantQuotasAlias: {
         parameters: {
             query?: never;
             header?: never;
@@ -18716,7 +18716,7 @@ export interface operations {
             };
         };
     };
-    IamService_UpdateTenantQuota: {
+    IamService_UpdateTenantQuotaAlias: {
         parameters: {
             query?: never;
             header?: never;
@@ -18752,7 +18752,7 @@ export interface operations {
             };
         };
     };
-    IamService_SuspendTenant: {
+    IamService_SuspendTenantAlias: {
         parameters: {
             query?: never;
             header?: never;
