@@ -199,8 +199,11 @@ type CreateChainWalletResponse struct {
 // ImportChainWalletRequest imports an existing non-custodial wallet from a
 // caller-provided BIP-39 mnemonic. Server validates, derives address
 // (SLIP-0010), AES-encrypts the private key, and stores it. Idempotent on
-// mnemonic_hash UNIQUE — re-importing same phrase для одного subject returns
-// the existing wallet. Mnemonic never logged / never persisted plaintext.
+// (tenant, mnemonic_hash) — re-importing the same phrase for the same
+// subject returns the existing wallet с WasExisting=true. Importing under a
+// different subject within the tenant returns 403 PERMISSION_DENIED
+// (credential-stuffing protection). Mnemonic never logged / never
+// persisted plaintext.
 type ImportChainWalletRequest struct {
 	TenantID       string   `json:"tenant_id"`
 	SubjectID      string   `json:"subject_id"`
@@ -209,6 +212,20 @@ type ImportChainWalletRequest struct {
 	Network        Network  `json:"network"`
 	Mnemonic       string   `json:"mnemonic"`
 	IdempotencyKey string   `json:"idempotency_key,omitempty"`
+}
+
+// ImportChainWalletResponse carries the resolved wallet plus a flag that
+// distinguishes a fresh import from a recovery (same seed re-imported for
+// the same subject).
+type ImportChainWalletResponse struct {
+	Wallet Wallet `json:"wallet"`
+	// True when the import resolved to a pre-existing row — a recovery
+	// rather than a new wallet. Frontends use this to render
+	// "✓ wallet recovered" vs "✓ wallet imported".
+	WasExisting bool `json:"was_existing"`
+	// RFC-3339 timestamp echoing wallet.created_at on fresh imports or
+	// wallet.updated_at on recoveries. Optional — empty on older servers.
+	RecoveredAt string `json:"recovered_at,omitempty"`
 }
 
 type FreezeWalletRequest struct {
@@ -354,15 +371,26 @@ func (s *WalletService) CreateChain(ctx context.Context, req CreateChainWalletRe
 }
 
 // ImportChain restores a non-custodial wallet from a user-provided BIP-39
-// mnemonic. Returns just the wallet (no mnemonic round-trip). Idempotent on
-// mnemonic_hash UNIQUE. Currently SOLANA only.
+// mnemonic. Returns the wallet plus a WasExisting flag that distinguishes a
+// fresh import from a recovery of the same phrase by the same subject.
+// Idempotent on (tenant, mnemonic_hash). Currently SOLANA only.
 //
 // **Caller MUST clear the mnemonic from memory after this call** — the
 // mnemonic touches process memory of both caller and server briefly; it is
 // never stored plaintext server-side (SHA-256 hash for dedup only).
-func (s *WalletService) ImportChain(ctx context.Context, req ImportChainWalletRequest, idempotencyKey string) (*Wallet, error) {
+//
+// Errors mapped from gRPC status:
+//   - INVALID_ARGUMENT — mnemonic fails BIP-39 checksum, network/currency missing.
+//   - PERMISSION_DENIED — same mnemonic_hash already belongs to a different
+//     subject in this tenant (credential-stuffing protection).
+//   - FAILED_PRECONDITION — WALLET_ENCRYPTION_KEY not configured server-side.
+//
+// BREAKING CHANGE vs sdk/go/v1.8.0: return type changed from *Wallet to
+// *ImportChainWalletResponse. Callers using the wallet directly need
+// `resp.Wallet` instead of `resp`.
+func (s *WalletService) ImportChain(ctx context.Context, req ImportChainWalletRequest, idempotencyKey string) (*ImportChainWalletResponse, error) {
 	req.TenantID = s.c.tenantID
-	var out Wallet
+	var out ImportChainWalletResponse
 	if err := s.c.do(ctx, http.MethodPost, "/v1/wallets/chain/import", req, idempotencyKey, &out); err != nil {
 		return nil, err
 	}

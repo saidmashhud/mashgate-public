@@ -176,6 +176,49 @@ class WalletAdminResource:
             body["idempotency_key"] = idempotency_key
         return self._c.request("POST", "/v1/wallets/chain", body=body)
 
+    def import_chain(
+        self,
+        *,
+        subject_id: str,
+        subject_type: str,
+        currency: Currency | str,
+        network: Network | str,
+        mnemonic: str,
+        idempotency_key: str | None = None,
+    ) -> dict[str, Any]:
+        """Recover / import a non-custodial wallet from a BIP-39 mnemonic.
+
+        Returns ``{"wallet": {...}, "was_existing": bool, "recovered_at": str}``.
+
+        - Re-importing the same phrase for the same ``subject_id`` returns
+          the existing wallet с ``was_existing=True`` (idempotent recovery).
+        - Re-importing under a different ``subject_id`` within the tenant
+          raises ``403 PERMISSION_DENIED`` — credential-stuffing protection.
+
+        :param mnemonic: BIP-39 phrase (12 or 24 words). **Clear from caller
+            memory immediately after this call** — phrase touches process
+            memory briefly but is never persisted plaintext server-side
+            (SHA-256 hash для dedup only).
+
+        :raises mashgate.errors.APIError:
+            - ``400 INVALID_ARGUMENT`` — mnemonic fails BIP-39 checksum,
+              network/currency missing.
+            - ``403 PERMISSION_DENIED`` — same mnemonic_hash already
+              belongs to a different subject in this tenant.
+            - ``412 FAILED_PRECONDITION`` — ``WALLET_ENCRYPTION_KEY`` not
+              configured server-side.
+        """
+        body: dict[str, Any] = {
+            "subject_id": subject_id,
+            "subject_type": subject_type,
+            "currency": _opt_str(currency),
+            "network": _opt_str(network),
+            "mnemonic": mnemonic,
+        }
+        if idempotency_key:
+            body["idempotency_key"] = idempotency_key
+        return self._c.request("POST", "/v1/wallets/chain/import", body=body)
+
     # ── Read ──────────────────────────────────────────────────────────
 
     def get(self, wallet_id: str) -> dict[str, Any]:

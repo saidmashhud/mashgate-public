@@ -171,6 +171,33 @@ export interface CreateChainWalletResponse {
   mnemonic: string;
 }
 
+// L1 of ADR-0016 recovery flow. Re-import the same mnemonic for the same
+// subject within a tenant returns the existing wallet с `was_existing=true`
+// (idempotent). Re-import под другим subject_id returns
+// `PERMISSION_DENIED` — credential-stuffing protection.
+export interface ImportChainWalletRequest {
+  subject_id: string;
+  subject_type: "user" | "merchant";
+  currency: Currency;
+  network: Network;
+  // BIP-39 phrase (12 or 24 words). Validated server-side; SHA-256-hashed
+  // before storage. **Clear from caller memory immediately после успешного
+  // ответа** — phrase is never persisted plaintext.
+  mnemonic: string;
+  idempotency_key?: string;
+}
+
+export interface ImportChainWalletResponse {
+  wallet: Wallet;
+  // True when import resolved to a pre-existing row (same mnemonic + same
+  // subject in the same tenant) — recovery rather than fresh creation.
+  // Frontends use this to render "✓ wallet recovered" vs "✓ wallet imported".
+  was_existing: boolean;
+  // ISO-8601. Mirror of wallet.created_at on fresh import or wallet.updated_at
+  // on recovery. May be omitted by older servers.
+  recovered_at?: string;
+}
+
 export interface CreditDebitRequest {
   amount: string; // decimal string — e.g. "100.50"
   reason: TransactionReason;
@@ -263,6 +290,25 @@ export class WalletAdminResource {
     return this.client.request<CreateChainWalletResponse>("POST", "/v1/wallets/chain", {
       body: req,
     });
+  }
+
+  /**
+   * Recover / import a non-custodial wallet from a user-provided BIP-39
+   * mnemonic. The mnemonic must be cleared from caller memory immediately
+   * after the call returns — it touches process memory briefly but is
+   * never persisted plaintext server-side. Currently SOLANA only.
+   *
+   * - Re-importing the same phrase for the same subject returns the
+   *   existing wallet с `was_existing=true` (idempotent recovery).
+   * - Re-importing under a different subject_id within the tenant returns
+   *   `PERMISSION_DENIED` (credential-stuffing protection).
+   */
+  importChain(req: ImportChainWalletRequest): Promise<ImportChainWalletResponse> {
+    return this.client.request<ImportChainWalletResponse>(
+      "POST",
+      "/v1/wallets/chain/import",
+      { body: req },
+    );
   }
 
   get(walletId: string): Promise<Wallet> {

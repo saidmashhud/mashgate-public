@@ -171,6 +171,63 @@ describe("WalletAdminResource", () => {
     expect(url).toContain("cursor=prev-token");
   });
 
+  it("importChain POSTs /v1/wallets/chain/import and surfaces was_existing", async () => {
+    mockFetch = mockFetchReturning({
+      wallet: { wallet_id: "w-1", currency: "USDC", status: "WALLET_STATUS_ACTIVE" },
+      was_existing: false,
+      recovered_at: "2026-05-19T10:15:00Z",
+    });
+    client = new MashgateClient({
+      baseUrl: "https://api.mashgate.uz",
+      apiKey: "mg_test_key",
+      fetch: mockFetch,
+    });
+    const out = await client.walletAdmin.importChain({
+      subject_id: "user-1",
+      subject_type: "user",
+      currency: Currency.USDC,
+      network: Network.Solana,
+      mnemonic:
+        "abandon ability able about above absent absorb abstract absurd abuse access accident",
+      idempotency_key: "idem-import-1",
+    });
+    expect(out.wallet.wallet_id).toBe("w-1");
+    expect(out.was_existing).toBe(false);
+    expect(out.recovered_at).toBe("2026-05-19T10:15:00Z");
+
+    const { url, init } = lastCall(mockFetch);
+    expect(url).toBe("https://api.mashgate.uz/v1/wallets/chain/import");
+    expect(init.method).toBe("POST");
+    const body = JSON.parse(String(init.body));
+    expect(body.mnemonic).toBe(
+      "abandon ability able about above absent absorb abstract absurd abuse access accident",
+    );
+    expect(body.subject_id).toBe("user-1");
+  });
+
+  it("importChain returns was_existing=true on recovery", async () => {
+    mockFetch = mockFetchReturning({
+      wallet: { wallet_id: "w-existing", currency: "USDC" },
+      was_existing: true,
+      recovered_at: "2026-04-01T12:00:00Z",
+    });
+    client = new MashgateClient({
+      baseUrl: "https://api.mashgate.uz",
+      apiKey: "mg_test_key",
+      fetch: mockFetch,
+    });
+    const out = await client.walletAdmin.importChain({
+      subject_id: "user-1",
+      subject_type: "user",
+      currency: Currency.USDC,
+      network: Network.Solana,
+      mnemonic:
+        "abandon ability able about above absent absorb abstract absurd abuse access accident",
+    });
+    expect(out.was_existing).toBe(true);
+    expect(out.wallet.wallet_id).toBe("w-existing");
+  });
+
   it("transfer POSTs /v1/wallets/{from}/transfer and returns both legs", async () => {
     mockFetch = mockFetchReturning({
       transfer_id: "xfer-uuid",

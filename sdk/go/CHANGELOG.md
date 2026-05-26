@@ -9,6 +9,43 @@ Aggregate changelog for all languages: [`../../CHANGELOG.md`](../../CHANGELOG.md
 
 ---
 
+## [v1.10.0] — 2026-05-19 — `sdk/go/v1.10.0`
+
+### 💥 BREAKING — `ImportChain` return type now `*ImportChainWalletResponse`
+
+Recovery flow polished. The RPC now surfaces a `was_existing` flag и
+distinguishes a fresh import from a recovery (same mnemonic re-imported
+для того же subject). Cross-subject mnemonic reuse within a tenant now
+returns `403 PERMISSION_DENIED` (credential-stuffing protection).
+
+**Migration**: callers that destructured `*Wallet` directly need
+`resp.Wallet`. Example:
+
+```go
+// Before (v1.8.0/v1.9.0):
+wallet, err := client.Wallet.ImportChain(ctx, req, idem)
+fmt.Println(wallet.WalletID)
+
+// After (v1.10.0):
+resp, err := client.Wallet.ImportChain(ctx, req, idem)
+if resp.WasExisting {
+    log.Println("✓ wallet recovered")
+} else {
+    log.Println("✓ wallet imported")
+}
+fmt.Println(resp.Wallet.WalletID)
+```
+
+- New `ImportChainWalletResponse{ Wallet, WasExisting, RecoveredAt }`.
+- 3 new httptest-mock tests (`FreshImport`, `Recovery`, `CrossSubject403`).
+
+Server-side guarantees (per-tenant): mnemonic_hash UNIQUE lookup runs
+before key derivation, so a denied import никогда не decrypts the seed.
+Audit log records every fresh import (`wallet.imported`), recovery
+(`wallet.imported_reused`), and denial (`wallet.import_denied`).
+
+---
+
 ## [v1.9.0] — 2026-05-15 — `sdk/go/v1.9.0`
 
 ### Added — `WalletService.Transfer` (atomic inter-wallet movement)

@@ -15,6 +15,31 @@ Top-level entry is the aggregate snapshot.
 
 ---
 
+## [2026-05-19] — wallet recovery polish (mnemonic_hash + was_existing + cross-subject deny)
+
+- **`sdk/go/v1.10.0`** — 💥 BREAKING — `(*WalletService).ImportChain` returns
+  `*ImportChainWalletResponse` instead of `*Wallet`.
+- **`@mashgate/sdk@1.4.0`** — new `client.walletAdmin.importChain(req)`.
+- **`mashgate@0.4.0`** — new `client.wallet_admin.import_chain(*, ...)`.
+
+Server (`mashgate@TBD`): `wallet.v1.WalletService.ImportChainWallet` polished:
+
+- Pre-flight lookup by `(tenant_id, mnemonic_hash)` before deriving keys —
+  cross-subject mnemonic reuse returns `PERMISSION_DENIED` immediately, без
+  exposing seed material через side channels.
+- Idempotent recovery: re-import same phrase для того же subject = same
+  wallet с `was_existing=true`.
+- Audit log entry on every call (`wallet.imported`, `wallet.imported_reused`,
+  `wallet.import_denied`).
+- New `ImportChainWalletResponse { wallet, was_existing, recovered_at }`.
+
+Per-language details:
+- [`sdk/go/CHANGELOG.md`](sdk/go/CHANGELOG.md#v1100--2026-05-19--sdkgov1100).
+- [`sdk/typescript/CHANGELOG.md`](sdk/typescript/CHANGELOG.md#140--2026-05-19).
+- [`sdk/python/CHANGELOG.md`](sdk/python/CHANGELOG.md#040--2026-05-19).
+
+---
+
 ## [2026-05-15] — wallet.transfer (atomic inter-wallet movement)
 
 - **`sdk/go/v1.9.0`** — `(*WalletService).Transfer(ctx, TransferRequest, idempotencyKey)`.

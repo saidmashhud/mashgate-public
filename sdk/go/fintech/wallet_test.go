@@ -311,6 +311,100 @@ func TestTypedConstantsMarshalAsPlainStrings(t *testing.T) {
 	}
 }
 
+func TestWalletService_ImportChain_FreshImportSurfacesWasExistingFalse(t *testing.T) {
+	cap := &capture{}
+	resp := ImportChainWalletResponse{
+		Wallet: Wallet{
+			WalletID: "w-1",
+			Currency: "USDC",
+			Status:   WalletStatusActive,
+		},
+		WasExisting: false,
+		RecoveredAt: "2026-05-19T10:15:00Z",
+	}
+	srv := mockServer(t, http.StatusOK, mustJSON(t, resp), cap)
+	defer srv.Close()
+
+	c := New(srv.URL, "tenant-A", "key-xyz")
+	out, err := c.Wallet.ImportChain(context.Background(), ImportChainWalletRequest{
+		SubjectID:   "user-1",
+		SubjectType: "user",
+		Currency:    "USDC",
+		Network:     "SOLANA",
+		Mnemonic:    "abandon ability able about above absent absorb abstract absurd abuse access accident",
+	}, "idem-import-1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if out.WasExisting {
+		t.Errorf("expected was_existing=false on fresh import, got true")
+	}
+	if out.Wallet.WalletID != "w-1" {
+		t.Errorf("wallet id mismatch: %s", out.Wallet.WalletID)
+	}
+	if out.RecoveredAt == "" {
+		t.Errorf("recovered_at should be populated")
+	}
+	if cap.path != "/v1/wallets/chain/import" {
+		t.Errorf("path mismatch: %s", cap.path)
+	}
+	if cap.idempotencyKey != "idem-import-1" {
+		t.Errorf("idempotency header missing: %q", cap.idempotencyKey)
+	}
+}
+
+func TestWalletService_ImportChain_RecoverySurfacesWasExistingTrue(t *testing.T) {
+	cap := &capture{}
+	resp := ImportChainWalletResponse{
+		Wallet: Wallet{
+			WalletID: "w-existing",
+			Currency: "USDC",
+			Status:   WalletStatusActive,
+		},
+		WasExisting: true,
+		RecoveredAt: "2026-04-01T12:00:00Z",
+	}
+	srv := mockServer(t, http.StatusOK, mustJSON(t, resp), cap)
+	defer srv.Close()
+
+	c := New(srv.URL, "tenant-A", "key-xyz")
+	out, err := c.Wallet.ImportChain(context.Background(), ImportChainWalletRequest{
+		SubjectID: "user-1",
+		Mnemonic:  "abandon ability able about above absent absorb abstract absurd abuse access accident",
+	}, "")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !out.WasExisting {
+		t.Fatalf("expected was_existing=true on recovery")
+	}
+	if out.Wallet.WalletID != "w-existing" {
+		t.Errorf("wallet id mismatch: %s", out.Wallet.WalletID)
+	}
+}
+
+func TestWalletService_ImportChain_PropagatesCrossSubject403(t *testing.T) {
+	cap := &capture{}
+	srv := mockServer(t, http.StatusForbidden, `{"message":"wallets belong to different tenants"}`, cap)
+	defer srv.Close()
+
+	c := New(srv.URL, "tenant-A", "key-xyz")
+	_, err := c.Wallet.ImportChain(context.Background(), ImportChainWalletRequest{
+		SubjectID: "user-1",
+		Mnemonic:  "abandon ability able about above absent absorb abstract absurd abuse access accident",
+	}, "")
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("expected *APIError, got %T", err)
+	}
+	if apiErr.Status != http.StatusForbidden {
+		t.Errorf("expected 403, got %d", apiErr.Status)
+	}
+}
+
 func TestWalletService_Transfer_SendsExpectedShape(t *testing.T) {
 	cap := &capture{}
 	resp := TransferResponse{

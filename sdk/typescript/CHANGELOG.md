@@ -9,6 +9,29 @@ Aggregate changelog for all languages: [`../../CHANGELOG.md`](../../CHANGELOG.md
 
 ---
 
+## [1.4.0] — 2026-05-19
+
+### Added — `WalletAdminResource.importChain` (BIP-39 recovery с was_existing)
+
+- `client.walletAdmin.importChain(req)` →
+  `POST /v1/wallets/chain/import`. Returns
+  `{ wallet, was_existing, recovered_at? }`.
+- New interfaces: `ImportChainWalletRequest`, `ImportChainWalletResponse`.
+- 2 new vitest mock-fetch tests (fresh import + recovery).
+
+Server-side guarantees: mnemonic_hash UNIQUE per tenant. Re-import same
+phrase для одного subject = idempotent recovery с
+`was_existing=true`. Re-import под другим subject_id → `PERMISSION_DENIED`
+(credential-stuffing protection). Mnemonic SHA-256-hashed before storage;
+plaintext never persisted.
+
+Errors mapped from gRPC status:
+- `INVALID_ARGUMENT` — mnemonic fails BIP-39 checksum, network/currency missing.
+- `PERMISSION_DENIED` — cross-subject mnemonic reuse.
+- `FAILED_PRECONDITION` — `WALLET_ENCRYPTION_KEY` not configured server-side.
+
+---
+
 ## [1.3.0] — 2026-05-15
 
 ### Added — `WalletAdminResource.transfer` (atomic inter-wallet movement)

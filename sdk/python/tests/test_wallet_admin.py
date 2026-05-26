@@ -179,6 +179,65 @@ def test_credit_serialises_reason_enum(client):
 
 
 @respx.mock
+def test_import_chain_fresh_returns_was_existing_false(client):
+    route = respx.post(f"{BASE}/v1/wallets/chain/import").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "wallet": {
+                    "wallet_id": "w-1",
+                    "currency": "USDC",
+                    "status": "WALLET_STATUS_ACTIVE",
+                },
+                "was_existing": False,
+                "recovered_at": "2026-05-19T10:15:00Z",
+            },
+        )
+    )
+    resp = client.wallet_admin.import_chain(
+        subject_id="user-1",
+        subject_type="user",
+        currency=Currency.USDC,
+        network=Network.SOLANA,
+        mnemonic="abandon ability able about above absent absorb abstract absurd abuse access accident",
+        idempotency_key="idem-import-1",
+    )
+    assert resp["wallet"]["wallet_id"] == "w-1"
+    assert resp["was_existing"] is False
+    assert resp["recovered_at"] == "2026-05-19T10:15:00Z"
+
+    sent = json.loads(route.calls.last.request.content)
+    assert sent["subject_id"] == "user-1"
+    assert sent["network"] == "SOLANA"
+    assert sent["currency"] == "USDC"
+    assert sent["mnemonic"].startswith("abandon")
+    assert sent["idempotency_key"] == "idem-import-1"
+
+
+@respx.mock
+def test_import_chain_recovery_returns_was_existing_true(client):
+    respx.post(f"{BASE}/v1/wallets/chain/import").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "wallet": {"wallet_id": "w-existing", "currency": "USDC"},
+                "was_existing": True,
+                "recovered_at": "2026-04-01T12:00:00Z",
+            },
+        )
+    )
+    resp = client.wallet_admin.import_chain(
+        subject_id="user-1",
+        subject_type="user",
+        currency=Currency.USDC,
+        network=Network.SOLANA,
+        mnemonic="abandon ability able about above absent absorb abstract absurd abuse access accident",
+    )
+    assert resp["was_existing"] is True
+    assert resp["wallet"]["wallet_id"] == "w-existing"
+
+
+@respx.mock
 def test_transfer_posts_to_from_wallet_path_with_body(client):
     route = respx.post(f"{BASE}/v1/wallets/w-from/transfer").mock(
         return_value=httpx.Response(
