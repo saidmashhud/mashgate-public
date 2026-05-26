@@ -15,6 +15,34 @@ Top-level entry is the aggregate snapshot.
 
 ---
 
+## [2026-05-19] — TRON chain provider Phase 1 (USDT-TRC20 + native TRX)
+
+- **`sdk/go/v1.12.0`** — new `MintUSDTTronMainnet`.
+- **`@mashgate/sdk@1.6.0`** — new `Mint.USDTTronMainnet`.
+- **`mashgate@0.6.0`** — new `Mint.USDT_TRON_MAINNET`.
+
+Server (`mashgate@TBD`): TRON wallets supported end-to-end. `wallet-crypto`
+adds `slip10_secp256k1` (BIP-32 derive) + `tron` (keccak256 → 0x41 prefix
+→ base58check address). chain-rpc gains `BuildTronTransferTx` that
+delegates to TRON node's `/wallet/createtransaction` (native TRX) /
+`/wallet/triggersmartcontract` (TRC-20). ledger-core handlers branch on
+network: SOLANA stays SLIP-0010 Ed25519 + base58 keypair, TRON path
+derives via BIP-32 secp256k1 на coin 195, signs SHA-256(raw_data)
+locally, injects signature into TRON tx JSON, broadcasts.
+
+Phase 1 limits:
+- Sponsor wallets (gasless) supported для SOLANA only — passing
+  `sponsor_wallet_id` on a TRON wallet returns an explicit error.
+- Status sync worker polls Solana only; TRON confirmation detection
+  deferred to Phase 2.
+
+Per-language details:
+- [`sdk/go/CHANGELOG.md`](sdk/go/CHANGELOG.md#v1120--2026-05-19--sdkgov1120).
+- [`sdk/typescript/CHANGELOG.md`](sdk/typescript/CHANGELOG.md#160--2026-05-19).
+- [`sdk/python/CHANGELOG.md`](sdk/python/CHANGELOG.md#060--2026-05-19).
+
+---
+
 ## [2026-05-19] — fee abstraction Phase 1 (sponsored withdrawals)
 
 - **`sdk/go/v1.11.0`** — new `WithdrawRequest.SponsorWalletID`.

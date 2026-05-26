@@ -9,6 +9,27 @@ Aggregate changelog for all languages: [`../../CHANGELOG.md`](../../CHANGELOG.md
 
 ---
 
+## [0.6.0] — 2026-05-19
+
+### Added — TRON chain provider Phase 1
+
+- New `Mint.USDT_TRON_MAINNET = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"` —
+  TRC-20 USDT contract address. The `Mint` enum now carries both Solana
+  SPL mints and TRON TRC-20 contracts; ledger-core selects interpretation
+  by wallet network.
+- `Network.TRON` already existed; server now actually accepts it.
+- 1 new pytest+respx test for TRON USDT withdraw.
+
+Server-side: secp256k1 derivation + TRON address builder в wallet-crypto;
+chain-rpc gains `BuildTronTransferTx`; ledger-core wallets с
+`network=TRON` derive via BIP-32 на coin type 195, sign SHA-256(raw_data)
+locally and broadcast through chain-rpc.
+
+Phase 1 limits: sponsor wallets (gasless) — Solana only; TRON status-sync
+worker — Phase 2.
+
+---
+
 ## [0.5.0] — 2026-05-19
 
 ### Added — `withdraw(..., sponsor_wallet_id=...)` (gasless withdrawals)

@@ -238,6 +238,33 @@ def test_import_chain_recovery_returns_was_existing_true(client):
 
 
 @respx.mock
+def test_withdraw_tron_trc20_mint(client):
+    route = respx.post(f"{BASE}/v1/wallets/w-tron/withdraw").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "transaction_id": "tx-tron",
+                "wallet_id": "w-tron",
+                "type": "TRANSACTION_TYPE_DEBIT",
+                "amount": "100",
+                "currency": "USDT",
+            },
+        )
+    )
+    client.wallet_admin.withdraw(
+        "w-tron",
+        amount="100",
+        destination_type="crypto_address",
+        destination_id="TXyz1234567890abcdefABCDEFghIJKLmn",
+        network=Network.TRON,
+        mint=Mint.USDT_TRON_MAINNET,
+    )
+    sent = json.loads(route.calls.last.request.content)
+    assert sent["network"] == "TRON"
+    assert sent["mint"] == "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+
+
+@respx.mock
 def test_withdraw_forwards_sponsor_wallet_id(client):
     route = respx.post(f"{BASE}/v1/wallets/w-from/withdraw").mock(
         return_value=httpx.Response(

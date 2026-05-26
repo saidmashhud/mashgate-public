@@ -65,15 +65,20 @@ class Network(str, Enum):
 
 
 class Mint(str, Enum):
-    """SPL token mint addresses on Solana mainnet.
+    """Token contract / mint addresses on the supported networks.
 
-    Empty mint (``""``) means native SOL transfer path. Members listed
-    here are well-known stablecoin mints; for tokens not in this enum
-    pass the plain base58 string.
+    Empty mint (``""``) means native asset transfer path (SOL on Solana,
+    TRX on Tron, ...). Members listed here are well-known mainnet
+    contracts; for tokens not in this enum pass the plain string.
+
+    Solana mints are SPL token mint addresses (base58). TRON mints are
+    TRC-20 contract addresses (base58check). ledger-core picks the right
+    interpretation based on the wallet's ``network`` column.
     """
 
     USDC_SOLANA_MAINNET = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
     USDT_SOLANA_MAINNET = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+    USDT_TRON_MAINNET = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
 
 
 class WalletType(str, Enum):

@@ -48,11 +48,15 @@ export const Network = {
 } as const;
 export type Network = (typeof Network)[keyof typeof Network];
 
-// SPL token mint addresses (Solana mainnet). Empty `Mint` = native SOL
-// transfer path.
+// Token contract / mint addresses keyed by (network, asset). Empty `Mint`
+// = native asset path. Solana entries are SPL token mints; TRON entries
+// are TRC-20 contract addresses (base58check). The field name стало
+// chain-agnostic: ledger-core picks the right interpretation based on
+// the wallet's `network` column.
 export const Mint = {
   USDCSolanaMainnet: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
   USDTSolanaMainnet: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+  USDTTronMainnet: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
 } as const;
 export type Mint = (typeof Mint)[keyof typeof Mint] | "" | string;
 

@@ -9,6 +9,40 @@ Aggregate changelog for all languages: [`../../CHANGELOG.md`](../../CHANGELOG.md
 
 ---
 
+## [v1.12.0] — 2026-05-19 — `sdk/go/v1.12.0`
+
+### Added — TRON chain provider Phase 1 (USDT-TRC20 + native TRX)
+
+- New `MintUSDTTronMainnet = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"` — TRC-20
+  USDT contract address. Reuses the existing `Mint` type alias because
+  TRON withdrawals share the SDK shape with Solana SPL withdrawals.
+- `NetworkTron` already shipped в earlier release — server-side
+  ledger-core now actually accepts it instead of bailing with "only
+  SOLANA supported".
+- 2 new httptest-mock tests covering TRC-20 withdraw + wire-value
+  assertions.
+
+Server-side (`mashgate@TBD`):
+- `wallet-crypto` got `slip10_secp256k1` (BIP-32 derive, returns 65-byte
+  uncompressed pubkey) и `tron` (keccak256 → `0x41` prefix → base58check
+  address derivation). Phantom-style derivation path `m/44'/195'/0'/0/0`.
+- chain-rpc new `BuildTronTransferTx` RPC delegating to the TRON node's
+  `/wallet/createtransaction` (native) or `/wallet/triggersmartcontract`
+  (TRC-20). Returns raw_data_hex + tx JSON для local signing.
+- ledger-core `handle_create_chain_wallet` / `handle_import_chain_wallet`
+  now branch on network; TRON wallets derive via secp256k1, store the
+  32-byte private key encrypted as before. `handle_on_chain_transfer`
+  branches: secp256k1 ECDSA sign SHA-256(raw_data), inject signature
+  into TRON tx JSON, broadcast.
+
+Phase 1 limits:
+- Sponsor wallets (gasless) supported для SOLANA only; passing
+  `sponsor_wallet_id` on a TRON wallet returns an explicit error.
+- Status sync worker still polls Solana-only — TRON confirmation
+  detection deferred to Phase 2.
+
+---
+
 ## [v1.11.0] — 2026-05-19 — `sdk/go/v1.11.0`
 
 ### Added — `WithdrawRequest.SponsorWalletID` (gasless withdrawals)

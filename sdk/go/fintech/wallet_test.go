@@ -405,6 +405,50 @@ func TestWalletService_ImportChain_PropagatesCrossSubject403(t *testing.T) {
 	}
 }
 
+func TestWalletService_Withdraw_TronUsdtMint(t *testing.T) {
+	cap := &capture{}
+	srv := mockServer(
+		t,
+		http.StatusOK,
+		`{"transaction_id":"tx-tron","wallet_id":"w-tron","type":"TRANSACTION_TYPE_DEBIT","amount":"100","currency":"USDT","external_ref":"d83f...txid"}`,
+		cap,
+	)
+	defer srv.Close()
+
+	c := New(srv.URL, "tenant-A", "key-xyz")
+	_, err := c.Wallet.Withdraw(context.Background(), WithdrawRequest{
+		WalletID:        "w-tron",
+		Amount:          "100",
+		DestinationType: "crypto_address",
+		DestinationID:   "TXyz1234567890abcdefABCDEFghIJKLmn",
+		Network:         NetworkTron,
+		Mint:            MintUSDTTronMainnet,
+	}, "idem-tron-1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	var sent map[string]any
+	if err := json.Unmarshal(cap.body, &sent); err != nil {
+		t.Fatalf("decode body: %v", err)
+	}
+	if sent["network"] != "TRON" {
+		t.Errorf("network mismatch: %v", sent["network"])
+	}
+	if sent["mint"] != "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t" {
+		t.Errorf("USDT TRC-20 mint mismatch: %v", sent["mint"])
+	}
+}
+
+func TestNetworkTronWireValue(t *testing.T) {
+	// Server-side parser compares against the literal "TRON".
+	if string(NetworkTron) != "TRON" {
+		t.Errorf("NetworkTron wire mismatch: %s", NetworkTron)
+	}
+	if string(MintUSDTTronMainnet) != "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t" {
+		t.Errorf("USDT TRC-20 mint literal mismatch: %s", MintUSDTTronMainnet)
+	}
+}
+
 func TestWalletService_Withdraw_PassesSponsorWalletID(t *testing.T) {
 	cap := &capture{}
 	srv := mockServer(

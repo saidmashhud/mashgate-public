@@ -67,6 +67,13 @@ type Mint string
 const (
 	MintUSDCSolanaMainnet Mint = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 	MintUSDTSolanaMainnet Mint = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+	// TRC-20 USDT on TRON mainnet. For TRON withdrawals the `Mint` field
+	// carries the contract address (base58check "T..."), not an SPL mint —
+	// the type alias is shared because both networks use the same SDK
+	// shape: `Withdraw(req)` selects between native and token transfer
+	// by presence/absence of this field, and server-side ledger-core
+	// branches on `Network` to know how to interpret the contents.
+	MintUSDTTronMainnet Mint = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
 )
 
 // String implements fmt.Stringer for callers that pass these into formatters

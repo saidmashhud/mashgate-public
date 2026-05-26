@@ -228,6 +228,33 @@ describe("WalletAdminResource", () => {
     expect(out.wallet.wallet_id).toBe("w-existing");
   });
 
+  it("withdraw сurries TRON network + USDT-TRC20 mint", async () => {
+    mockFetch = mockFetchReturning({
+      transaction_id: "tx-tron",
+      wallet_id: "w-tron",
+      type: "TRANSACTION_TYPE_DEBIT",
+      amount: "100",
+      currency: "USDT",
+      external_ref: "d83f...txid",
+    });
+    client = new MashgateClient({
+      baseUrl: "https://api.mashgate.uz",
+      apiKey: "mg_test_key",
+      fetch: mockFetch,
+    });
+    await client.walletAdmin.withdraw("w-tron", {
+      amount: "100",
+      destination_type: "crypto_address",
+      destination_id: "TXyz1234567890abcdefABCDEFghIJKLmn",
+      network: Network.Tron,
+      mint: Mint.USDTTronMainnet,
+    });
+    const { init } = lastCall(mockFetch);
+    const body = JSON.parse(String(init.body));
+    expect(body.network).toBe("TRON");
+    expect(body.mint).toBe("TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t");
+  });
+
   it("withdraw forwards sponsor_wallet_id to the gateway", async () => {
     mockFetch = mockFetchReturning({
       transaction_id: "tx-sp",
