@@ -238,6 +238,35 @@ def test_import_chain_recovery_returns_was_existing_true(client):
 
 
 @respx.mock
+def test_withdraw_forwards_sponsor_wallet_id(client):
+    route = respx.post(f"{BASE}/v1/wallets/w-from/withdraw").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "transaction_id": "tx-sp",
+                "wallet_id": "w-from",
+                "type": "TRANSACTION_TYPE_DEBIT",
+                "amount": "5.00",
+                "currency": "USDC",
+            },
+        )
+    )
+    client.wallet_admin.withdraw(
+        "w-from",
+        amount="5.00",
+        destination_type="crypto_address",
+        destination_id="DEsT_sOlanA",
+        network=Network.SOLANA,
+        mint=Mint.USDC_SOLANA_MAINNET,
+        sponsor_wallet_id="spon-uuid",
+        idempotency_key="idem-spon-1",
+    )
+    sent = json.loads(route.calls.last.request.content)
+    assert sent["sponsor_wallet_id"] == "spon-uuid"
+    assert sent["mint"] == Mint.USDC_SOLANA_MAINNET.value
+
+
+@respx.mock
 def test_transfer_posts_to_from_wallet_path_with_body(client):
     route = respx.post(f"{BASE}/v1/wallets/w-from/transfer").mock(
         return_value=httpx.Response(

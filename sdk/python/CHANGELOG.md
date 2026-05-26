@@ -9,6 +9,21 @@ Aggregate changelog for all languages: [`../../CHANGELOG.md`](../../CHANGELOG.md
 
 ---
 
+## [0.5.0] — 2026-05-19
+
+### Added — `withdraw(..., sponsor_wallet_id=...)` (gasless withdrawals)
+
+- New optional `sponsor_wallet_id` keyword arg on
+  `WalletAdminResource.withdraw`. When set, the platform sponsor wallet
+  pays the chain fee + ATA rent instead of the source.
+- 1 new pytest+respx test (15 total).
+
+Server-side: dual-signer Solana tx (sponsor first, source second). Phase
+1 only — fee debit from sponsor's off-chain balance deferred to
+status-sync worker (Phase 2).
+
+---
+
 ## [0.4.0] — 2026-05-19
 
 ### Added — `WalletAdminResource.import_chain` (BIP-39 recovery)

@@ -228,6 +228,35 @@ describe("WalletAdminResource", () => {
     expect(out.wallet.wallet_id).toBe("w-existing");
   });
 
+  it("withdraw forwards sponsor_wallet_id to the gateway", async () => {
+    mockFetch = mockFetchReturning({
+      transaction_id: "tx-sp",
+      wallet_id: "w-from",
+      type: "TRANSACTION_TYPE_DEBIT",
+      amount: "5.00",
+      currency: "USDC",
+    });
+    client = new MashgateClient({
+      baseUrl: "https://api.mashgate.uz",
+      apiKey: "mg_test_key",
+      fetch: mockFetch,
+    });
+    await client.walletAdmin.withdraw("w-from", {
+      amount: "5.00",
+      destination_type: "crypto_address",
+      destination_id: "DEsT_sOlanA",
+      network: Network.Solana,
+      mint: Mint.USDCSolanaMainnet,
+      sponsor_wallet_id: "spon-uuid",
+      idempotency_key: "idem-spon-1",
+    });
+    const { url, init } = lastCall(mockFetch);
+    expect(url).toBe("https://api.mashgate.uz/v1/wallets/w-from/withdraw");
+    const body = JSON.parse(String(init.body));
+    expect(body.sponsor_wallet_id).toBe("spon-uuid");
+    expect(body.mint).toBe(Mint.USDCSolanaMainnet);
+  });
+
   it("transfer POSTs /v1/wallets/{from}/transfer and returns both legs", async () => {
     mockFetch = mockFetchReturning({
       transfer_id: "xfer-uuid",

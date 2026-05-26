@@ -405,6 +405,41 @@ func TestWalletService_ImportChain_PropagatesCrossSubject403(t *testing.T) {
 	}
 }
 
+func TestWalletService_Withdraw_PassesSponsorWalletID(t *testing.T) {
+	cap := &capture{}
+	srv := mockServer(
+		t,
+		http.StatusOK,
+		`{"transaction_id":"tx-sp","wallet_id":"w-from","type":"TRANSACTION_TYPE_DEBIT","amount":"5.00","currency":"USDC"}`,
+		cap,
+	)
+	defer srv.Close()
+
+	c := New(srv.URL, "tenant-A", "key-xyz")
+	_, err := c.Wallet.Withdraw(context.Background(), WithdrawRequest{
+		WalletID:        "w-from",
+		Amount:          "5.00",
+		DestinationType: "crypto_address",
+		DestinationID:   "DEsT_sOlanA",
+		Network:         "SOLANA",
+		Mint:            MintUSDCSolanaMainnet,
+		SponsorWalletID: "spon-uuid",
+	}, "idem-spon-1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	var sent map[string]any
+	if err := json.Unmarshal(cap.body, &sent); err != nil {
+		t.Fatalf("decode body: %v", err)
+	}
+	if sent["sponsor_wallet_id"] != "spon-uuid" {
+		t.Errorf("sponsor_wallet_id not forwarded: %v", sent["sponsor_wallet_id"])
+	}
+	if cap.path != "/v1/wallets/w-from/withdraw" {
+		t.Errorf("path mismatch: %s", cap.path)
+	}
+}
+
 func TestWalletService_Transfer_SendsExpectedShape(t *testing.T) {
 	cap := &capture{}
 	resp := TransferResponse{

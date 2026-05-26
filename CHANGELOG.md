@@ -15,6 +15,31 @@ Top-level entry is the aggregate snapshot.
 
 ---
 
+## [2026-05-19] — fee abstraction Phase 1 (sponsored withdrawals)
+
+- **`sdk/go/v1.11.0`** — new `WithdrawRequest.SponsorWalletID`.
+- **`@mashgate/sdk@1.5.0`** — new `InitiateWithdrawalRequest.sponsor_wallet_id`.
+- **`mashgate@0.5.0`** — new `withdraw(..., sponsor_wallet_id=...)`.
+
+Server (`mashgate@TBD`): dual-signer Solana txs. New
+`chain.internal.v1.BuildSolanaTransferTxRequest.fee_payer_pubkey_base58`
+selects между legacy single-signer (source pays fee) и sponsor variant
+(sponsor signs first, pays fee + ATA rent; source signs second,
+authorises movement). 4 new builders в `wallet/solana_tx.rs` (SOL + SPL,
+sponsor flavour each).
+
+Phase 1 limits: sponsor pays the fee on-chain but не получает явный
+off-chain debit movement yet — that's Phase 2 (status-sync worker captures
+actual fee_lamports on confirmation and emits a separate sponsor-debit
+movement).
+
+Per-language details:
+- [`sdk/go/CHANGELOG.md`](sdk/go/CHANGELOG.md#v1110--2026-05-19--sdkgov1110).
+- [`sdk/typescript/CHANGELOG.md`](sdk/typescript/CHANGELOG.md#150--2026-05-19).
+- [`sdk/python/CHANGELOG.md`](sdk/python/CHANGELOG.md#050--2026-05-19).
+
+---
+
 ## [2026-05-19] — wallet recovery polish (mnemonic_hash + was_existing + cross-subject deny)
 
 - **`sdk/go/v1.10.0`** — 💥 BREAKING — `(*WalletService).ImportChain` returns

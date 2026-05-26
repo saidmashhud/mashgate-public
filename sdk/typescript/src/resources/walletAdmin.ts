@@ -217,6 +217,10 @@ export interface InitiateWithdrawalRequest {
   idempotency_key?: string;
   // SPL token mint. Empty / undefined = native SOL. L2 of ADR-0016.
   mint?: Mint;
+  // Optional sponsor wallet. When provided, the platform sponsor pays the
+  // chain fee + any SPL ATA rent instead of the source — used for gasless
+  // withdrawals. Must be in the same tenant + same network, active, on-chain.
+  sponsor_wallet_id?: string;
 }
 
 export interface ListWalletsQuery {

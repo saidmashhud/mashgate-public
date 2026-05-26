@@ -176,6 +176,12 @@ type WithdrawRequest struct {
 	// SPL token mint (base58). Empty = native SOL. Required for SPL token
 	// withdrawals; ignored for bank_account destinations. L2 of ADR-0016.
 	Mint Mint `json:"mint,omitempty"`
+	// Optional sponsor wallet — when set, the platform sponsor wallet pays
+	// the chain fee + ATA rent instead of the source. Used for gasless
+	// withdrawals: a customer holding USDT but zero SOL can still move
+	// tokens off-chain. Sponsor must be in the same tenant + same network,
+	// active, and on-chain.
+	SponsorWalletID string `json:"sponsor_wallet_id,omitempty"`
 }
 
 // CreateChainWalletRequest creates a non-custodial on-chain wallet — BIP-39

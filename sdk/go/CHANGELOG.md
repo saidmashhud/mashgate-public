@@ -9,6 +9,28 @@ Aggregate changelog for all languages: [`../../CHANGELOG.md`](../../CHANGELOG.md
 
 ---
 
+## [v1.11.0] — 2026-05-19 — `sdk/go/v1.11.0`
+
+### Added — `WithdrawRequest.SponsorWalletID` (gasless withdrawals)
+
+`WalletService.Withdraw` теперь принимает optional `SponsorWalletID`. When
+set, the platform sponsor wallet pays the chain fee + any SPL ATA rent
+instead of the source — letting a customer holding USDT but zero SOL still
+move tokens off-chain.
+
+- New field `WithdrawRequest.SponsorWalletID string`.
+- 1 new httptest-mock test verifying field is forwarded в body.
+
+Server-side guarantees (per-tenant):
+- Sponsor must be active on-chain wallet in same tenant + network.
+- Dual-signer Solana tx: sponsor signs first (key[0], pays fee), source
+  signs second (key[1], authorises movement).
+- Fee debit deferred to status-sync worker on confirmation (Phase 2 —
+  current implementation broadcasts с sponsor as fee payer but doesn't yet
+  debit sponsor's off-chain balance separately from source's).
+
+---
+
 ## [v1.10.0] — 2026-05-19 — `sdk/go/v1.10.0`
 
 ### 💥 BREAKING — `ImportChain` return type now `*ImportChainWalletResponse`

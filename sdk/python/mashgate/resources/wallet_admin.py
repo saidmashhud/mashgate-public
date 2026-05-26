@@ -390,12 +390,19 @@ class WalletAdminResource:
         mint: Mint | str | None = None,
         description: str | None = None,
         idempotency_key: str | None = None,
+        sponsor_wallet_id: str | None = None,
     ) -> dict[str, Any]:
         """Initiate a withdrawal.
 
         Pass ``mint`` for SPL tokens, leave None for native SOL. L2 of
         ADR-0016 — the ``mint`` field replaces the legacy ``mint=...;``
         prefix in ``description``.
+
+        :param sponsor_wallet_id: Optional sponsor wallet UUID. When set,
+            the platform sponsor pays the chain fee + any SPL ATA rent
+            instead of the source — used for gasless withdrawals so a
+            customer holding USDT but zero SOL can still move tokens.
+            Sponsor must be in the same tenant + network, active, on-chain.
         """
         body: dict[str, Any] = {
             "amount": amount,
@@ -407,6 +414,7 @@ class WalletAdminResource:
             ("mint", _opt_str(mint)),
             ("description", description),
             ("idempotency_key", idempotency_key),
+            ("sponsor_wallet_id", sponsor_wallet_id),
         ]:
             if v is not None and v != "":
                 body[k] = v
