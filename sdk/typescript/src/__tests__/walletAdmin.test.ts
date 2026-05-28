@@ -228,6 +228,32 @@ describe("WalletAdminResource", () => {
     expect(out.wallet.wallet_id).toBe("w-existing");
   });
 
+  it("withdraw curries Ethereum + USDT-ERC20 mint", async () => {
+    mockFetch = mockFetchReturning({
+      transaction_id: "tx-eth",
+      wallet_id: "w-eth",
+      type: "TRANSACTION_TYPE_DEBIT",
+      amount: "100",
+      currency: "USDT",
+    });
+    client = new MashgateClient({
+      baseUrl: "https://api.mashgate.uz",
+      apiKey: "mg_test_key",
+      fetch: mockFetch,
+    });
+    await client.walletAdmin.withdraw("w-eth", {
+      amount: "100",
+      destination_type: "crypto_address",
+      destination_id: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bE15",
+      network: Network.Ethereum,
+      mint: Mint.USDTEthereumMainnet,
+    });
+    const { init } = lastCall(mockFetch);
+    const body = JSON.parse(String(init.body));
+    expect(body.network).toBe("ETHEREUM");
+    expect(body.mint).toBe("0xdAC17F958D2ee523a2206206994597C13D831ec7");
+  });
+
   it("withdraw сurries TRON network + USDT-TRC20 mint", async () => {
     mockFetch = mockFetchReturning({
       transaction_id: "tx-tron",

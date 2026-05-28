@@ -15,6 +15,35 @@ Top-level entry is the aggregate snapshot.
 
 ---
 
+## [2026-05-19] — EVM chain provider Phase 1 (Ethereum / BSC / Polygon / Base)
+
+- **`sdk/go/v1.13.0`** — 7 new `Mint*` ERC-20 contract constants.
+- **`@mashgate/sdk@1.7.0`** — same 7 constants on `Mint.*`.
+- **`mashgate@0.7.0`** — same 7 constants on `Mint.*`.
+
+Server (`mashgate@TBD`): EVM wallets supported end-to-end. wallet-crypto
+adds `evm` (keccak256 → EIP-55 checksum address) + `evm_tx` (minimal
+RLP encoder + EIP-1559 build + ERC-20 calldata + pack-signed). chain-rpc
+gains `BuildEvmTransferTx` RPC; EthereumProvider carries per-network
+chain_id (Ethereum=1, BSC=56, Polygon=137, Base=8453). ledger-core
+handlers branch on network: SOLANA stays SLIP-0010, TRON stays secp256k1
++ SHA-256(raw_data), EVM uses BIP-32 secp256k1 + keccak256(signing_payload)
++ local RLP-packed signed tx via shared `wallet-crypto/evm_tx`.
+
+Phase 1 limits:
+- Sponsor wallets (gasless) supported для SOLANA only.
+- ERC-20 decimals assumed = 6 (USDT/USDC). DAI / WETH / 18-decimal
+  tokens need a per-token override — Phase 2.
+- Status sync worker polls Solana only; EVM confirmation detection via
+  `eth_getTransactionReceipt` — Phase 2.
+
+Per-language details:
+- [`sdk/go/CHANGELOG.md`](sdk/go/CHANGELOG.md#v1130--2026-05-19--sdkgov1130).
+- [`sdk/typescript/CHANGELOG.md`](sdk/typescript/CHANGELOG.md#170--2026-05-19).
+- [`sdk/python/CHANGELOG.md`](sdk/python/CHANGELOG.md#070--2026-05-19).
+
+---
+
 ## [2026-05-19] — TRON chain provider Phase 1 (USDT-TRC20 + native TRX)
 
 - **`sdk/go/v1.12.0`** — new `MintUSDTTronMainnet`.

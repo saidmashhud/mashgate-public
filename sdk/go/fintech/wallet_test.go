@@ -405,6 +405,60 @@ func TestWalletService_ImportChain_PropagatesCrossSubject403(t *testing.T) {
 	}
 }
 
+func TestWalletService_Withdraw_EthereumUsdtMint(t *testing.T) {
+	cap := &capture{}
+	srv := mockServer(
+		t,
+		http.StatusOK,
+		`{"transaction_id":"tx-eth","wallet_id":"w-eth","type":"TRANSACTION_TYPE_DEBIT","amount":"100","currency":"USDT","external_ref":"0xabc...txid"}`,
+		cap,
+	)
+	defer srv.Close()
+
+	c := New(srv.URL, "tenant-A", "key-xyz")
+	_, err := c.Wallet.Withdraw(context.Background(), WithdrawRequest{
+		WalletID:        "w-eth",
+		Amount:          "100",
+		DestinationType: "crypto_address",
+		DestinationID:   "0x742d35Cc6634C0532925a3b844Bc9e7595f0bE15",
+		Network:         NetworkEthereum,
+		Mint:            MintUSDTEthereumMainnet,
+	}, "idem-eth-1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	var sent map[string]any
+	_ = json.Unmarshal(cap.body, &sent)
+	if sent["network"] != "ETHEREUM" {
+		t.Errorf("network mismatch: %v", sent["network"])
+	}
+	if sent["mint"] != "0xdAC17F958D2ee523a2206206994597C13D831ec7" {
+		t.Errorf("USDT ERC-20 mint mismatch: %v", sent["mint"])
+	}
+}
+
+func TestEvmMintLiterals(t *testing.T) {
+	// Pin all six EVM mint constants — these are infrastructure-grade
+	// addresses, regression here = serious incident.
+	cases := []struct {
+		name     string
+		mint     Mint
+		expected string
+	}{
+		{"USDT ETH", MintUSDTEthereumMainnet, "0xdAC17F958D2ee523a2206206994597C13D831ec7"},
+		{"USDC ETH", MintUSDCEthereumMainnet, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"},
+		{"USDT BSC", MintUSDTBscMainnet, "0x55d398326f99059fF775485246999027B3197955"},
+		{"USDC BSC", MintUSDCBscMainnet, "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d"},
+		{"USDT POLY", MintUSDTPolygonMainnet, "0xc2132D05D31c914a87C6611C10748AEb04B58e8F"},
+		{"USDC POLY", MintUSDCPolygonMainnet, "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"},
+	}
+	for _, c := range cases {
+		if string(c.mint) != c.expected {
+			t.Errorf("%s mismatch: got %s want %s", c.name, c.mint, c.expected)
+		}
+	}
+}
+
 func TestWalletService_Withdraw_TronUsdtMint(t *testing.T) {
 	cap := &capture{}
 	srv := mockServer(

@@ -238,6 +238,48 @@ def test_import_chain_recovery_returns_was_existing_true(client):
 
 
 @respx.mock
+def test_withdraw_ethereum_erc20_mint(client):
+    route = respx.post(f"{BASE}/v1/wallets/w-eth/withdraw").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "transaction_id": "tx-eth",
+                "wallet_id": "w-eth",
+                "type": "TRANSACTION_TYPE_DEBIT",
+                "amount": "100",
+                "currency": "USDT",
+            },
+        )
+    )
+    client.wallet_admin.withdraw(
+        "w-eth",
+        amount="100",
+        destination_type="crypto_address",
+        destination_id="0x742d35Cc6634C0532925a3b844Bc9e7595f0bE15",
+        network="ETHEREUM",
+        mint=Mint.USDT_ETHEREUM_MAINNET,
+    )
+    sent = json.loads(route.calls.last.request.content)
+    assert sent["network"] == "ETHEREUM"
+    assert sent["mint"] == "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+
+
+def test_evm_mint_literals_pinned():
+    """Infrastructure-grade — regression here is a serious incident."""
+    pairs = [
+        (Mint.USDT_ETHEREUM_MAINNET, "0xdAC17F958D2ee523a2206206994597C13D831ec7"),
+        (Mint.USDC_ETHEREUM_MAINNET, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"),
+        (Mint.USDT_BSC_MAINNET, "0x55d398326f99059fF775485246999027B3197955"),
+        (Mint.USDC_BSC_MAINNET, "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d"),
+        (Mint.USDT_POLYGON_MAINNET, "0xc2132D05D31c914a87C6611C10748AEb04B58e8F"),
+        (Mint.USDC_POLYGON_MAINNET, "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"),
+        (Mint.USDC_BASE_MAINNET, "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"),
+    ]
+    for mint, expected in pairs:
+        assert mint.value == expected, f"{mint} != {expected}"
+
+
+@respx.mock
 def test_withdraw_tron_trc20_mint(client):
     route = respx.post(f"{BASE}/v1/wallets/w-tron/withdraw").mock(
         return_value=httpx.Response(

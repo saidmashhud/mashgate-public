@@ -9,6 +9,45 @@ Aggregate changelog for all languages: [`../../CHANGELOG.md`](../../CHANGELOG.md
 
 ---
 
+## [v1.13.0] — 2026-05-19 — `sdk/go/v1.13.0`
+
+### Added — EVM chain provider Phase 1 (Ethereum / BSC / Polygon / Base)
+
+7 new ERC-20 mint constants:
+- `MintUSDTEthereumMainnet` / `MintUSDCEthereumMainnet`
+- `MintUSDTBscMainnet` / `MintUSDCBscMainnet`
+- `MintUSDTPolygonMainnet` / `MintUSDCPolygonMainnet`
+- `MintUSDCBaseMainnet`
+
+`NetworkEthereum` / `NetworkBSC` / `NetworkPolygon` / `NetworkBase`
+already existed; server-side ledger-core теперь actually accepts them.
+
+Server-side (`mashgate@TBD`):
+- `wallet-crypto` got `evm` module (keccak256 → EIP-55 checksum address)
+  and `evm_tx` module (minimal RLP encoder + EIP-1559 build + ERC-20
+  `transfer(address,uint256)` calldata).
+- chain-rpc gains `BuildEvmTransferTx` RPC — fetches nonce + EIP-1559
+  fees from the matching EthereumProvider (chain_id pinned at construction:
+  Ethereum=1, BSC=56, Polygon=137, Base=8453), RLP-encodes the body,
+  returns signing payload + context.
+- ledger-core wallets с network=ETHEREUM/BSC/POLYGON/BASE derive via
+  BIP-32 secp256k1 on coin type 60 (industry standard для all EVM
+  chains), sign keccak256(signing_payload) с k256 ECDSA recoverable,
+  pack the signed RLP locally (shared `wallet-crypto/evm_tx`), broadcast
+  through chain-rpc's EthereumProvider.
+
+Phase 1 limits:
+- Sponsor wallets (gasless) — Solana only.
+- ERC-20 decimals assumed = 6 (USDT/USDC). 18-decimal tokens (DAI, WETH)
+  need a per-token decimals override — Phase 2.
+- Status sync worker — Solana only. EVM confirmation detection via
+  `eth_getTransactionReceipt` — Phase 2.
+
+2 new httptest-mock tests (ETH USDT withdraw shape + all 7 EVM mint
+literals pinned).
+
+---
+
 ## [v1.12.0] — 2026-05-19 — `sdk/go/v1.12.0`
 
 ### Added — TRON chain provider Phase 1 (USDT-TRC20 + native TRX)

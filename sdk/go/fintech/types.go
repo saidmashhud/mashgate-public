@@ -74,6 +74,20 @@ const (
 	// by presence/absence of this field, and server-side ledger-core
 	// branches on `Network` to know how to interpret the contents.
 	MintUSDTTronMainnet Mint = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+	// ERC-20 mainnet token contracts. `Mint` here is the contract
+	// address (0x-hex). ledger-core selects EIP-1559 (EVM) path based on
+	// the wallet's `Network`.
+	MintUSDTEthereumMainnet Mint = "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+	MintUSDCEthereumMainnet Mint = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+	// BSC. USDT-BEP20 18-decimals (different shape from ETH USDT — server
+	// uses a per-network `decimals` lookup; SDK constant is pure address).
+	MintUSDTBscMainnet Mint = "0x55d398326f99059fF775485246999027B3197955"
+	MintUSDCBscMainnet Mint = "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d"
+	// Polygon. Native USDT/USDC bridged from Ethereum.
+	MintUSDTPolygonMainnet Mint = "0xc2132D05D31c914a87C6611C10748AEb04B58e8F"
+	MintUSDCPolygonMainnet Mint = "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"
+	// Base. Coinbase-native USDC; USDT not officially on Base (use bridge).
+	MintUSDCBaseMainnet Mint = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
 )
 
 // String implements fmt.Stringer for callers that pass these into formatters

@@ -9,6 +9,27 @@ Aggregate changelog for all languages: [`../../CHANGELOG.md`](../../CHANGELOG.md
 
 ---
 
+## [0.7.0] — 2026-05-19
+
+### Added — EVM chain provider Phase 1
+
+7 new ERC-20 mint constants под `Mint.*` для Ethereum / BSC / Polygon /
+Base — USDT и USDC contract addresses on mainnet. `Network.ETHEREUM`
+etc. already existed; server now accepts them.
+
+Server-side: wallet-crypto adds `evm` (EIP-55 address) + `evm_tx`
+(RLP + EIP-1559 build) modules. chain-rpc gains `BuildEvmTransferTx`
+RPC. ledger-core handlers derive via BIP-32 secp256k1 на coin 60,
+sign keccak256(signing_payload), pack signed RLP, broadcast.
+
+Phase 1 limits: sponsor wallets (gasless) — Solana only; ERC-20 decimals
+assumed = 6 (USDT/USDC); status sync worker — Solana only (Phase 2).
+
+2 new pytest+respx tests (ETH USDT withdraw + EVM mint literals
+pinned).
+
+---
+
 ## [0.6.0] — 2026-05-19
 
 ### Added — TRON chain provider Phase 1
