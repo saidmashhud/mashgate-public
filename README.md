@@ -41,6 +41,17 @@ Mashgate is the shared backend for a family of products. Instead of every app re
 
 ---
 
+## Guides
+
+New to building on Mashgate? Start here:
+
+- **[Building a vertical](docs/guides/building-a-vertical.md)** — the end-to-end path: provision a tenant, scaffold, wire the modules you need, build your domain, deploy.
+- **[Data modeling & identity](docs/guides/data-modeling-and-identity.md)** — how your tables join to Mashgate ids (you don't extend Mashgate's users table — you key your own table by `user_id`).
+- **[Best practices](docs/best-practices.md)** — idempotency, money/ledger as source of truth, multi-tenancy, webhooks, error handling, versioning.
+- **[Service catalog](docs/modules/service-catalog.md)** — the full module/RPC reference.
+
+---
+
 ## Supported languages
 
 | Language | Package | Min version | Status |
@@ -113,6 +124,8 @@ mashgate-public/
 │   ├── typescript/        Core Mashgate SDK (npm: @mashgate/sdk)
 │   └── python/            Core Mashgate SDK (PyPI: mashgate-sdk)
 ├── docs/
+│   ├── guides/            How-to guides (building a vertical, data modeling & identity)
+│   ├── best-practices.md  Cross-cutting patterns (idempotency, money, multi-tenancy, …)
 │   ├── getting-started/   Per-language quickstarts
 │   ├── modules/           Per-module guides (auth, payments, events, …)
 │   └── migration/         Migration guides (from in-tree SDK, from hand-rolled clients)
