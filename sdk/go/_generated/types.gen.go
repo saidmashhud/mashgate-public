@@ -67,9 +67,10 @@ type AddGroupMemberResponse struct {
 
 // AddPaymentMethodRequest defines model for AddPaymentMethodRequest.
 type AddPaymentMethodRequest struct {
-	SetDefault *bool   `json:"setDefault,omitempty"`
-	TenantId   *string `json:"tenantId,omitempty"`
-	Token      *string `json:"token,omitempty"`
+	IdempotencyKey *string `json:"idempotencyKey,omitempty"`
+	SetDefault     *bool   `json:"setDefault,omitempty"`
+	TenantId       *string `json:"tenantId,omitempty"`
+	Token          *string `json:"token,omitempty"`
 }
 
 // AddWalletPaymentMethodCommand defines model for AddWalletPaymentMethodCommand.
@@ -134,18 +135,26 @@ type Anomaly struct {
 
 // ApiKey defines model for ApiKey.
 type ApiKey struct {
-	ApiKeyId  *string   `json:"apiKeyId,omitempty"`
-	Burst     *int32    `json:"burst,omitempty"`
-	ClientId  *string   `json:"clientId,omitempty"`
-	CreatedAt *string   `json:"createdAt,omitempty"`
-	ExpiresAt *string   `json:"expiresAt,omitempty"`
-	Name      *string   `json:"name,omitempty"`
-	Prefix    *string   `json:"prefix,omitempty"`
-	RotatedAt *string   `json:"rotatedAt,omitempty"`
-	Rpm       *int32    `json:"rpm,omitempty"`
-	Scopes    *[]string `json:"scopes,omitempty"`
-	Status    *string   `json:"status,omitempty"`
-	TenantId  *string   `json:"tenantId,omitempty"`
+	ApiKeyId     *string   `json:"apiKeyId,omitempty"`
+	Burst        *int32    `json:"burst,omitempty"`
+	ClientId     *string   `json:"clientId,omitempty"`
+	CreatedAt    *string   `json:"createdAt,omitempty"`
+	Environment  *string   `json:"environment,omitempty"`
+	ExpiresAt    *string   `json:"expiresAt,omitempty"`
+	LastUsedAt   *string   `json:"lastUsedAt,omitempty"`
+	Name         *string   `json:"name,omitempty"`
+	Prefix       *string   `json:"prefix,omitempty"`
+	RevokeReason *string   `json:"revokeReason,omitempty"`
+	RevokedAt    *string   `json:"revokedAt,omitempty"`
+	RotatedAt    *string   `json:"rotatedAt,omitempty"`
+	Rpm          *int32    `json:"rpm,omitempty"`
+	Scopes       *[]string `json:"scopes,omitempty"`
+	State        *string   `json:"state,omitempty"`
+	Status       *string   `json:"status,omitempty"`
+
+	// TenantCode R1.b additions for cross-tenant platform-admin view.
+	TenantCode *string `json:"tenantCode,omitempty"`
+	TenantId   *string `json:"tenantId,omitempty"`
 }
 
 // AppPermission A permission that an App declares it may request at runtime.
@@ -415,12 +424,79 @@ type Bucket struct {
 	TenantId    *string    `json:"tenantId,omitempty"`
 }
 
+// BuildEvmTransferTxRequest defines model for BuildEvmTransferTxRequest.
+type BuildEvmTransferTxRequest struct {
+	// Amount Decimal string. For native ETH/BNB/MATIC, e.g. "1.5". For ERC-20 в
+	//  token's major unit (USDT/USDC = 6 decimals, "100.50" → 100_500_000).
+	Amount *string `json:"amount,omitempty"`
+
+	// ContractAddressHex ERC-20 contract address (0x-hex, optional). Empty = native transfer.
+	ContractAddressHex *string `json:"contractAddressHex,omitempty"`
+
+	// FromAddressHex 0x-prefixed hex address (EIP-55 checksum optional — chain-rpc parses
+	//  case-insensitively).
+	FromAddressHex *string `json:"fromAddressHex,omitempty"`
+
+	// GasLimitOverride Optional override for gas_limit. 0 = pick chain default (21_000 for
+	//  native, 60_000 for ERC-20 transfers based on average usage).
+	GasLimitOverride *string `json:"gasLimitOverride,omitempty"`
+
+	// Network Uppercase network code: ETHEREUM, BSC, POLYGON, BASE. chain-rpc maps
+	//  it to chain_id (1 / 56 / 137 / 8453) and routes to the right
+	//  EthereumProvider instance.
+	Network      *string `json:"network,omitempty"`
+	ToAddressHex *string `json:"toAddressHex,omitempty"`
+}
+
+// BuildEvmTransferTxResponse defines model for BuildEvmTransferTxResponse.
+type BuildEvmTransferTxResponse struct {
+	// ChainId The chain_id picked by chain-rpc based on `network`. Surfaced so the
+	//  caller can pre-compute / display fee estimates client-side.
+	ChainId *string `json:"chainId,omitempty"`
+
+	// DataHex Hex-encoded calldata (empty for native transfers).
+	DataHex *string `json:"dataHex,omitempty"`
+	Error   *string `json:"error,omitempty"`
+
+	// EstimatedFeeNative Estimated cost в native units (e.g. "0.0042" ETH) so the caller can
+	//  pre-flight the sender's balance.
+	EstimatedFeeNative   *string `json:"estimatedFeeNative,omitempty"`
+	GasLimit             *string `json:"gasLimit,omitempty"`
+	MaxFeePerGas         *string `json:"maxFeePerGas,omitempty"`
+	MaxPriorityFeePerGas *string `json:"maxPriorityFeePerGas,omitempty"`
+
+	// Nonce The nonce / gas / fee values chain-rpc picked. Returned so ledger-core
+	//  can re-build the signed RLP without a second roundtrip и so the
+	//  outbox event captures actual values.
+	Nonce *string `json:"nonce,omitempty"`
+
+	// SigningHashHex keccak256(signing_payload), hex. Echoed for sanity-checking — caller
+	//  can recompute locally to confirm.
+	SigningHashHex *string `json:"signingHashHex,omitempty"`
+
+	// SigningPayloadHex 0x-prefixed hex of the EIP-1559 signing payload (`0x02 || rlp([...])`).
+	//  Caller should keccak256-hash these bytes and sign the digest.
+	SigningPayloadHex *string `json:"signingPayloadHex,omitempty"`
+	ValueWei          *string `json:"valueWei,omitempty"`
+}
+
 // BuildSolanaTransferTxRequest defines model for BuildSolanaTransferTxRequest.
 type BuildSolanaTransferTxRequest struct {
 	// Amount Amount as a decimal string (e.g. "100.50"). chain-rpc multiplies by the
 	//  token decimals (looked up via getTokenSupply for SPL, or 9 for SOL) and
 	//  packs the result into the instruction.
 	Amount *string `json:"amount,omitempty"`
+
+	// FeePayerPubkeyBase58 Optional sponsor / fee payer. When non-empty, the built message has
+	//  two signers: the sponsor (first, pays the lamport fee + any SPL ATA
+	//  rent) and the source (second, authorises the token movement). Empty
+	//  string preserves the legacy single-signer layout where the source
+	//  pays its own fee.
+	//
+	//  Caller must hold the sponsor's signing key locally — chain-rpc only
+	//  serialises the message; signing stays in ledger-core. The sponsor
+	//  must differ from both the source and the destination.
+	FeePayerPubkeyBase58 *string `json:"feePayerPubkeyBase58,omitempty"`
 
 	// FromPubkeyBase58 The fee payer and signer of the transaction. Must match the wallet
 	//  owning `from_token_account` (or the source for native SOL transfers).
@@ -459,6 +535,54 @@ type BuildSolanaTransferTxResponse struct {
 	UnsignedMessageBase64 *string `json:"unsignedMessageBase64,omitempty"`
 }
 
+// BuildTronTransferTxRequest defines model for BuildTronTransferTxRequest.
+type BuildTronTransferTxRequest struct {
+	// Amount Decimal string. For native TRX e.g. "1.5" (multiplied by 1e6 sun).
+	//  For TRC-20 in the token's major unit (USDT has 6 decimals — "100.50"
+	//  becomes 100_500_000).
+	Amount *string `json:"amount,omitempty"`
+
+	// ContractAddressBase58 TRC-20 contract address (base58check). Empty = native TRX transfer.
+	//  For USDT mainnet pass "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t".
+	ContractAddressBase58 *string `json:"contractAddressBase58,omitempty"`
+
+	// FeeLimitSun TRC-20 fee limit in sun. Default = 100_000_000 (100 TRX) when zero.
+	//  Native TRX transfers ignore this field.
+	FeeLimitSun *string `json:"feeLimitSun,omitempty"`
+
+	// FromAddressBase58 TRON base58check address ("T..."), source / owner. chain-rpc passes
+	//  it to the TRON node as `owner_address` with `visible=true`.
+	FromAddressBase58 *string `json:"fromAddressBase58,omitempty"`
+
+	// ToAddressBase58 TRON base58check destination address.
+	ToAddressBase58 *string `json:"toAddressBase58,omitempty"`
+}
+
+// BuildTronTransferTxResponse defines model for BuildTronTransferTxResponse.
+type BuildTronTransferTxResponse struct {
+	Error *string `json:"error,omitempty"`
+
+	// EstimatedFeeTrx Estimated cost in TRX (decimal string). For native TRX it's mostly
+	//  free (consumed bandwidth). For TRC-20 ~13.4 TRX worth of energy plus
+	//  bandwidth. Treat as informational, not a precise fee bound.
+	EstimatedFeeTrx *string `json:"estimatedFeeTrx,omitempty"`
+
+	// RawDataHex The `raw_data_hex` from the TRON node. Caller must SHA-256-hash these
+	//  bytes (decoded from hex) and sign the digest with the wallet's
+	//  secp256k1 private key.
+	RawDataHex *string `json:"rawDataHex,omitempty"`
+
+	// TransactionJson Full transaction JSON (sans signature) — caller passes this back to
+	//  BroadcastTransaction as the body once the signature is attached. We
+	//  surface it explicitly so the caller never has to round-trip raw_data
+	//  back into TRON's JSON shape itself.
+	TransactionJson *string `json:"transactionJson,omitempty"`
+
+	// TxIdHex Transaction ID == SHA-256(raw_data). Hex. Used by BroadcastTransaction
+	//  and for status polling.
+	TxIdHex *string `json:"txIdHex,omitempty"`
+}
+
 // BulkTenantActionRequest defines model for BulkTenantActionRequest.
 type BulkTenantActionRequest struct {
 	Action    *string   `json:"action,omitempty"`
@@ -473,9 +597,10 @@ type BulkTenantActionResponse struct {
 
 // CancelPlanRequest defines model for CancelPlanRequest.
 type CancelPlanRequest struct {
-	Immediate *bool   `json:"immediate,omitempty"`
-	Reason    *string `json:"reason,omitempty"`
-	TenantId  *string `json:"tenantId,omitempty"`
+	IdempotencyKey *string `json:"idempotencyKey,omitempty"`
+	Immediate      *bool   `json:"immediate,omitempty"`
+	Reason         *string `json:"reason,omitempty"`
+	TenantId       *string `json:"tenantId,omitempty"`
 }
 
 // CancelSubscriptionRequest defines model for CancelSubscriptionRequest.
@@ -528,11 +653,27 @@ type CardPaymentMethod struct {
 	Token     *string `json:"token,omitempty"`
 }
 
+// ChangePasswordRequest defines model for ChangePasswordRequest.
+type ChangePasswordRequest struct {
+	CurrentPassword *string `json:"currentPassword,omitempty"`
+	NewPassword     *string `json:"newPassword,omitempty"`
+	UserId          *string `json:"userId,omitempty"`
+}
+
+// ChangePasswordResponse defines model for ChangePasswordResponse.
+type ChangePasswordResponse struct {
+	Success *bool `json:"success,omitempty"`
+}
+
 // ChangePlanRequest defines model for ChangePlanRequest.
 type ChangePlanRequest struct {
-	Interval *int    `json:"interval,omitempty"`
-	PlanId   *string `json:"planId,omitempty"`
-	TenantId *string `json:"tenantId,omitempty"`
+	// IdempotencyKey P1.2: client-supplied idempotency key. Replays within 24h return cached
+	//  response without re-executing the plan change (no double subscription,
+	//  no double dunning escalation). TTL 24h.
+	IdempotencyKey *string `json:"idempotencyKey,omitempty"`
+	Interval       *int    `json:"interval,omitempty"`
+	PlanId         *string `json:"planId,omitempty"`
+	TenantId       *string `json:"tenantId,omitempty"`
 }
 
 // ChatMessage defines model for ChatMessage.
@@ -666,6 +807,18 @@ type ComplianceAlert struct {
 	SubjectType  *string          `json:"subjectType,omitempty"`
 	TenantId     *string          `json:"tenantId,omitempty"`
 	UpdatedAt    *time.Time       `json:"updatedAt,omitempty"`
+}
+
+// ConfirmEmailVerificationRequest defines model for ConfirmEmailVerificationRequest.
+type ConfirmEmailVerificationRequest struct {
+	Code   *string `json:"code,omitempty"`
+	UserId *string `json:"userId,omitempty"`
+}
+
+// ConfirmEmailVerificationResponse defines model for ConfirmEmailVerificationResponse.
+type ConfirmEmailVerificationResponse struct {
+	EmailVerified *bool `json:"emailVerified,omitempty"`
+	Success       *bool `json:"success,omitempty"`
 }
 
 // ConfirmOtpRequest defines model for ConfirmOtpRequest.
@@ -856,11 +1009,14 @@ type CreateFlagRequest struct {
 
 // CreateInvoiceRequest defines model for CreateInvoiceRequest.
 type CreateInvoiceRequest struct {
-	Currency   *string            `json:"currency,omitempty"`
-	CustomerId *string            `json:"customerId,omitempty"`
-	DueDate    *time.Time         `json:"dueDate,omitempty"`
-	LineItems  *[]InvoiceLineItem `json:"lineItems,omitempty"`
-	TenantId   *string            `json:"tenantId,omitempty"`
+	Currency   *string    `json:"currency,omitempty"`
+	CustomerId *string    `json:"customerId,omitempty"`
+	DueDate    *time.Time `json:"dueDate,omitempty"`
+
+	// IdempotencyKey P1.2: prevents duplicate invoice creation on retry (no double accounting entry).
+	IdempotencyKey *string            `json:"idempotencyKey,omitempty"`
+	LineItems      *[]InvoiceLineItem `json:"lineItems,omitempty"`
+	TenantId       *string            `json:"tenantId,omitempty"`
 }
 
 // CreateMailboxRequest defines model for CreateMailboxRequest.
@@ -915,12 +1071,13 @@ type CreatePaymentIntentResponse struct {
 
 // CreatePlanRequest defines model for CreatePlanRequest.
 type CreatePlanRequest struct {
-	Amount    *string `json:"amount,omitempty"`
-	Currency  *string `json:"currency,omitempty"`
-	Interval  *int    `json:"interval,omitempty"`
-	Name      *string `json:"name,omitempty"`
-	TenantId  *string `json:"tenantId,omitempty"`
-	TrialDays *int32  `json:"trialDays,omitempty"`
+	Amount         *string `json:"amount,omitempty"`
+	Currency       *string `json:"currency,omitempty"`
+	IdempotencyKey *string `json:"idempotencyKey,omitempty"`
+	Interval       *int    `json:"interval,omitempty"`
+	Name           *string `json:"name,omitempty"`
+	TenantId       *string `json:"tenantId,omitempty"`
+	TrialDays      *int32  `json:"trialDays,omitempty"`
 }
 
 // CreatePromotionRequest defines model for CreatePromotionRequest.
@@ -976,6 +1133,22 @@ type CreateScheduledReportRequest struct {
 	Schedule   *string         `json:"schedule,omitempty"`
 	TenantId   *string         `json:"tenantId,omitempty"`
 	Type       *int            `json:"type,omitempty"`
+}
+
+// CreateSecretRequest defines model for CreateSecretRequest.
+type CreateSecretRequest struct {
+	Description *string `json:"description,omitempty"`
+	Environment *string `json:"environment,omitempty"`
+	Name        *string `json:"name,omitempty"`
+	TenantId    *string `json:"tenantId,omitempty"`
+	Value       *string `json:"value,omitempty"`
+}
+
+// CreateSecretResponse defines model for CreateSecretResponse.
+type CreateSecretResponse struct {
+	// Secret Returned by List/Create/Rotate. Value preview is the last <=4 chars of the
+	//  plaintext for visual hint; the actual secret is only available via Reveal.
+	Secret *Secret `json:"secret,omitempty"`
 }
 
 // CreateSessionRequest defines model for CreateSessionRequest.
@@ -1135,6 +1308,26 @@ type CustomerMetrics struct {
 	TotalCustomers   *MetricDelta `json:"totalCustomers,omitempty"`
 }
 
+// DashboardAuditCounts defines model for DashboardAuditCounts.
+type DashboardAuditCounts struct {
+	Last24h *string `json:"last24h,omitempty"`
+	Total   *string `json:"total,omitempty"`
+}
+
+// DashboardModuleCounts defines model for DashboardModuleCounts.
+type DashboardModuleCounts struct {
+	Active   *string `json:"active,omitempty"`
+	Disabled *string `json:"disabled,omitempty"`
+	Trial    *string `json:"trial,omitempty"`
+}
+
+// DashboardTenantCounts defines model for DashboardTenantCounts.
+type DashboardTenantCounts struct {
+	Active    *string `json:"active,omitempty"`
+	Suspended *string `json:"suspended,omitempty"`
+	Total     *string `json:"total,omitempty"`
+}
+
 // DebitWalletRequest defines model for DebitWalletRequest.
 type DebitWalletRequest struct {
 	Amount         *string `json:"amount,omitempty"`
@@ -1154,6 +1347,11 @@ type DecisionStep struct {
 	MatchedEntities *[]string `json:"matchedEntities,omitempty"`
 	Name            *string   `json:"name,omitempty"`
 	Passed          *bool     `json:"passed,omitempty"`
+}
+
+// DeleteAccountResponse defines model for DeleteAccountResponse.
+type DeleteAccountResponse struct {
+	Success *bool `json:"success,omitempty"`
 }
 
 // DeleteApplicationResponse defines model for DeleteApplicationResponse.
@@ -1188,6 +1386,11 @@ type DeleteRiskRuleResponse struct {
 
 // DeleteRoleResponse defines model for DeleteRoleResponse.
 type DeleteRoleResponse struct {
+	Success *bool `json:"success,omitempty"`
+}
+
+// DeleteSecretResponse defines model for DeleteSecretResponse.
+type DeleteSecretResponse struct {
 	Success *bool `json:"success,omitempty"`
 }
 
@@ -1544,6 +1747,43 @@ type ExplainAccessResponse struct {
 	Reason      *string             `json:"reason,omitempty"`
 }
 
+// ExportChainWalletMnemonicRequest defines model for ExportChainWalletMnemonicRequest.
+type ExportChainWalletMnemonicRequest struct {
+	// Reason Free-text reason captured in the audit event. Optional but
+	//  recommended ("user requested recovery on device X").
+	Reason *string `json:"reason,omitempty"`
+
+	// SubjectId Subject who owns the wallet (must match `wallets.subject_id`). Set
+	//  explicitly so the server can fail-fast before decryption if the
+	//  caller is impersonating.
+	SubjectId *string `json:"subjectId,omitempty"`
+
+	// TenantId tenant_id is overwritten from the authenticated context — body value
+	//  is ignored. Documented here for proto symmetry with other wallet
+	//  RPCs.
+	TenantId *string `json:"tenantId,omitempty"`
+	WalletId *string `json:"walletId,omitempty"`
+}
+
+// ExportChainWalletMnemonicResponse defines model for ExportChainWalletMnemonicResponse.
+type ExportChainWalletMnemonicResponse struct {
+	// ExportCount Number of times this wallet has had its mnemonic exported,
+	//  including this call. Frontends surface this to the user as a
+	//  "phrase revealed N times" awareness signal.
+	ExportCount *int32 `json:"exportCount,omitempty"`
+
+	// ExportedAt ISO-8601 timestamp of this export (mirrored in the audit row /
+	//  outbox event so clients can correlate).
+	ExportedAt *time.Time `json:"exportedAt,omitempty"`
+
+	// Mnemonic BIP-39 mnemonic phrase (12 or 24 words). Plaintext over gRPC — the
+	//  caller MUST surface it once and never persist it. ledger-core
+	//  wraps the in-process buffer in Zeroizing; wire serialization is
+	//  unavoidable.
+	Mnemonic *string `json:"mnemonic,omitempty"`
+	WalletId *string `json:"walletId,omitempty"`
+}
+
 // FailureAnalysisResponse defines model for FailureAnalysisResponse.
 type FailureAnalysisResponse struct {
 	Entries          *[]FailureEntry `json:"entries,omitempty"`
@@ -1724,6 +1964,14 @@ type GetCheckoutSessionResponse struct {
 	Session *CheckoutSession `json:"session,omitempty"`
 }
 
+// GetDashboardMetricsResponse defines model for GetDashboardMetricsResponse.
+type GetDashboardMetricsResponse struct {
+	AuditEvents *DashboardAuditCounts  `json:"auditEvents,omitempty"`
+	Modules     *DashboardModuleCounts `json:"modules,omitempty"`
+	TenantScope *string                `json:"tenantScope,omitempty"`
+	Tenants     *DashboardTenantCounts `json:"tenants,omitempty"`
+}
+
 // GetDeliveryResponse defines model for GetDeliveryResponse.
 type GetDeliveryResponse struct {
 	Delivery *Delivery `json:"delivery,omitempty"`
@@ -1788,6 +2036,11 @@ type GetOAuthClientResponse struct {
 	Client *OAuthClient `json:"client,omitempty"`
 }
 
+// GetPacksCatalogResponse defines model for GetPacksCatalogResponse.
+type GetPacksCatalogResponse struct {
+	Packs *[]PackCatalogEntry `json:"packs,omitempty"`
+}
+
 // GetPlatformHealthResponse defines model for GetPlatformHealthResponse.
 type GetPlatformHealthResponse struct {
 	CheckedAt     *time.Time       `json:"checkedAt,omitempty"`
@@ -1807,6 +2060,11 @@ type GetRecentBlockhashResponse struct {
 	Blockhash       *string `json:"blockhash,omitempty"`
 	Error           *string `json:"error,omitempty"`
 	LastValidHeight *string `json:"lastValidHeight,omitempty"`
+}
+
+// GetReconcileLogResponse defines model for GetReconcileLogResponse.
+type GetReconcileLogResponse struct {
+	Rows *[]ReconcileLogEntry `json:"rows,omitempty"`
 }
 
 // GetServiceHistoryResponse defines model for GetServiceHistoryResponse.
@@ -1957,6 +2215,38 @@ type ImpersonationSession struct {
 	TenantName  *string    `json:"tenantName,omitempty"`
 }
 
+// ImportChainWalletRequest defines model for ImportChainWalletRequest.
+type ImportChainWalletRequest struct {
+	Currency       *string `json:"currency,omitempty"`
+	IdempotencyKey *string `json:"idempotencyKey,omitempty"`
+
+	// Mnemonic BIP-39 mnemonic phrase (12 or 24 words). Validated server-side;
+	//  SHA-256-hashed before storage. Never persisted plaintext, never
+	//  logged. Re-import same phrase для одного subject = idempotent
+	//  (returns existing wallet by mnemonic_hash UNIQUE).
+	Mnemonic    *string `json:"mnemonic,omitempty"`
+	Network     *string `json:"network,omitempty"`
+	SubjectId   *string `json:"subjectId,omitempty"`
+	SubjectType *string `json:"subjectType,omitempty"`
+	TenantId    *string `json:"tenantId,omitempty"`
+}
+
+// ImportChainWalletResponse defines model for ImportChainWalletResponse.
+type ImportChainWalletResponse struct {
+	// RecoveredAt ISO-8601 timestamp echoing wallet.created_at on a fresh import, or
+	//  wallet.updated_at on a recovery. Frontends use this to show
+	//  "recovered" / "originally imported" labels without re-parsing the
+	//  wallet object.
+	RecoveredAt *time.Time `json:"recoveredAt,omitempty"`
+	Wallet      *Wallet    `json:"wallet,omitempty"`
+
+	// WasExisting True when the import resolved to an already-existing wallet (same
+	//  mnemonic_hash, same subject). Lets the caller distinguish a recovery
+	//  ("you already had this wallet, here it is") from a fresh import (UX:
+	//  "✓ wallet imported successfully").
+	WasExisting *bool `json:"wasExisting,omitempty"`
+}
+
 // InitiateWithdrawalRequest defines model for InitiateWithdrawalRequest.
 type InitiateWithdrawalRequest struct {
 	Amount          *string `json:"amount,omitempty"`
@@ -1966,6 +2256,16 @@ type InitiateWithdrawalRequest struct {
 	IdempotencyKey  *string `json:"idempotencyKey,omitempty"`
 	Mint            *string `json:"mint,omitempty"`
 	Network         *string `json:"network,omitempty"`
+
+	// SponsorWalletId Replaces the earlier "mint=...;" hack in
+	//  `description`. Ignored for bank withdrawals.
+	//  Optional sponsor wallet for gasless withdrawals. When set, the chain
+	//  fee (and any SPL ATA rent) is debited from this wallet's off-chain
+	//  balance instead of the source. The end-user wallet needs no native SOL.
+	//  Must be an active on-chain wallet in the same tenant + network. The
+	//  tenant_admin role typically owns one omnibus sponsor wallet per network
+	//  and references it on every customer withdrawal.
+	SponsorWalletId *string `json:"sponsorWalletId,omitempty"`
 	TenantId        *string `json:"tenantId,omitempty"`
 	WalletId        *string `json:"walletId,omitempty"`
 }
@@ -2081,6 +2381,17 @@ type ListAdminSubscriptionsResponse struct {
 type ListAlertsResponse struct {
 	Alerts     *[]ComplianceAlert `json:"alerts,omitempty"`
 	NextCursor *string            `json:"nextCursor,omitempty"`
+}
+
+// ListAllApiKeysResponse defines model for ListAllApiKeysResponse.
+type ListAllApiKeysResponse struct {
+	ApiKeys *[]ApiKey `json:"apiKeys,omitempty"`
+
+	// NextCursor R1.b: next page token (empty when no more pages). Encoded as the next
+	//  page number string for the simple page-based scheme; clients pass it
+	//  back in `cursor`.
+	NextCursor *string `json:"nextCursor,omitempty"`
+	TotalCount *int32  `json:"totalCount,omitempty"`
 }
 
 // ListApiKeysResponse defines model for ListApiKeysResponse.
@@ -2273,6 +2584,17 @@ type ListPlatformPlansResponse struct {
 	Plans *[]PlatformPlan `json:"plans,omitempty"`
 }
 
+// ListPlatformUsageResponse defines model for ListPlatformUsageResponse.
+type ListPlatformUsageResponse struct {
+	Tenants *[]TenantUsageSummary `json:"tenants,omitempty"`
+}
+
+// ListPoliciesResponse defines model for ListPoliciesResponse.
+type ListPoliciesResponse struct {
+	Policies   *[]Policy `json:"policies,omitempty"`
+	TotalCount *int32    `json:"totalCount,omitempty"`
+}
+
 // ListPromotionsResponse defines model for ListPromotionsResponse.
 type ListPromotionsResponse struct {
 	Promotions *[]Promotion `json:"promotions,omitempty"`
@@ -2332,6 +2654,12 @@ type ListScheduledReportsResponse struct {
 	Reports *[]ScheduledReport `json:"reports,omitempty"`
 }
 
+// ListSecretsResponse defines model for ListSecretsResponse.
+type ListSecretsResponse struct {
+	Secrets    *[]Secret `json:"secrets,omitempty"`
+	TotalCount *int32    `json:"totalCount,omitempty"`
+}
+
 // ListStreamsResponse defines model for ListStreamsResponse.
 type ListStreamsResponse struct {
 	Streams *[]LogStream `json:"streams,omitempty"`
@@ -2370,6 +2698,12 @@ type ListTenantsResponse struct {
 type ListTransactionsResponse struct {
 	NextCursor   *string              `json:"nextCursor,omitempty"`
 	Transactions *[]WalletTransaction `json:"transactions,omitempty"`
+}
+
+// ListUsersResponse defines model for ListUsersResponse.
+type ListUsersResponse struct {
+	TotalCount *int32  `json:"totalCount,omitempty"`
+	Users      *[]User `json:"users,omitempty"`
 }
 
 // ListWalletMovementsResponse defines model for ListWalletMovementsResponse.
@@ -2699,15 +3033,16 @@ type Notification struct {
 
 // NotificationTemplate defines model for NotificationTemplate.
 type NotificationTemplate struct {
-	Body      *string    `json:"body,omitempty"`
-	Channel   *int       `json:"channel,omitempty"`
-	CreatedAt *time.Time `json:"createdAt,omitempty"`
-	Id        *string    `json:"id,omitempty"`
-	Name      *string    `json:"name,omitempty"`
-	Subject   *string    `json:"subject,omitempty"`
-	TenantId  *string    `json:"tenantId,omitempty"`
-	UpdatedAt *time.Time `json:"updatedAt,omitempty"`
-	Variables *[]string  `json:"variables,omitempty"`
+	Body         *string    `json:"body,omitempty"`
+	Channel      *int       `json:"channel,omitempty"`
+	CreatedAt    *time.Time `json:"createdAt,omitempty"`
+	Id           *string    `json:"id,omitempty"`
+	Name         *string    `json:"name,omitempty"`
+	Subject      *string    `json:"subject,omitempty"`
+	TelegramText *string    `json:"telegramText,omitempty"`
+	TenantId     *string    `json:"tenantId,omitempty"`
+	UpdatedAt    *time.Time `json:"updatedAt,omitempty"`
+	Variables    *[]string  `json:"variables,omitempty"`
 }
 
 // OAuthClient defines model for OAuthClient.
@@ -2795,6 +3130,38 @@ type OverrideCheckRequest struct {
 	TenantId     *string `json:"tenantId,omitempty"`
 }
 
+// PackBilling defines model for PackBilling.
+type PackBilling struct {
+	OverageModel *string `json:"overageModel,omitempty"`
+	PlanMinimum  *string `json:"planMinimum,omitempty"`
+}
+
+// PackCatalogEntry defines model for PackCatalogEntry.
+type PackCatalogEntry struct {
+	Billing             *PackBilling         `json:"billing,omitempty"`
+	Code                *string              `json:"code,omitempty"`
+	Constraints         *[]string            `json:"constraints,omitempty"`
+	Description         *string              `json:"description,omitempty"`
+	EventTopics         *[]string            `json:"eventTopics,omitempty"`
+	Modules             *[]PackCatalogModule `json:"modules,omitempty"`
+	PackServices        *[]string            `json:"packServices,omitempty"`
+	QuotasPreset        *string              `json:"quotasPreset,omitempty"`
+	ReferenceDownstream *string              `json:"referenceDownstream,omitempty"`
+	RoleTemplates       *[]string            `json:"roleTemplates,omitempty"`
+	Status              *string              `json:"status,omitempty"`
+	TargetClass         *string              `json:"targetClass,omitempty"`
+	UiModules           *[]string            `json:"uiModules,omitempty"`
+}
+
+// PackCatalogModule Pack catalog entries (R1.a). Mirrors contracts/registry/vertical-packs.yaml
+//
+//	1:1 so frontend can render the full pack definition (description, billing,
+//	role templates, event topics, ui modules).
+type PackCatalogModule struct {
+	Key      *string `json:"key,omitempty"`
+	Required *bool   `json:"required,omitempty"`
+}
+
 // PackStatus defines model for PackStatus.
 type PackStatus struct {
 	EnabledAt      *time.Time `json:"enabledAt,omitempty"`
@@ -2822,9 +3189,12 @@ type PauseSubscriptionRequest struct {
 
 // PayInvoiceRequest defines model for PayInvoiceRequest.
 type PayInvoiceRequest struct {
-	InvoiceId *string `json:"invoiceId,omitempty"`
-	MethodId  *string `json:"methodId,omitempty"`
-	TenantId  *string `json:"tenantId,omitempty"`
+	// IdempotencyKey P1.2: most money-critical RPC. Replay with same key returns cached
+	//  response without re-charging the payment method or re-marking invoice.
+	IdempotencyKey *string `json:"idempotencyKey,omitempty"`
+	InvoiceId      *string `json:"invoiceId,omitempty"`
+	MethodId       *string `json:"methodId,omitempty"`
+	TenantId       *string `json:"tenantId,omitempty"`
 }
 
 // PaymentDetailsResponse defines model for PaymentDetailsResponse.
@@ -3045,10 +3415,50 @@ type RaiseAlertRequest struct {
 	TenantId       *string          `json:"tenantId,omitempty"`
 }
 
+// ReconcileDelta defines model for ReconcileDelta.
+type ReconcileDelta struct {
+	ModulesAdded   *[]string `json:"modulesAdded,omitempty"`
+	ModulesRemoved *[]string `json:"modulesRemoved,omitempty"`
+	PacksAdded     *[]string `json:"packsAdded,omitempty"`
+	PacksRemoved   *[]string `json:"packsRemoved,omitempty"`
+}
+
+// ReconcileLogEntry defines model for ReconcileLogEntry.
+type ReconcileLogEntry struct {
+	EventId        *string    `json:"eventId,omitempty"`
+	FromPlan       *string    `json:"fromPlan,omitempty"`
+	Id             *string    `json:"id,omitempty"`
+	ModulesAdded   *[]string  `json:"modulesAdded,omitempty"`
+	ModulesRemoved *[]string  `json:"modulesRemoved,omitempty"`
+	PacksAdded     *[]string  `json:"packsAdded,omitempty"`
+	PacksRemoved   *[]string  `json:"packsRemoved,omitempty"`
+	ReconciledAt   *time.Time `json:"reconciledAt,omitempty"`
+	ToPlan         *string    `json:"toPlan,omitempty"`
+	Transition     *string    `json:"transition,omitempty"`
+}
+
+// ReconcilePlanRequest defines model for ReconcilePlanRequest.
+type ReconcilePlanRequest struct {
+	EventId    *string `json:"eventId,omitempty"`
+	FromPlan   *string `json:"fromPlan,omitempty"`
+	TenantId   *string `json:"tenantId,omitempty"`
+	ToPlan     *string `json:"toPlan,omitempty"`
+	Transition *string `json:"transition,omitempty"`
+}
+
+// ReconcilePlanResponse defines model for ReconcilePlanResponse.
+type ReconcilePlanResponse struct {
+	Delta      *ReconcileDelta `json:"delta,omitempty"`
+	Reconciled *bool           `json:"reconciled,omitempty"`
+}
+
 // RedeemPromoCodeRequest defines model for RedeemPromoCodeRequest.
 type RedeemPromoCodeRequest struct {
-	Code     *string `json:"code,omitempty"`
-	TenantId *string `json:"tenantId,omitempty"`
+	Code *string `json:"code,omitempty"`
+
+	// IdempotencyKey P1.2: prevents double credit + double promo usage on retry.
+	IdempotencyKey *string `json:"idempotencyKey,omitempty"`
+	TenantId       *string `json:"tenantId,omitempty"`
 }
 
 // RefreshTokenRequest defines model for RefreshTokenRequest.
@@ -3244,6 +3654,23 @@ type RequestCheckResponse struct {
 	RedirectUrl *string   `json:"redirectUrl,omitempty"`
 }
 
+// ResetPasswordRequest ResetPassword is the forgot-password completion. Caller has previously
+//
+//	run SendOtp(purpose="password_reset") and received a 6-digit code.
+type ResetPasswordRequest struct {
+	Code *string `json:"code,omitempty"`
+
+	// Email Exactly one of identifier — the channel where the OTP was sent.
+	Email       *string `json:"email,omitempty"`
+	NewPassword *string `json:"newPassword,omitempty"`
+	Phone       *string `json:"phone,omitempty"`
+}
+
+// ResetPasswordResponse defines model for ResetPasswordResponse.
+type ResetPasswordResponse struct {
+	Success *bool `json:"success,omitempty"`
+}
+
 // ResolveAlertRequest defines model for ResolveAlertRequest.
 type ResolveAlertRequest struct {
 	AlertId     *string `json:"alertId,omitempty"`
@@ -3290,6 +3717,21 @@ type RetryDeliveryResponse struct {
 	Delivery *Delivery `json:"delivery,omitempty"`
 }
 
+// RevealSecretRequest defines model for RevealSecretRequest.
+type RevealSecretRequest struct {
+	AuditReason *string `json:"auditReason,omitempty"`
+	SecretId    *string `json:"secretId,omitempty"`
+	TenantId    *string `json:"tenantId,omitempty"`
+}
+
+// RevealSecretResponse defines model for RevealSecretResponse.
+type RevealSecretResponse struct {
+	// Secret Returned by List/Create/Rotate. Value preview is the last <=4 chars of the
+	//  plaintext for visual hint; the actual secret is only available via Reveal.
+	Secret *Secret `json:"secret,omitempty"`
+	Value  *string `json:"value,omitempty"`
+}
+
 // RevenueMetrics defines model for RevenueMetrics.
 type RevenueMetrics struct {
 	Arpu               *string  `json:"arpu,omitempty"`
@@ -3316,6 +3758,13 @@ type RevenueTimeSeriesPoint struct {
 // RevenueTimeSeriesResponse defines model for RevenueTimeSeriesResponse.
 type RevenueTimeSeriesResponse struct {
 	Points *[]RevenueTimeSeriesPoint `json:"points,omitempty"`
+}
+
+// RevokeApiKeyRequest defines model for RevokeApiKeyRequest.
+type RevokeApiKeyRequest struct {
+	ApiKeyId *string `json:"apiKeyId,omitempty"`
+	Reason   *string `json:"reason,omitempty"`
+	TenantId *string `json:"tenantId,omitempty"`
 }
 
 // RevokeApiKeyResponse defines model for RevokeApiKeyResponse.
@@ -3459,13 +3908,17 @@ type RotateDomainDKIMRequest struct {
 
 // RotateSecretRequest defines model for RotateSecretRequest.
 type RotateSecretRequest struct {
-	EndpointId *string `json:"endpointId,omitempty"`
-	TenantId   *string `json:"tenantId,omitempty"`
+	AuditReason *string `json:"auditReason,omitempty"`
+	NewValue    *string `json:"newValue,omitempty"`
+	SecretId    *string `json:"secretId,omitempty"`
+	TenantId    *string `json:"tenantId,omitempty"`
 }
 
 // RotateSecretResponse defines model for RotateSecretResponse.
 type RotateSecretResponse struct {
-	Endpoint *Endpoint `json:"endpoint,omitempty"`
+	// Secret Returned by List/Create/Rotate. Value preview is the last <=4 chars of the
+	//  plaintext for visual hint; the actual secret is only available via Reveal.
+	Secret *Secret `json:"secret,omitempty"`
 }
 
 // RuleCondition defines model for RuleCondition.
@@ -3538,6 +3991,23 @@ type ScreenTransactionResponse struct {
 	ScreenedAt *string   `json:"screenedAt,omitempty"`
 }
 
+// Secret Returned by List/Create/Rotate. Value preview is the last <=4 chars of the
+//
+//	plaintext for visual hint; the actual secret is only available via Reveal.
+type Secret struct {
+	CreatedAt      *string `json:"createdAt,omitempty"`
+	Description    *string `json:"description,omitempty"`
+	Environment    *string `json:"environment,omitempty"`
+	LastRevealedAt *string `json:"lastRevealedAt,omitempty"`
+	Name           *string `json:"name,omitempty"`
+	RevealCount    *int32  `json:"revealCount,omitempty"`
+	RotatedAt      *string `json:"rotatedAt,omitempty"`
+	SecretId       *string `json:"secretId,omitempty"`
+	TenantId       *string `json:"tenantId,omitempty"`
+	UpdatedAt      *string `json:"updatedAt,omitempty"`
+	ValuePreview   *string `json:"valuePreview,omitempty"`
+}
+
 // Segment defines model for Segment.
 type Segment struct {
 	AvgSpend      *float64 `json:"avgSpend,omitempty"`
@@ -3552,8 +4022,22 @@ type SegmentsResponse struct {
 	Segments *[]Segment `json:"segments,omitempty"`
 }
 
+// SendEmailVerificationRequest defines model for SendEmailVerificationRequest.
+type SendEmailVerificationRequest struct {
+	// Email Optional override — by default sends to the user's current email.
+	Email  *string `json:"email,omitempty"`
+	UserId *string `json:"userId,omitempty"`
+}
+
+// SendEmailVerificationResponse defines model for SendEmailVerificationResponse.
+type SendEmailVerificationResponse struct {
+	Success *bool `json:"success,omitempty"`
+}
+
 // SendInvoiceRequest defines model for SendInvoiceRequest.
 type SendInvoiceRequest struct {
+	// IdempotencyKey P1.2: prevents double email send (real cost via SMTP provider).
+	IdempotencyKey *string `json:"idempotencyKey,omitempty"`
 	InvoiceId      *string `json:"invoiceId,omitempty"`
 	RecipientEmail *string `json:"recipientEmail,omitempty"`
 	TenantId       *string `json:"tenantId,omitempty"`
@@ -3582,10 +4066,15 @@ type SendMessageResponse struct {
 
 // SendNotificationRequest defines model for SendNotificationRequest.
 type SendNotificationRequest struct {
-	Recipient  *string            `json:"recipient,omitempty"`
-	TemplateId *string            `json:"templateId,omitempty"`
-	TenantId   *string            `json:"tenantId,omitempty"`
-	Variables  *map[string]string `json:"variables,omitempty"`
+	// IdempotencyKey P1.2: client-supplied idempotency key. If a request with the same
+	//  (tenant_id, idempotency_key) has been processed before, the cached
+	//  response is returned without re-sending (no double SMS/email/push).
+	//  TTL 24h (notify-service config).
+	IdempotencyKey *string            `json:"idempotencyKey,omitempty"`
+	Recipient      *string            `json:"recipient,omitempty"`
+	TemplateId     *string            `json:"templateId,omitempty"`
+	TenantId       *string            `json:"tenantId,omitempty"`
+	Variables      *map[string]string `json:"variables,omitempty"`
 }
 
 // SendNotificationResponse defines model for SendNotificationResponse.
@@ -3604,6 +4093,27 @@ type SendOtpRequest struct {
 // SendOtpResponse defines model for SendOtpResponse.
 type SendOtpResponse struct {
 	Success *bool `json:"success,omitempty"`
+}
+
+// SendTelegramRequest defines model for SendTelegramRequest.
+type SendTelegramRequest struct {
+	ChatId *string `json:"chatId,omitempty"`
+
+	// IdempotencyKey P1.2: client-supplied idempotency key. If a request with the same
+	//  (tenant_id, idempotency_key) has been processed before, the cached
+	//  response is returned without re-sending. TTL 24h (notify-service config).
+	IdempotencyKey *string            `json:"idempotencyKey,omitempty"`
+	RawText        *string            `json:"rawText,omitempty"`
+	TemplateKey    *string            `json:"templateKey,omitempty"`
+	TenantId       *string            `json:"tenantId,omitempty"`
+	Variables      *map[string]string `json:"variables,omitempty"`
+}
+
+// SendTelegramResponse defines model for SendTelegramResponse.
+type SendTelegramResponse struct {
+	NotificationId *string `json:"notificationId,omitempty"`
+	ProviderMsgId  *string `json:"providerMsgId,omitempty"`
+	Status         *int    `json:"status,omitempty"`
 }
 
 // ServiceHistoryPoint defines model for ServiceHistoryPoint.
@@ -3654,6 +4164,23 @@ type SetDefaultWalletPaymentMethodResponse struct {
 type SetProviderConfigRequest struct {
 	Config   *ProviderConfig `json:"config,omitempty"`
 	TenantId *string         `json:"tenantId,omitempty"`
+}
+
+// SetTenantQuotaOverrideRequest R1.d — platform admin override request.
+type SetTenantQuotaOverrideRequest struct {
+	// OverrideLimit override_limit < 0 → clear the override (reverts to plan default).
+	OverrideLimit *string `json:"overrideLimit,omitempty"`
+	Reason        *string `json:"reason,omitempty"`
+	Resource      *int    `json:"resource,omitempty"`
+	TenantId      *string `json:"tenantId,omitempty"`
+}
+
+// SetTenantQuotaOverrideResponse defines model for SetTenantQuotaOverrideResponse.
+type SetTenantQuotaOverrideResponse struct {
+	EffectiveLimit *string `json:"effectiveLimit,omitempty"`
+	HasOverride    *bool   `json:"hasOverride,omitempty"`
+	Resource       *int    `json:"resource,omitempty"`
+	TenantId       *string `json:"tenantId,omitempty"`
 }
 
 // SettlementConfig defines model for SettlementConfig.
@@ -3837,6 +4364,16 @@ type TenantSubscription struct {
 	TenantId           *string       `json:"tenantId,omitempty"`
 }
 
+// TenantUsageSummary defines model for TenantUsageSummary.
+type TenantUsageSummary struct {
+	Dimensions *[]UsageDimension `json:"dimensions,omitempty"`
+	OverQuota  *bool             `json:"overQuota,omitempty"`
+	Plan       *string           `json:"plan,omitempty"`
+	TenantCode *string           `json:"tenantCode,omitempty"`
+	TenantId   *string           `json:"tenantId,omitempty"`
+	UpdatedAt  *string           `json:"updatedAt,omitempty"`
+}
+
 // TenantUser defines model for TenantUser.
 type TenantUser struct {
 	CreatedAt   *string `json:"createdAt,omitempty"`
@@ -3918,6 +4455,39 @@ type TopCustomer struct {
 // TopCustomersResponse defines model for TopCustomersResponse.
 type TopCustomersResponse struct {
 	Customers *[]TopCustomer `json:"customers,omitempty"`
+}
+
+// TransferBetweenWalletsRequest defines model for TransferBetweenWalletsRequest.
+type TransferBetweenWalletsRequest struct {
+	// Amount Decimal string — see Wallet.balance notes. Must be > 0.
+	Amount         *string `json:"amount,omitempty"`
+	Description    *string `json:"description,omitempty"`
+	FromWalletId   *string `json:"fromWalletId,omitempty"`
+	IdempotencyKey *string `json:"idempotencyKey,omitempty"`
+
+	// MerchantId Merchant context for the wallet.{credit,debit,transfer} envelope events.
+	//  wallet.transfer.json doesn't require it but the debit/credit pair does
+	//  (skipped if absent — money state still commits, see outbox helpers).
+	MerchantId *string `json:"merchantId,omitempty"`
+
+	// Note Optional free-text note attached to the wallet.transfer event.
+	Note *string `json:"note,omitempty"`
+
+	// Reason Audit/ledger reason classifier (TRANSACTION_REASON_*). Defaults to
+	//  TRANSACTION_REASON_ADJUSTMENT if UNSPECIFIED.
+	Reason     *int    `json:"reason,omitempty"`
+	TenantId   *string `json:"tenantId,omitempty"`
+	ToWalletId *string `json:"toWalletId,omitempty"`
+}
+
+// TransferBetweenWalletsResponse defines model for TransferBetweenWalletsResponse.
+type TransferBetweenWalletsResponse struct {
+	Credit *WalletTransaction `json:"credit,omitempty"`
+	Debit  *WalletTransaction `json:"debit,omitempty"`
+
+	// TransferId Stable UUID identifying the transfer (used as outbox event aggregate_id
+	//  and `transfer_id` in the wallet.transfer payload). Generated server-side.
+	TransferId *string `json:"transferId,omitempty"`
 }
 
 // UnbindPolicyRequest defines model for UnbindPolicyRequest.
@@ -4174,6 +4744,35 @@ type UpdateTenantRequest struct {
 	TenantId *string            `json:"tenantId,omitempty"`
 }
 
+// UpdateUserEmailRequest defines model for UpdateUserEmailRequest.
+type UpdateUserEmailRequest struct {
+	// Code OTP code sent to new_email with purpose="phone_verify"
+	//  (re-using the OTP plumbing — proto label is legacy).
+	Code     *string `json:"code,omitempty"`
+	NewEmail *string `json:"newEmail,omitempty"`
+	UserId   *string `json:"userId,omitempty"`
+}
+
+// UpdateUserEmailResponse defines model for UpdateUserEmailResponse.
+type UpdateUserEmailResponse struct {
+	Email   *string `json:"email,omitempty"`
+	Success *bool   `json:"success,omitempty"`
+}
+
+// UpdateUserPhoneRequest defines model for UpdateUserPhoneRequest.
+type UpdateUserPhoneRequest struct {
+	// Code OTP code that was sent to new_phone with purpose="phone_verify".
+	Code     *string `json:"code,omitempty"`
+	NewPhone *string `json:"newPhone,omitempty"`
+	UserId   *string `json:"userId,omitempty"`
+}
+
+// UpdateUserPhoneResponse defines model for UpdateUserPhoneResponse.
+type UpdateUserPhoneResponse struct {
+	Phone   *string `json:"phone,omitempty"`
+	Success *bool   `json:"success,omitempty"`
+}
+
 // UpdateUserProfileRequest defines model for UpdateUserProfileRequest.
 type UpdateUserProfileRequest struct {
 	Email    *string            `json:"email,omitempty"`
@@ -4241,6 +4840,17 @@ type UpsertRoleResponse struct {
 	Role *Role `json:"role,omitempty"`
 }
 
+// UsageDimension defines model for UsageDimension.
+type UsageDimension struct {
+	Dimension     *string `json:"dimension,omitempty"`
+	Module        *string `json:"module,omitempty"`
+	OverrideQuota *string `json:"overrideQuota,omitempty"`
+	PeriodEnd     *string `json:"periodEnd,omitempty"`
+	Quota         *string `json:"quota,omitempty"`
+	Unit          *string `json:"unit,omitempty"`
+	Used          *string `json:"used,omitempty"`
+}
+
 // UsageSummary defines model for UsageSummary.
 type UsageSummary struct {
 	PeriodEnd   *time.Time       `json:"periodEnd,omitempty"`
@@ -4261,6 +4871,18 @@ type UsageTimeSeriesResponse struct {
 	Projected *string                 `json:"projected,omitempty"`
 	Resource  *int                    `json:"resource,omitempty"`
 	Total     *string                 `json:"total,omitempty"`
+}
+
+// User defines model for User.
+type User struct {
+	CreatedAt *string   `json:"createdAt,omitempty"`
+	Email     *string   `json:"email,omitempty"`
+	IsActive  *bool     `json:"isActive,omitempty"`
+	Name      *string   `json:"name,omitempty"`
+	Roles     *[]string `json:"roles,omitempty"`
+	TenantId  *string   `json:"tenantId,omitempty"`
+	UpdatedAt *string   `json:"updatedAt,omitempty"`
+	UserId    *string   `json:"userId,omitempty"`
 }
 
 // UserInfoResponse defines model for UserInfoResponse.
@@ -4320,7 +4942,12 @@ type VerifyDomainRequest struct {
 
 // VerifyOtpRequest defines model for VerifyOtpRequest.
 type VerifyOtpRequest struct {
-	Code    *string `json:"code,omitempty"`
+	Code *string `json:"code,omitempty"`
+
+	// Phone Phone-based verification path (for first-time signup / passwordless
+	//  before user_id exists). Exactly one of user_id or phone must be set,
+	//  matching SendOtpRequest semantics.
+	Phone   *string `json:"phone,omitempty"`
 	Purpose *string `json:"purpose,omitempty"`
 	UserId  *string `json:"userId,omitempty"`
 }
@@ -4332,9 +4959,10 @@ type VerifyOtpResponse struct {
 
 // VoidInvoiceRequest defines model for VoidInvoiceRequest.
 type VoidInvoiceRequest struct {
-	InvoiceId *string `json:"invoiceId,omitempty"`
-	Reason    *string `json:"reason,omitempty"`
-	TenantId  *string `json:"tenantId,omitempty"`
+	IdempotencyKey *string `json:"idempotencyKey,omitempty"`
+	InvoiceId      *string `json:"invoiceId,omitempty"`
+	Reason         *string `json:"reason,omitempty"`
+	TenantId       *string `json:"tenantId,omitempty"`
 }
 
 // VoidPaymentCommand Void Payment
@@ -4663,6 +5291,15 @@ type AnalyticsServiceGetVolumeTimeSeriesParams struct {
 	IncludePrevious  *bool      `form:"includePrevious,omitempty" json:"includePrevious,omitempty"`
 }
 
+// AuthServiceDeleteAccountParams defines parameters for AuthServiceDeleteAccount.
+type AuthServiceDeleteAccountParams struct {
+	UserId *string `form:"userId,omitempty" json:"userId,omitempty"`
+
+	// CurrentPassword Soft confirmation: client must pass the user's current password
+	//  (or a recent password_reset OTP) to prevent CSRF-style erasure.
+	CurrentPassword *string `form:"currentPassword,omitempty" json:"currentPassword,omitempty"`
+}
+
 // AuthServiceGetMyCapabilitiesParams defines parameters for AuthServiceGetMyCapabilities.
 type AuthServiceGetMyCapabilitiesParams struct {
 	// UserId Optional. If omitted, backend can infer from auth context.
@@ -4875,6 +5512,20 @@ type DeveloperServiceRevokePermissionParams struct {
 	TenantId *string `form:"tenantId,omitempty" json:"tenantId,omitempty"`
 }
 
+// DeveloperServiceListSecretsParams defines parameters for DeveloperServiceListSecrets.
+type DeveloperServiceListSecretsParams struct {
+	TenantId    *string `form:"tenantId,omitempty" json:"tenantId,omitempty"`
+	Environment *string `form:"environment,omitempty" json:"environment,omitempty"`
+	Page        *int32  `form:"page,omitempty" json:"page,omitempty"`
+	PageSize    *int32  `form:"pageSize,omitempty" json:"pageSize,omitempty"`
+}
+
+// DeveloperServiceDeleteSecretParams defines parameters for DeveloperServiceDeleteSecret.
+type DeveloperServiceDeleteSecretParams struct {
+	TenantId    *string `form:"tenantId,omitempty" json:"tenantId,omitempty"`
+	AuditReason *string `form:"auditReason,omitempty" json:"auditReason,omitempty"`
+}
+
 // MgEventsServiceListDeliveriesParams defines parameters for MgEventsServiceListDeliveries.
 type MgEventsServiceListDeliveriesParams struct {
 	EndpointId *string `form:"endpointId,omitempty" json:"endpointId,omitempty"`
@@ -4992,9 +5643,25 @@ type IamServiceListApiKeysParams struct {
 	TenantId *string `form:"tenantId,omitempty" json:"tenantId,omitempty"`
 }
 
+// IamServiceListAllApiKeysParams defines parameters for IamServiceListAllApiKeys.
+type IamServiceListAllApiKeysParams struct {
+	StatusFilter *string `form:"statusFilter,omitempty" json:"statusFilter,omitempty"`
+	ModeFilter   *string `form:"modeFilter,omitempty" json:"modeFilter,omitempty"`
+	Page         *int32  `form:"page,omitempty" json:"page,omitempty"`
+	PageSize     *int32  `form:"pageSize,omitempty" json:"pageSize,omitempty"`
+
+	// TenantId R1.b additions
+	TenantId    *string `form:"tenantId,omitempty" json:"tenantId,omitempty"`
+	State       *string `form:"state,omitempty" json:"state,omitempty"`
+	Environment *string `form:"environment,omitempty" json:"environment,omitempty"`
+	Cursor      *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Limit       *int32  `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // IamServiceRevokeApiKeyParams defines parameters for IamServiceRevokeApiKey.
 type IamServiceRevokeApiKeyParams struct {
 	TenantId *string `form:"tenantId,omitempty" json:"tenantId,omitempty"`
+	Reason   *string `form:"reason,omitempty" json:"reason,omitempty"`
 }
 
 // IamServiceListAppScopesParams defines parameters for IamServiceListAppScopes.
@@ -5043,6 +5710,13 @@ type IamServiceListPermissionsParams struct {
 	TenantId *string `form:"tenantId,omitempty" json:"tenantId,omitempty"`
 }
 
+// IamServiceListPoliciesParams defines parameters for IamServiceListPolicies.
+type IamServiceListPoliciesParams struct {
+	TenantId *string `form:"tenantId,omitempty" json:"tenantId,omitempty"`
+	Page     *int32  `form:"page,omitempty" json:"page,omitempty"`
+	PageSize *int32  `form:"pageSize,omitempty" json:"pageSize,omitempty"`
+}
+
 // IamServiceDeletePolicyParams defines parameters for IamServiceDeletePolicy.
 type IamServiceDeletePolicyParams struct {
 	TenantId *string `form:"tenantId,omitempty" json:"tenantId,omitempty"`
@@ -5084,6 +5758,15 @@ type IamServiceListTenantsParams struct {
 	Status    *string `form:"status,omitempty" json:"status,omitempty"`
 	SortBy    *string `form:"sortBy,omitempty" json:"sortBy,omitempty"`
 	SortOrder *string `form:"sortOrder,omitempty" json:"sortOrder,omitempty"`
+}
+
+// IamServiceListUsersParams defines parameters for IamServiceListUsers.
+type IamServiceListUsersParams struct {
+	TenantId   *string `form:"tenantId,omitempty" json:"tenantId,omitempty"`
+	EmailQ     *string `form:"emailQ,omitempty" json:"emailQ,omitempty"`
+	ActiveOnly *bool   `form:"activeOnly,omitempty" json:"activeOnly,omitempty"`
+	Page       *int32  `form:"page,omitempty" json:"page,omitempty"`
+	PageSize   *int32  `form:"pageSize,omitempty" json:"pageSize,omitempty"`
 }
 
 // InvoiceServiceListInvoicesParams defines parameters for InvoiceServiceListInvoices.
@@ -5286,9 +5969,29 @@ type PaymentsServiceGetPaymentParams struct {
 	TenantId *string `form:"tenantId,omitempty" json:"tenantId,omitempty"`
 }
 
+// IamServiceListAllApiKeysAliasParams defines parameters for IamServiceListAllApiKeysAlias.
+type IamServiceListAllApiKeysAliasParams struct {
+	StatusFilter *string `form:"statusFilter,omitempty" json:"statusFilter,omitempty"`
+	ModeFilter   *string `form:"modeFilter,omitempty" json:"modeFilter,omitempty"`
+	Page         *int32  `form:"page,omitempty" json:"page,omitempty"`
+	PageSize     *int32  `form:"pageSize,omitempty" json:"pageSize,omitempty"`
+
+	// TenantId R1.b additions
+	TenantId    *string `form:"tenantId,omitempty" json:"tenantId,omitempty"`
+	State       *string `form:"state,omitempty" json:"state,omitempty"`
+	Environment *string `form:"environment,omitempty" json:"environment,omitempty"`
+	Cursor      *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Limit       *int32  `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // PlatformServiceGetPlatformMetricsParams defines parameters for PlatformServiceGetPlatformMetrics.
 type PlatformServiceGetPlatformMetricsParams struct {
 	Period *string `form:"period,omitempty" json:"period,omitempty"`
+}
+
+// PlatformServiceGetDashboardMetricsParams defines parameters for PlatformServiceGetDashboardMetrics.
+type PlatformServiceGetDashboardMetricsParams struct {
+	TenantId *string `form:"tenantId,omitempty" json:"tenantId,omitempty"`
 }
 
 // PlatformServiceListEnabledModulesParams defines parameters for PlatformServiceListEnabledModules.
@@ -5299,6 +6002,12 @@ type PlatformServiceListEnabledModulesParams struct {
 // PlatformServiceListEnabledPacksParams defines parameters for PlatformServiceListEnabledPacks.
 type PlatformServiceListEnabledPacksParams struct {
 	TenantId *string `form:"tenantId,omitempty" json:"tenantId,omitempty"`
+}
+
+// PlatformServiceGetReconcileLogParams defines parameters for PlatformServiceGetReconcileLog.
+type PlatformServiceGetReconcileLogParams struct {
+	TenantId *string `form:"tenantId,omitempty" json:"tenantId,omitempty"`
+	Limit    *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // PlatformServiceGetServiceHistoryParams defines parameters for PlatformServiceGetServiceHistory.
@@ -5314,6 +6023,12 @@ type IamServiceListTenantsAliasParams struct {
 	Status    *string `form:"status,omitempty" json:"status,omitempty"`
 	SortBy    *string `form:"sortBy,omitempty" json:"sortBy,omitempty"`
 	SortOrder *string `form:"sortOrder,omitempty" json:"sortOrder,omitempty"`
+}
+
+// MeteringServiceListPlatformUsageParams defines parameters for MeteringServiceListPlatformUsage.
+type MeteringServiceListPlatformUsageParams struct {
+	TenantId *string `form:"tenantId,omitempty" json:"tenantId,omitempty"`
+	Limit    *int32  `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ReportsServiceListReportJobsParams defines parameters for ReportsServiceListReportJobs.
@@ -5570,6 +6285,12 @@ type BillingServiceCreatePromotionJSONRequestBody = CreatePromotionRequest
 // BillingServiceUpdatePromotionJSONRequestBody defines body for BillingServiceUpdatePromotion for application/json ContentType.
 type BillingServiceUpdatePromotionJSONRequestBody = UpdatePromotionRequest
 
+// AuthServiceConfirmEmailVerificationJSONRequestBody defines body for AuthServiceConfirmEmailVerification for application/json ContentType.
+type AuthServiceConfirmEmailVerificationJSONRequestBody = ConfirmEmailVerificationRequest
+
+// AuthServiceSendEmailVerificationJSONRequestBody defines body for AuthServiceSendEmailVerification for application/json ContentType.
+type AuthServiceSendEmailVerificationJSONRequestBody = SendEmailVerificationRequest
+
 // AuthServiceLoginJSONRequestBody defines body for AuthServiceLogin for application/json ContentType.
 type AuthServiceLoginJSONRequestBody = LoginRequest
 
@@ -5581,6 +6302,18 @@ type AuthServiceSendOtpJSONRequestBody = SendOtpRequest
 
 // AuthServiceVerifyOtpJSONRequestBody defines body for AuthServiceVerifyOtp for application/json ContentType.
 type AuthServiceVerifyOtpJSONRequestBody = VerifyOtpRequest
+
+// AuthServiceChangePasswordJSONRequestBody defines body for AuthServiceChangePassword for application/json ContentType.
+type AuthServiceChangePasswordJSONRequestBody = ChangePasswordRequest
+
+// AuthServiceResetPasswordJSONRequestBody defines body for AuthServiceResetPassword for application/json ContentType.
+type AuthServiceResetPasswordJSONRequestBody = ResetPasswordRequest
+
+// AuthServiceUpdateUserEmailJSONRequestBody defines body for AuthServiceUpdateUserEmail for application/json ContentType.
+type AuthServiceUpdateUserEmailJSONRequestBody = UpdateUserEmailRequest
+
+// AuthServiceUpdateUserPhoneJSONRequestBody defines body for AuthServiceUpdateUserPhone for application/json ContentType.
+type AuthServiceUpdateUserPhoneJSONRequestBody = UpdateUserPhoneRequest
 
 // AuthServiceUpdateUserProfileJSONRequestBody defines body for AuthServiceUpdateUserProfile for application/json ContentType.
 type AuthServiceUpdateUserProfileJSONRequestBody = UpdateUserProfileRequest
@@ -5629,6 +6362,12 @@ type BillingServiceChangePlanJSONRequestBody = ChangePlanRequest
 
 // BillingServicePreviewPlanChangeJSONRequestBody defines body for BillingServicePreviewPlanChange for application/json ContentType.
 type BillingServicePreviewPlanChangeJSONRequestBody = PreviewPlanChangeRequest
+
+// ChainRpcServiceBuildEvmTransferTxJSONRequestBody defines body for ChainRpcServiceBuildEvmTransferTx for application/json ContentType.
+type ChainRpcServiceBuildEvmTransferTxJSONRequestBody = BuildEvmTransferTxRequest
+
+// ChainRpcServiceBuildTronTransferTxJSONRequestBody defines body for ChainRpcServiceBuildTronTransferTx for application/json ContentType.
+type ChainRpcServiceBuildTronTransferTxJSONRequestBody = BuildTronTransferTxRequest
 
 // ChainRpcServiceBroadcastTransactionJSONRequestBody defines body for ChainRpcServiceBroadcastTransaction for application/json ContentType.
 type ChainRpcServiceBroadcastTransactionJSONRequestBody = BroadcastTxRequest
@@ -5716,6 +6455,15 @@ type DeveloperServiceUpdateApplicationJSONRequestBody = UpdateApplicationRequest
 
 // DeveloperServiceRegisterPermissionsJSONRequestBody defines body for DeveloperServiceRegisterPermissions for application/json ContentType.
 type DeveloperServiceRegisterPermissionsJSONRequestBody = RegisterPermissionsRequest
+
+// DeveloperServiceCreateSecretJSONRequestBody defines body for DeveloperServiceCreateSecret for application/json ContentType.
+type DeveloperServiceCreateSecretJSONRequestBody = CreateSecretRequest
+
+// DeveloperServiceRevealSecretJSONRequestBody defines body for DeveloperServiceRevealSecret for application/json ContentType.
+type DeveloperServiceRevealSecretJSONRequestBody = RevealSecretRequest
+
+// DeveloperServiceRotateSecretJSONRequestBody defines body for DeveloperServiceRotateSecret for application/json ContentType.
+type DeveloperServiceRotateSecretJSONRequestBody = RotateSecretRequest
 
 // MgEventsServiceRetryDeliveryJSONRequestBody defines body for MgEventsServiceRetryDelivery for application/json ContentType.
 type MgEventsServiceRetryDeliveryJSONRequestBody = RetryDeliveryRequest
@@ -5915,6 +6663,9 @@ type MerchantServiceSuspendMerchantJSONRequestBody = SuspendMerchantRequest
 // NotifyServiceSendNotificationJSONRequestBody defines body for NotifyServiceSendNotification for application/json ContentType.
 type NotifyServiceSendNotificationJSONRequestBody = SendNotificationRequest
 
+// NotifyServiceSendTelegramJSONRequestBody defines body for NotifyServiceSendTelegram for application/json ContentType.
+type NotifyServiceSendTelegramJSONRequestBody = SendTelegramRequest
+
 // NotifyServiceCreateTemplateJSONRequestBody defines body for NotifyServiceCreateTemplate for application/json ContentType.
 type NotifyServiceCreateTemplateJSONRequestBody = CreateTemplateRequest
 
@@ -5936,6 +6687,9 @@ type PaymentsServiceRefundJSONRequestBody = RefundCommand
 // PaymentsServiceVoidPaymentJSONRequestBody defines body for PaymentsServiceVoidPayment for application/json ContentType.
 type PaymentsServiceVoidPaymentJSONRequestBody = VoidPaymentCommand
 
+// IamServiceRevokeApiKeyAliasJSONRequestBody defines body for IamServiceRevokeApiKeyAlias for application/json ContentType.
+type IamServiceRevokeApiKeyAliasJSONRequestBody = RevokeApiKeyRequest
+
 // PlatformServiceStartImpersonationJSONRequestBody defines body for PlatformServiceStartImpersonation for application/json ContentType.
 type PlatformServiceStartImpersonationJSONRequestBody = StartImpersonationRequest
 
@@ -5950,6 +6704,12 @@ type PlatformServiceDisablePackJSONRequestBody = DisablePackRequest
 
 // PlatformServiceEnablePackJSONRequestBody defines body for PlatformServiceEnablePack for application/json ContentType.
 type PlatformServiceEnablePackJSONRequestBody = EnablePackRequest
+
+// PlatformServiceReconcilePlanJSONRequestBody defines body for PlatformServiceReconcilePlan for application/json ContentType.
+type PlatformServiceReconcilePlanJSONRequestBody = ReconcilePlanRequest
+
+// MeteringServiceSetTenantQuotaOverrideJSONRequestBody defines body for MeteringServiceSetTenantQuotaOverride for application/json ContentType.
+type MeteringServiceSetTenantQuotaOverrideJSONRequestBody = SetTenantQuotaOverrideRequest
 
 // PlatformServiceUpdateFeatureGateJSONRequestBody defines body for PlatformServiceUpdateFeatureGate for application/json ContentType.
 type PlatformServiceUpdateFeatureGateJSONRequestBody = UpdateFeatureGateRequest
@@ -6038,11 +6798,20 @@ type WalletServiceCreateWalletJSONRequestBody = CreateWalletRequest
 // WalletServiceCreateChainWalletJSONRequestBody defines body for WalletServiceCreateChainWallet for application/json ContentType.
 type WalletServiceCreateChainWalletJSONRequestBody = CreateChainWalletRequest
 
+// WalletServiceImportChainWalletJSONRequestBody defines body for WalletServiceImportChainWallet for application/json ContentType.
+type WalletServiceImportChainWalletJSONRequestBody = ImportChainWalletRequest
+
+// WalletServiceTransferBetweenWalletsJSONRequestBody defines body for WalletServiceTransferBetweenWallets for application/json ContentType.
+type WalletServiceTransferBetweenWalletsJSONRequestBody = TransferBetweenWalletsRequest
+
 // WalletServiceCreditWalletJSONRequestBody defines body for WalletServiceCreditWallet for application/json ContentType.
 type WalletServiceCreditWalletJSONRequestBody = CreditWalletRequest
 
 // WalletServiceDebitWalletJSONRequestBody defines body for WalletServiceDebitWallet for application/json ContentType.
 type WalletServiceDebitWalletJSONRequestBody = DebitWalletRequest
+
+// WalletServiceExportChainWalletMnemonicJSONRequestBody defines body for WalletServiceExportChainWalletMnemonic for application/json ContentType.
+type WalletServiceExportChainWalletMnemonicJSONRequestBody = ExportChainWalletMnemonicRequest
 
 // WalletServiceFreezeWalletJSONRequestBody defines body for WalletServiceFreezeWallet for application/json ContentType.
 type WalletServiceFreezeWalletJSONRequestBody = FreezeWalletRequest

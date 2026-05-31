@@ -510,6 +510,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/auth/account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * @description Account erasure (v1.4.0+). Hard-deletes the user from auth_users +
+         *      cascades through Mashgate's tenant graph; downstream products handle
+         *      their own read-models via the user.deleted event.
+         */
+        delete: operations["AuthService_DeleteAccount"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/auth/capabilities": {
         parameters: {
             query?: never;
@@ -521,6 +542,39 @@ export interface paths {
         get: operations["AuthService_GetMyCapabilities"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/email/verify/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthService_ConfirmEmailVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/email/verify/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Email verification (v1.4.0+). */
+        post: operations["AuthService_SendEmailVerification"];
         delete?: never;
         options?: never;
         head?: never;
@@ -587,6 +641,82 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["AuthService_VerifyOtp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/password/change": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Password lifecycle (v1.4.0+).
+         *      Authenticated change: user knows current password + wants to set new one.
+         */
+        post: operations["AuthService_ChangePassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/password/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Forgot-password completion: user has a valid OTP (purpose=password_reset)
+         *      for their email/phone and wants to set a new password.
+         */
+        post: operations["AuthService_ResetPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/profile/email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AuthService_UpdateUserEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/profile/phone": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Profile mutations (v1.4.0+). Each requires a fresh OTP whose purpose
+         *      matches the field being changed, defending against takeovers.
+         */
+        post: operations["AuthService_UpdateUserPhone"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1012,6 +1142,56 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["BillingService_PreviewPlanChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/chain-rpc/internal/evm/build-transfer-tx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Build the EIP-1559 signing payload for an EVM transfer (Ethereum,
+         *      BSC, Polygon, Base, or any other EVM-compatible network). chain-rpc
+         *      fetches nonce + gas price + EIP-1559 fee bounds from the relevant
+         *      node, RLP-encodes the transaction body, and returns the bytes to
+         *      sign. Caller (ledger-core) signs keccak256(signing_payload) with the
+         *      wallet's secp256k1 private key, packs the signed RLP, and submits
+         *      via BroadcastTransaction.
+         */
+        post: operations["ChainRpcService_BuildEvmTransferTx"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/chain-rpc/internal/tron/build-transfer-tx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Build an unsigned TRON transfer (native TRX or TRC-20). chain-rpc calls
+         *      the TRON node's /wallet/createtransaction (TRX) or
+         *      /wallet/triggersmartcontract (TRC-20) and returns the raw_data bytes the
+         *      caller must sign. The caller (ledger-core) computes SHA-256 over
+         *      raw_data, signs the digest with the wallet's secp256k1 private key, and
+         *      hands the JSON-encoded {raw_data_hex, txID, signature} back to
+         *      BroadcastTransaction.
+         */
+        post: operations["ChainRpcService_BuildTronTransferTx"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1796,6 +1976,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/developer/secrets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description ── Tenant secrets manager ─────────────────────────────────────────────────
+         *      Per-tenant per-environment encrypted secrets. Values are AES-256-GCM
+         *      encrypted at rest. List returns masked previews only — reveal requires
+         *      an explicit RevealSecret call with audit_reason.
+         */
+        get: operations["DeveloperService_ListSecrets"];
+        put?: never;
+        post: operations["DeveloperService_CreateSecret"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/developer/secrets/{secretId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["DeveloperService_DeleteSecret"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/developer/secrets/{secretId}/reveal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["DeveloperService_RevealSecret"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/developer/secrets/{secretId}/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["DeveloperService_RotateSecret"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/events/deliveries": {
         parameters: {
             query?: never;
@@ -2275,6 +2525,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/iam/api-keys/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Platform-admin cross-tenant view. Returns api keys for all tenants the
+         *      caller has visibility into; backend filters by ext-authz check.
+         */
+        get: operations["IamService_ListAllApiKeys"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/iam/api-keys/{apiKeyId}": {
         parameters: {
             query?: never;
@@ -2514,7 +2784,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["IamService_ListPolicies"];
         put?: never;
         post: operations["IamService_UpsertPolicy"];
         delete?: never;
@@ -2840,6 +3110,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["IamService_SuspendTenant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/iam/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["IamService_ListUsers"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3579,6 +3865,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/notify/telegram": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["NotifyService_SendTelegram"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/notify/templates": {
         parameters: {
             query?: never;
@@ -3725,6 +4027,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/platform/api-keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Platform-admin cross-tenant view. Returns api keys for all tenants the
+         *      caller has visibility into; backend filters by ext-authz check.
+         */
+        get: operations["IamService_ListAllApiKeysAlias"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/api-keys/{apiKeyId}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["IamService_RevokeApiKeyAlias"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/platform/health": {
         parameters: {
             query?: never;
@@ -3783,6 +4121,27 @@ export interface paths {
             cookie?: never;
         };
         get: operations["PlatformService_GetPlatformMetrics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/metrics/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Aggregated control-plane dashboard counts (index.js L281-355). Single
+         *      round-trip rollup of tenants / modules / audit_events. Optional tenant_id
+         *      query param scopes module + audit counts.
+         */
+        get: operations["PlatformService_GetDashboardMetrics"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3861,6 +4220,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/platform/packs/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description GET /v1/platform/packs/catalog (R1.a 2026-05-27). Static pack catalog
+         *      from contracts/registry/vertical-packs.yaml (NOT per-tenant state — that
+         *      lives in ListEnabledPacks). Consumed by control-plane Packs Center page.
+         */
+        get: operations["PlatformService_GetPacksCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/platform/packs/{packCode}/disable": {
         parameters: {
             query?: never;
@@ -3892,6 +4272,66 @@ export interface paths {
          *      applies quota preset, wires role templates, emits envelope v1 events.
          */
         post: operations["PlatformService_EnablePack"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/plan/reconcile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Plan reconciliation (index.js L1190-1234, docs/product/vertical-packs-v1.md
+         *      §4). Synchronous reconcile that subscription-service POSTs directly after a
+         *      plan change, plus the ops audit-log read. Same logic path as the Kafka
+         *      `billing.plan.changed` consumer — exposed here so the Node service can be
+         *      retired. POST body mirrors EnableModule's `body: "*"`; the log read mirrors
+         *      GetDashboardMetrics' GET-with-query convention.
+         */
+        post: operations["PlatformService_ReconcilePlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/plan/reconcile-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["PlatformService_GetReconcileLog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/quota-overrides": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * @description R1.d — platform-admin sets per-tenant override on top of plan default.
+         *      Pass override_limit < 0 to clear the override (resets to plan default).
+         */
+        put: operations["MeteringService_SetTenantQuotaOverride"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4086,6 +4526,47 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["IamService_SuspendTenantAlias"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/tenants/{tenantId}/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description List auth_users for a tenant (index.js L522-533). Path param mirrors the
+         *      GetServiceHistory {service_name} convention: Node ":id" → {tenant_id}.
+         */
+        get: operations["PlatformService_ListTenantUsers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description R1.c — cross-tenant usage view for platform admin (/admin/usage page).
+         *      Aggregates per-tenant usage + quotas + plan info; module label is a
+         *      static map from the metering resource enum.
+         */
+        get: operations["MeteringService_ListPlatformUsage"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4669,6 +5150,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/wallets/chain/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Import an existing non-custodial on-chain wallet from a caller-provided
+         *      BIP-39 mnemonic. Server validates the mnemonic, derives the address
+         *      (SLIP-0010), AES-encrypts the private key, and stores in `wallets`.
+         *      Mnemonic_hash is UNIQUE per tenant — re-importing the same phrase для
+         *      одного subject returns the existing wallet с `was_existing=true`
+         *      (idempotent, recovery-friendly). Importing under a different subject_id
+         *      returns `PERMISSION_DENIED` (credential-stuffing protection). Caller's
+         *      mnemonic is NEVER persisted plaintext (only SHA-256 hash). Currently
+         *      SOLANA only.
+         */
+        post: operations["WalletService_ImportChainWallet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/wallets/{fromWalletId}/transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Internal transfer between two wallets within the same tenant. Atomic:
+         *      both wallet_transactions rows + balance updates + outbox events
+         *      (wallet.debit on source, wallet.credit on dest, wallet.transfer
+         *      envelope) commit in one DB tx. Same-currency v1 only — cross-currency
+         *      FX transfers are out of scope (a future Convert RPC would handle them).
+         *      Idempotent via `idempotency_key` — replay returns the previously-built
+         *      result without double-applying.
+         */
+        post: operations["WalletService_TransferBetweenWallets"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/wallets/{walletId}": {
         parameters: {
             query?: never;
@@ -4731,6 +5264,37 @@ export interface paths {
         get: operations["WalletService_GetDepositAddress"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/wallets/{walletId}/export-mnemonic": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Export the BIP-39 mnemonic phrase for a non-custodial on-chain wallet.
+         *      Money-critical: returns the secret that grants full control of the
+         *      chain wallet. Authorization:
+         *        - tenant_id from JWT (the caller must belong to the wallet's tenant).
+         *        - subject_id is verified to match `wallets.subject_id` of the wallet
+         *          being exported (subjects cannot export each other's wallets).
+         *        - Requires the `export_mnemonic` IAM permission (granted only to
+         *          the wallet owner subject, never to operators / merchants).
+         *        - Caller is expected to re-authenticate the user (password / OTP)
+         *          out-of-band BEFORE issuing this RPC. ledger-core does not
+         *          re-prompt — the upstream auth gate is the contract.
+         *      Audit: emits `wallet.mnemonic_exported` outbox event and increments
+         *      `wallets.mnemonic_export_count` in the same DB tx.
+         */
+        post: operations["WalletService_ExportChainWalletMnemonic"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4969,6 +5533,7 @@ export interface components {
             tenantId?: string;
             token?: string;
             setDefault?: boolean;
+            idempotencyKey?: string;
         };
         AddWalletPaymentMethodCommand: {
             tenantId?: string;
@@ -5043,6 +5608,13 @@ export interface components {
             createdAt?: string;
             rotatedAt?: string;
             expiresAt?: string;
+            /** @description R1.b additions for cross-tenant platform-admin view. */
+            tenantCode?: string;
+            environment?: string;
+            lastUsedAt?: string;
+            state?: string;
+            revokedAt?: string;
+            revokeReason?: string;
         };
         /**
          * @description A permission that an App declares it may request at runtime.
@@ -5283,6 +5855,67 @@ export interface components {
             /** Format: date-time */
             createdAt?: string;
         };
+        BuildEvmTransferTxRequest: {
+            /**
+             * @description Uppercase network code: ETHEREUM, BSC, POLYGON, BASE. chain-rpc maps
+             *      it to chain_id (1 / 56 / 137 / 8453) and routes to the right
+             *      EthereumProvider instance.
+             */
+            network?: string;
+            /**
+             * @description 0x-prefixed hex address (EIP-55 checksum optional — chain-rpc parses
+             *      case-insensitively).
+             */
+            fromAddressHex?: string;
+            toAddressHex?: string;
+            /**
+             * @description Decimal string. For native ETH/BNB/MATIC, e.g. "1.5". For ERC-20 в
+             *      token's major unit (USDT/USDC = 6 decimals, "100.50" → 100_500_000).
+             */
+            amount?: string;
+            /** @description ERC-20 contract address (0x-hex, optional). Empty = native transfer. */
+            contractAddressHex?: string;
+            /**
+             * @description Optional override for gas_limit. 0 = pick chain default (21_000 for
+             *      native, 60_000 for ERC-20 transfers based on average usage).
+             */
+            gasLimitOverride?: string;
+        };
+        BuildEvmTransferTxResponse: {
+            /**
+             * @description 0x-prefixed hex of the EIP-1559 signing payload (`0x02 || rlp([...])`).
+             *      Caller should keccak256-hash these bytes and sign the digest.
+             */
+            signingPayloadHex?: string;
+            /**
+             * @description keccak256(signing_payload), hex. Echoed for sanity-checking — caller
+             *      can recompute locally to confirm.
+             */
+            signingHashHex?: string;
+            /**
+             * @description The chain_id picked by chain-rpc based on `network`. Surfaced so the
+             *      caller can pre-compute / display fee estimates client-side.
+             */
+            chainId?: string;
+            /**
+             * @description The nonce / gas / fee values chain-rpc picked. Returned so ledger-core
+             *      can re-build the signed RLP without a second roundtrip и so the
+             *      outbox event captures actual values.
+             */
+            nonce?: string;
+            maxPriorityFeePerGas?: string;
+            maxFeePerGas?: string;
+            gasLimit?: string;
+            valueWei?: string;
+            /** @description Hex-encoded calldata (empty for native transfers). */
+            dataHex?: string;
+            /**
+             * @description Estimated cost в native units (e.g. "0.0042" ETH) so the caller can
+             *      pre-flight the sender's balance.
+             */
+            estimatedFeeNative?: string;
+            error?: string;
+        };
         BuildSolanaTransferTxRequest: {
             /**
              * @description The fee payer and signer of the transaction. Must match the wallet
@@ -5312,6 +5945,18 @@ export interface components {
              *      ~60-second blockhash validity window.
              */
             recentBlockhashBase58?: string;
+            /**
+             * @description Optional sponsor / fee payer. When non-empty, the built message has
+             *      two signers: the sponsor (first, pays the lamport fee + any SPL ATA
+             *      rent) and the source (second, authorises the token movement). Empty
+             *      string preserves the legacy single-signer layout where the source
+             *      pays its own fee.
+             *
+             *      Caller must hold the sponsor's signing key locally — chain-rpc only
+             *      serialises the message; signing stays in ledger-core. The sponsor
+             *      must differ from both the source and the destination.
+             */
+            feePayerPubkeyBase58?: string;
         };
         BuildSolanaTransferTxResponse: {
             /**
@@ -5332,6 +5977,58 @@ export interface components {
             feeLamports?: string;
             error?: string;
         };
+        BuildTronTransferTxRequest: {
+            /**
+             * @description TRON base58check address ("T..."), source / owner. chain-rpc passes
+             *      it to the TRON node as `owner_address` with `visible=true`.
+             */
+            fromAddressBase58?: string;
+            /** @description TRON base58check destination address. */
+            toAddressBase58?: string;
+            /**
+             * @description Decimal string. For native TRX e.g. "1.5" (multiplied by 1e6 sun).
+             *      For TRC-20 in the token's major unit (USDT has 6 decimals — "100.50"
+             *      becomes 100_500_000).
+             */
+            amount?: string;
+            /**
+             * @description TRC-20 contract address (base58check). Empty = native TRX transfer.
+             *      For USDT mainnet pass "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t".
+             */
+            contractAddressBase58?: string;
+            /**
+             * @description TRC-20 fee limit in sun. Default = 100_000_000 (100 TRX) when zero.
+             *      Native TRX transfers ignore this field.
+             */
+            feeLimitSun?: string;
+        };
+        BuildTronTransferTxResponse: {
+            /**
+             * @description The `raw_data_hex` from the TRON node. Caller must SHA-256-hash these
+             *      bytes (decoded from hex) and sign the digest with the wallet's
+             *      secp256k1 private key.
+             */
+            rawDataHex?: string;
+            /**
+             * @description Transaction ID == SHA-256(raw_data). Hex. Used by BroadcastTransaction
+             *      and for status polling.
+             */
+            txIdHex?: string;
+            /**
+             * @description Estimated cost in TRX (decimal string). For native TRX it's mostly
+             *      free (consumed bandwidth). For TRC-20 ~13.4 TRX worth of energy plus
+             *      bandwidth. Treat as informational, not a precise fee bound.
+             */
+            estimatedFeeTrx?: string;
+            /**
+             * @description Full transaction JSON (sans signature) — caller passes this back to
+             *      BroadcastTransaction as the body once the signature is attached. We
+             *      surface it explicitly so the caller never has to round-trip raw_data
+             *      back into TRON's JSON shape itself.
+             */
+            transactionJson?: string;
+            error?: string;
+        };
         BulkTenantActionRequest: {
             tenantIds?: string[];
             action?: string;
@@ -5345,6 +6042,7 @@ export interface components {
             tenantId?: string;
             reason?: string;
             immediate?: boolean;
+            idempotencyKey?: string;
         };
         CancelSubscriptionRequest: {
             tenantId?: string;
@@ -5384,11 +6082,25 @@ export interface components {
             bin?: string;
             luhnValid?: boolean;
         };
+        ChangePasswordRequest: {
+            userId?: string;
+            currentPassword?: string;
+            newPassword?: string;
+        };
+        ChangePasswordResponse: {
+            success?: boolean;
+        };
         ChangePlanRequest: {
             tenantId?: string;
             planId?: string;
             /** Format: enum */
             interval?: number;
+            /**
+             * @description P1.2: client-supplied idempotency key. Replays within 24h return cached
+             *      response without re-executing the plan change (no double subscription,
+             *      no double dunning escalation). TTL 24h.
+             */
+            idempotencyKey?: string;
         };
         ChatMessage: {
             id?: string;
@@ -5513,6 +6225,14 @@ export interface components {
             updatedAt?: string;
             /** Format: date-time */
             dueAt?: string;
+        };
+        ConfirmEmailVerificationRequest: {
+            userId?: string;
+            code?: string;
+        };
+        ConfirmEmailVerificationResponse: {
+            success?: boolean;
+            emailVerified?: boolean;
         };
         ConfirmOtpRequest: {
             paymentId?: string;
@@ -5689,6 +6409,8 @@ export interface components {
             currency?: string;
             /** Format: date-time */
             dueDate?: string;
+            /** @description P1.2: prevents duplicate invoice creation on retry (no double accounting entry). */
+            idempotencyKey?: string;
         };
         CreateMailboxRequest: {
             /** @description tenant_id из JWT */
@@ -5742,6 +6464,7 @@ export interface components {
             interval?: number;
             /** Format: int32 */
             trialDays?: number;
+            idempotencyKey?: string;
         };
         CreatePromotionRequest: {
             code?: string;
@@ -5793,6 +6516,16 @@ export interface components {
             recipients?: string[];
             columns?: string[];
             filters?: components["schemas"]["ReportFilter"][];
+        };
+        CreateSecretRequest: {
+            tenantId?: string;
+            name?: string;
+            description?: string;
+            environment?: string;
+            value?: string;
+        };
+        CreateSecretResponse: {
+            secret?: components["schemas"]["Secret"];
         };
         CreateSessionRequest: {
             email?: string;
@@ -5927,6 +6660,20 @@ export interface components {
             activeCustomers?: string;
             churnedCustomers?: string;
         };
+        DashboardAuditCounts: {
+            total?: string;
+            last24h?: string;
+        };
+        DashboardModuleCounts: {
+            active?: string;
+            trial?: string;
+            disabled?: string;
+        };
+        DashboardTenantCounts: {
+            total?: string;
+            active?: string;
+            suspended?: string;
+        };
         DebitWalletRequest: {
             tenantId?: string;
             walletId?: string;
@@ -5944,6 +6691,9 @@ export interface components {
             passed?: boolean;
             detail?: string;
             matchedEntities?: string[];
+        };
+        DeleteAccountResponse: {
+            success?: boolean;
         };
         DeleteApplicationResponse: {
             success?: boolean;
@@ -5964,6 +6714,9 @@ export interface components {
             success?: boolean;
         };
         DeleteRoleResponse: {
+            success?: boolean;
+        };
+        DeleteSecretResponse: {
             success?: boolean;
         };
         DeleteSessionResponse: {
@@ -6269,6 +7022,49 @@ export interface components {
             constraints?: components["schemas"]["AccessConstraint"][];
             denies?: components["schemas"]["AccessGrant"][];
         };
+        ExportChainWalletMnemonicRequest: {
+            /**
+             * @description tenant_id is overwritten from the authenticated context — body value
+             *      is ignored. Documented here for proto symmetry with other wallet
+             *      RPCs.
+             */
+            tenantId?: string;
+            walletId?: string;
+            /**
+             * @description Subject who owns the wallet (must match `wallets.subject_id`). Set
+             *      explicitly so the server can fail-fast before decryption if the
+             *      caller is impersonating.
+             */
+            subjectId?: string;
+            /**
+             * @description Free-text reason captured in the audit event. Optional but
+             *      recommended ("user requested recovery on device X").
+             */
+            reason?: string;
+        };
+        ExportChainWalletMnemonicResponse: {
+            /**
+             * @description BIP-39 mnemonic phrase (12 or 24 words). Plaintext over gRPC — the
+             *      caller MUST surface it once and never persist it. ledger-core
+             *      wraps the in-process buffer in Zeroizing; wire serialization is
+             *      unavoidable.
+             */
+            mnemonic?: string;
+            walletId?: string;
+            /**
+             * Format: int32
+             * @description Number of times this wallet has had its mnemonic exported,
+             *      including this call. Frontends surface this to the user as a
+             *      "phrase revealed N times" awareness signal.
+             */
+            exportCount?: number;
+            /**
+             * Format: date-time
+             * @description ISO-8601 timestamp of this export (mirrored in the audit row /
+             *      outbox event so clients can correlate).
+             */
+            exportedAt?: string;
+        };
         FailureAnalysisResponse: {
             entries?: components["schemas"]["FailureEntry"][];
             /** Format: double */
@@ -6424,6 +7220,12 @@ export interface components {
         GetCheckoutSessionResponse: {
             session?: components["schemas"]["CheckoutSession"];
         };
+        GetDashboardMetricsResponse: {
+            tenants?: components["schemas"]["DashboardTenantCounts"];
+            modules?: components["schemas"]["DashboardModuleCounts"];
+            auditEvents?: components["schemas"]["DashboardAuditCounts"];
+            tenantScope?: string;
+        };
         GetDeliveryResponse: {
             delivery?: components["schemas"]["Delivery"];
         };
@@ -6471,6 +7273,9 @@ export interface components {
         GetOAuthClientResponse: {
             client?: components["schemas"]["OAuthClient"];
         };
+        GetPacksCatalogResponse: {
+            packs?: components["schemas"]["PackCatalogEntry"][];
+        };
         GetPlatformHealthResponse: {
             /** Format: enum */
             overallStatus?: number;
@@ -6487,6 +7292,9 @@ export interface components {
             blockhash?: string;
             lastValidHeight?: string;
             error?: string;
+        };
+        GetReconcileLogResponse: {
+            rows?: components["schemas"]["ReconcileLogEntry"][];
         };
         GetServiceHistoryResponse: {
             serviceName?: string;
@@ -6613,6 +7421,39 @@ export interface components {
             /** Format: date-time */
             expiresAt?: string;
         };
+        ImportChainWalletRequest: {
+            tenantId?: string;
+            subjectId?: string;
+            subjectType?: string;
+            currency?: string;
+            network?: string;
+            /**
+             * @description BIP-39 mnemonic phrase (12 or 24 words). Validated server-side;
+             *      SHA-256-hashed before storage. Never persisted plaintext, never
+             *      logged. Re-import same phrase для одного subject = idempotent
+             *      (returns existing wallet by mnemonic_hash UNIQUE).
+             */
+            mnemonic?: string;
+            idempotencyKey?: string;
+        };
+        ImportChainWalletResponse: {
+            wallet?: components["schemas"]["Wallet"];
+            /**
+             * @description True when the import resolved to an already-existing wallet (same
+             *      mnemonic_hash, same subject). Lets the caller distinguish a recovery
+             *      ("you already had this wallet, here it is") from a fresh import (UX:
+             *      "✓ wallet imported successfully").
+             */
+            wasExisting?: boolean;
+            /**
+             * Format: date-time
+             * @description ISO-8601 timestamp echoing wallet.created_at on a fresh import, or
+             *      wallet.updated_at on a recovery. Frontends use this to show
+             *      "recovered" / "originally imported" labels without re-parsing the
+             *      wallet object.
+             */
+            recoveredAt?: string;
+        };
         InitiateWithdrawalRequest: {
             tenantId?: string;
             walletId?: string;
@@ -6623,6 +7464,17 @@ export interface components {
             description?: string;
             idempotencyKey?: string;
             mint?: string;
+            /**
+             * @description Replaces the earlier "mint=...;" hack in
+             *      `description`. Ignored for bank withdrawals.
+             *      Optional sponsor wallet for gasless withdrawals. When set, the chain
+             *      fee (and any SPL ATA rent) is debited from this wallet's off-chain
+             *      balance instead of the source. The end-user wallet needs no native SOL.
+             *      Must be an active on-chain wallet in the same tenant + network. The
+             *      tenant_admin role typically owns one omnibus sponsor wallet per network
+             *      and references it on every customer withdrawal.
+             */
+            sponsorWalletId?: string;
         };
         InvestigationFinding: {
             findingType?: string;
@@ -6728,6 +7580,17 @@ export interface components {
         };
         ListAlertsResponse: {
             alerts?: components["schemas"]["ComplianceAlert"][];
+            nextCursor?: string;
+        };
+        ListAllApiKeysResponse: {
+            apiKeys?: components["schemas"]["ApiKey"][];
+            /** Format: int32 */
+            totalCount?: number;
+            /**
+             * @description R1.b: next page token (empty when no more pages). Encoded as the next
+             *      page number string for the simple page-based scheme; clients pass it
+             *      back in `cursor`.
+             */
             nextCursor?: string;
         };
         ListApiKeysResponse: {
@@ -6866,6 +7729,14 @@ export interface components {
         ListPlatformPlansResponse: {
             plans?: components["schemas"]["PlatformPlan"][];
         };
+        ListPlatformUsageResponse: {
+            tenants?: components["schemas"]["TenantUsageSummary"][];
+        };
+        ListPoliciesResponse: {
+            policies?: components["schemas"]["Policy"][];
+            /** Format: int32 */
+            totalCount?: number;
+        };
         ListPromotionsResponse: {
             promotions?: components["schemas"]["Promotion"][];
             /** Format: int32 */
@@ -6906,6 +7777,11 @@ export interface components {
         ListScheduledReportsResponse: {
             reports?: components["schemas"]["ScheduledReport"][];
         };
+        ListSecretsResponse: {
+            secrets?: components["schemas"]["Secret"][];
+            /** Format: int32 */
+            totalCount?: number;
+        };
         ListStreamsResponse: {
             streams?: components["schemas"]["LogStream"][];
         };
@@ -6935,6 +7811,11 @@ export interface components {
         ListTransactionsResponse: {
             transactions?: components["schemas"]["WalletTransaction"][];
             nextCursor?: string;
+        };
+        ListUsersResponse: {
+            users?: components["schemas"]["User"][];
+            /** Format: int32 */
+            totalCount?: number;
         };
         ListWalletMovementsResponse: {
             movements?: components["schemas"]["WalletMovement"][];
@@ -7268,6 +8149,7 @@ export interface components {
             createdAt?: string;
             /** Format: date-time */
             updatedAt?: string;
+            telegramText?: string;
         };
         OAuthClient: {
             id?: string;
@@ -7346,6 +8228,34 @@ export interface components {
             status?: number;
             overrideNote?: string;
         };
+        PackBilling: {
+            planMinimum?: string;
+            overageModel?: string;
+        };
+        PackCatalogEntry: {
+            code?: string;
+            description?: string;
+            targetClass?: string;
+            referenceDownstream?: string;
+            status?: string;
+            modules?: components["schemas"]["PackCatalogModule"][];
+            packServices?: string[];
+            roleTemplates?: string[];
+            eventTopics?: string[];
+            uiModules?: string[];
+            quotasPreset?: string;
+            billing?: components["schemas"]["PackBilling"];
+            constraints?: string[];
+        };
+        /**
+         * @description Pack catalog entries (R1.a). Mirrors contracts/registry/vertical-packs.yaml
+         *      1:1 so frontend can render the full pack definition (description, billing,
+         *      role templates, event topics, ui modules).
+         */
+        PackCatalogModule: {
+            key?: string;
+            required?: boolean;
+        };
         PackStatus: {
             packCode?: string;
             tenantId?: string;
@@ -7373,6 +8283,11 @@ export interface components {
             tenantId?: string;
             invoiceId?: string;
             methodId?: string;
+            /**
+             * @description P1.2: most money-critical RPC. Replay with same key returns cached
+             *      response without re-charging the payment method or re-marking invoice.
+             */
+            idempotencyKey?: string;
         };
         PaymentDetailsResponse: {
             paymentId?: string;
@@ -7570,9 +8485,41 @@ export interface components {
             evidence?: components["schemas"]["AlertEvidence"][];
             idempotencyKey?: string;
         };
+        ReconcileDelta: {
+            modulesAdded?: string[];
+            modulesRemoved?: string[];
+            packsAdded?: string[];
+            packsRemoved?: string[];
+        };
+        ReconcileLogEntry: {
+            id?: string;
+            eventId?: string;
+            fromPlan?: string;
+            toPlan?: string;
+            transition?: string;
+            modulesAdded?: string[];
+            modulesRemoved?: string[];
+            packsAdded?: string[];
+            packsRemoved?: string[];
+            /** Format: date-time */
+            reconciledAt?: string;
+        };
+        ReconcilePlanRequest: {
+            tenantId?: string;
+            fromPlan?: string;
+            toPlan?: string;
+            transition?: string;
+            eventId?: string;
+        };
+        ReconcilePlanResponse: {
+            reconciled?: boolean;
+            delta?: components["schemas"]["ReconcileDelta"];
+        };
         RedeemPromoCodeRequest: {
             tenantId?: string;
             code?: string;
+            /** @description P1.2: prevents double credit + double promo usage on retry. */
+            idempotencyKey?: string;
         };
         RefreshTokenRequest: {
             refreshToken?: string;
@@ -7732,6 +8679,20 @@ export interface components {
             check?: components["schemas"]["KycCheck"];
             redirectUrl?: string;
         };
+        /**
+         * @description ResetPassword is the forgot-password completion. Caller has previously
+         *      run SendOtp(purpose="password_reset") and received a 6-digit code.
+         */
+        ResetPasswordRequest: {
+            /** @description Exactly one of identifier — the channel where the OTP was sent. */
+            email?: string;
+            phone?: string;
+            code?: string;
+            newPassword?: string;
+        };
+        ResetPasswordResponse: {
+            success?: boolean;
+        };
         ResolveAlertRequest: {
             tenantId?: string;
             alertId?: string;
@@ -7770,6 +8731,15 @@ export interface components {
         RetryDeliveryResponse: {
             delivery?: components["schemas"]["Delivery"];
         };
+        RevealSecretRequest: {
+            secretId?: string;
+            tenantId?: string;
+            auditReason?: string;
+        };
+        RevealSecretResponse: {
+            value?: string;
+            secret?: components["schemas"]["Secret"];
+        };
         RevenueMetrics: {
             mrr?: string;
             arr?: string;
@@ -7795,6 +8765,11 @@ export interface components {
         };
         RevenueTimeSeriesResponse: {
             points?: components["schemas"]["RevenueTimeSeriesPoint"][];
+        };
+        RevokeApiKeyRequest: {
+            tenantId?: string;
+            apiKeyId?: string;
+            reason?: string;
         };
         RevokeApiKeyResponse: {
             success?: boolean;
@@ -7914,11 +8889,13 @@ export interface components {
             keyBits?: number;
         };
         RotateSecretRequest: {
-            endpointId?: string;
+            secretId?: string;
             tenantId?: string;
+            newValue?: string;
+            auditReason?: string;
         };
         RotateSecretResponse: {
-            endpoint?: components["schemas"]["Endpoint"];
+            secret?: components["schemas"]["Secret"];
         };
         RuleCondition: {
             field?: string;
@@ -7989,6 +8966,24 @@ export interface components {
             provider?: string;
             screenedAt?: string;
         };
+        /**
+         * @description Returned by List/Create/Rotate. Value preview is the last <=4 chars of the
+         *      plaintext for visual hint; the actual secret is only available via Reveal.
+         */
+        Secret: {
+            secretId?: string;
+            tenantId?: string;
+            name?: string;
+            description?: string;
+            environment?: string;
+            valuePreview?: string;
+            createdAt?: string;
+            updatedAt?: string;
+            rotatedAt?: string;
+            lastRevealedAt?: string;
+            /** Format: int32 */
+            revealCount?: number;
+        };
         Segment: {
             name?: string;
             customerCount?: string;
@@ -8001,10 +8996,20 @@ export interface components {
         SegmentsResponse: {
             segments?: components["schemas"]["Segment"][];
         };
+        SendEmailVerificationRequest: {
+            userId?: string;
+            /** @description Optional override — by default sends to the user's current email. */
+            email?: string;
+        };
+        SendEmailVerificationResponse: {
+            success?: boolean;
+        };
         SendInvoiceRequest: {
             tenantId?: string;
             invoiceId?: string;
             recipientEmail?: string;
+            /** @description P1.2: prevents double email send (real cost via SMTP provider). */
+            idempotencyKey?: string;
         };
         SendInvoiceResponse: {
             sent?: boolean;
@@ -8031,6 +9036,13 @@ export interface components {
             variables?: {
                 [key: string]: string;
             };
+            /**
+             * @description P1.2: client-supplied idempotency key. If a request with the same
+             *      (tenant_id, idempotency_key) has been processed before, the cached
+             *      response is returned without re-sending (no double SMS/email/push).
+             *      TTL 24h (notify-service config).
+             */
+            idempotencyKey?: string;
         };
         SendNotificationResponse: {
             notificationId?: string;
@@ -8044,6 +9056,27 @@ export interface components {
         };
         SendOtpResponse: {
             success?: boolean;
+        };
+        SendTelegramRequest: {
+            tenantId?: string;
+            chatId?: string;
+            templateKey?: string;
+            variables?: {
+                [key: string]: string;
+            };
+            rawText?: string;
+            /**
+             * @description P1.2: client-supplied idempotency key. If a request with the same
+             *      (tenant_id, idempotency_key) has been processed before, the cached
+             *      response is returned without re-sending. TTL 24h (notify-service config).
+             */
+            idempotencyKey?: string;
+        };
+        SendTelegramResponse: {
+            notificationId?: string;
+            providerMsgId?: string;
+            /** Format: enum */
+            status?: number;
         };
         ServiceHistoryPoint: {
             /** Format: date-time */
@@ -8088,6 +9121,22 @@ export interface components {
         SetProviderConfigRequest: {
             tenantId?: string;
             config?: components["schemas"]["ProviderConfig"];
+        };
+        /** @description R1.d — platform admin override request. */
+        SetTenantQuotaOverrideRequest: {
+            tenantId?: string;
+            /** Format: enum */
+            resource?: number;
+            /** @description override_limit < 0 → clear the override (reverts to plan default). */
+            overrideLimit?: string;
+            reason?: string;
+        };
+        SetTenantQuotaOverrideResponse: {
+            tenantId?: string;
+            /** Format: enum */
+            resource?: number;
+            effectiveLimit?: string;
+            hasOverride?: boolean;
         };
         SettlementConfig: {
             merchantId?: string;
@@ -8261,6 +9310,14 @@ export interface components {
             cancelAt?: string;
             cancelAtPeriodEnd?: boolean;
         };
+        TenantUsageSummary: {
+            tenantId?: string;
+            tenantCode?: string;
+            plan?: string;
+            dimensions?: components["schemas"]["UsageDimension"][];
+            overQuota?: boolean;
+            updatedAt?: string;
+        };
         TenantUser: {
             userId?: string;
             email?: string;
@@ -8330,6 +9387,38 @@ export interface components {
         };
         TopCustomersResponse: {
             customers?: components["schemas"]["TopCustomer"][];
+        };
+        TransferBetweenWalletsRequest: {
+            tenantId?: string;
+            fromWalletId?: string;
+            toWalletId?: string;
+            /** @description Decimal string — see Wallet.balance notes. Must be > 0. */
+            amount?: string;
+            /**
+             * Format: enum
+             * @description Audit/ledger reason classifier (TRANSACTION_REASON_*). Defaults to
+             *      TRANSACTION_REASON_ADJUSTMENT if UNSPECIFIED.
+             */
+            reason?: number;
+            description?: string;
+            idempotencyKey?: string;
+            /**
+             * @description Merchant context for the wallet.{credit,debit,transfer} envelope events.
+             *      wallet.transfer.json doesn't require it but the debit/credit pair does
+             *      (skipped if absent — money state still commits, see outbox helpers).
+             */
+            merchantId?: string;
+            /** @description Optional free-text note attached to the wallet.transfer event. */
+            note?: string;
+        };
+        TransferBetweenWalletsResponse: {
+            /**
+             * @description Stable UUID identifying the transfer (used as outbox event aggregate_id
+             *      and `transfer_id` in the wallet.transfer payload). Generated server-side.
+             */
+            transferId?: string;
+            debit?: components["schemas"]["WalletTransaction"];
+            credit?: components["schemas"]["WalletTransaction"];
         };
         UnbindPolicyRequest: {
             tenantId?: string;
@@ -8549,6 +9638,29 @@ export interface components {
                 [key: string]: string;
             };
         };
+        UpdateUserEmailRequest: {
+            userId?: string;
+            newEmail?: string;
+            /**
+             * @description OTP code sent to new_email with purpose="phone_verify"
+             *      (re-using the OTP plumbing — proto label is legacy).
+             */
+            code?: string;
+        };
+        UpdateUserEmailResponse: {
+            success?: boolean;
+            email?: string;
+        };
+        UpdateUserPhoneRequest: {
+            userId?: string;
+            newPhone?: string;
+            /** @description OTP code that was sent to new_phone with purpose="phone_verify". */
+            code?: string;
+        };
+        UpdateUserPhoneResponse: {
+            success?: boolean;
+            phone?: string;
+        };
         UpdateUserProfileRequest: {
             userId?: string;
             fullName?: string;
@@ -8606,6 +9718,15 @@ export interface components {
         UpsertRoleResponse: {
             role?: components["schemas"]["Role"];
         };
+        UsageDimension: {
+            module?: string;
+            dimension?: string;
+            unit?: string;
+            used?: string;
+            quota?: string;
+            overrideQuota?: string;
+            periodEnd?: string;
+        };
         UsageSummary: {
             resources?: components["schemas"]["ResourceUsage"][];
             /** Format: date-time */
@@ -8625,6 +9746,16 @@ export interface components {
             total?: string;
             limit?: string;
             projected?: string;
+        };
+        User: {
+            userId?: string;
+            tenantId?: string;
+            email?: string;
+            name?: string;
+            roles?: string[];
+            isActive?: boolean;
+            createdAt?: string;
+            updatedAt?: string;
         };
         UserInfoResponse: {
             sub?: string;
@@ -8676,6 +9807,12 @@ export interface components {
             userId?: string;
             code?: string;
             purpose?: string;
+            /**
+             * @description Phone-based verification path (for first-time signup / passwordless
+             *      before user_id exists). Exactly one of user_id or phone must be set,
+             *      matching SendOtpRequest semantics.
+             */
+            phone?: string;
         };
         VerifyOtpResponse: {
             valid?: boolean;
@@ -8684,6 +9821,7 @@ export interface components {
             tenantId?: string;
             invoiceId?: string;
             reason?: string;
+            idempotencyKey?: string;
         };
         /** @description Void Payment */
         VoidPaymentCommand: {
@@ -10060,6 +11198,42 @@ export interface operations {
             };
         };
     };
+    AuthService_DeleteAccount: {
+        parameters: {
+            query?: {
+                userId?: string;
+                /**
+                 * @description Soft confirmation: client must pass the user's current password
+                 *      (or a recent password_reset OTP) to prevent CSRF-style erasure.
+                 */
+                currentPassword?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteAccountResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
     AuthService_GetMyCapabilities: {
         parameters: {
             query?: {
@@ -10081,6 +11255,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetMyCapabilitiesResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    AuthService_ConfirmEmailVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmEmailVerificationRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfirmEmailVerificationResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    AuthService_SendEmailVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendEmailVerificationRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SendEmailVerificationResponse"];
                 };
             };
             /** @description Default error response */
@@ -10213,6 +11453,138 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VerifyOtpResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    AuthService_ChangePassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangePasswordResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    AuthService_ResetPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetPasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResetPasswordResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    AuthService_UpdateUserEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUserEmailRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateUserEmailResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    AuthService_UpdateUserPhone: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUserPhoneRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateUserPhoneResponse"];
                 };
             };
             /** @description Default error response */
@@ -11157,6 +12529,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlanChangePreview"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    ChainRpcService_BuildEvmTransferTx: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BuildEvmTransferTxRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BuildEvmTransferTxResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    ChainRpcService_BuildTronTransferTx: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BuildTronTransferTxRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BuildTronTransferTxResponse"];
                 };
             };
             /** @description Default error response */
@@ -13105,6 +14543,177 @@ export interface operations {
             };
         };
     };
+    DeveloperService_ListSecrets: {
+        parameters: {
+            query?: {
+                tenantId?: string;
+                environment?: string;
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListSecretsResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    DeveloperService_CreateSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSecretRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateSecretResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    DeveloperService_DeleteSecret: {
+        parameters: {
+            query?: {
+                tenantId?: string;
+                auditReason?: string;
+            };
+            header?: never;
+            path: {
+                secretId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteSecretResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    DeveloperService_RevealSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                secretId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RevealSecretRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevealSecretResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    DeveloperService_RotateSecret: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                secretId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RotateSecretRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RotateSecretResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
     MgEventsService_ListDeliveries: {
         parameters: {
             query?: {
@@ -14433,10 +16042,51 @@ export interface operations {
             };
         };
     };
+    IamService_ListAllApiKeys: {
+        parameters: {
+            query?: {
+                statusFilter?: string;
+                modeFilter?: string;
+                page?: number;
+                pageSize?: number;
+                /** @description R1.b additions */
+                tenantId?: string;
+                state?: string;
+                environment?: string;
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListAllApiKeysResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
     IamService_RevokeApiKey: {
         parameters: {
             query?: {
                 tenantId?: string;
+                reason?: string;
             };
             header?: never;
             path: {
@@ -14947,6 +16597,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ListPermissionsResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    IamService_ListPolicies: {
+        parameters: {
+            query?: {
+                tenantId?: string;
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListPoliciesResponse"];
                 };
             };
             /** @description Default error response */
@@ -15769,6 +17452,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SuspendTenantResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    IamService_ListUsers: {
+        parameters: {
+            query?: {
+                tenantId?: string;
+                emailQ?: string;
+                activeOnly?: boolean;
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListUsersResponse"];
                 };
             };
             /** @description Default error response */
@@ -17631,6 +19349,39 @@ export interface operations {
             };
         };
     };
+    NotifyService_SendTelegram: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendTelegramRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SendTelegramResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
     NotifyService_ListTemplates: {
         parameters: {
             query?: {
@@ -18036,6 +19787,81 @@ export interface operations {
             };
         };
     };
+    IamService_ListAllApiKeysAlias: {
+        parameters: {
+            query?: {
+                statusFilter?: string;
+                modeFilter?: string;
+                page?: number;
+                pageSize?: number;
+                /** @description R1.b additions */
+                tenantId?: string;
+                state?: string;
+                environment?: string;
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListAllApiKeysResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    IamService_RevokeApiKeyAlias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                apiKeyId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RevokeApiKeyRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevokeApiKeyResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
     PlatformService_GetPlatformHealth: {
         parameters: {
             query?: never;
@@ -18145,6 +19971,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetPlatformMetricsResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    PlatformService_GetDashboardMetrics: {
+        parameters: {
+            query?: {
+                tenantId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetDashboardMetricsResponse"];
                 };
             };
             /** @description Default error response */
@@ -18290,6 +20147,35 @@ export interface operations {
             };
         };
     };
+    PlatformService_GetPacksCatalog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetPacksCatalogResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
     PlatformService_DisablePack: {
         parameters: {
             query?: never;
@@ -18347,6 +20233,104 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EnablePackResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    PlatformService_ReconcilePlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReconcilePlanRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReconcilePlanResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    PlatformService_GetReconcileLog: {
+        parameters: {
+            query?: {
+                tenantId?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetReconcileLogResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    MeteringService_SetTenantQuotaOverride: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetTenantQuotaOverrideRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SetTenantQuotaOverrideResponse"];
                 };
             };
             /** @description Default error response */
@@ -18774,6 +20758,69 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SuspendTenantResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    PlatformService_ListTenantUsers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListTenantUsersResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    MeteringService_ListPlatformUsage: {
+        parameters: {
+            query?: {
+                tenantId?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListPlatformUsageResponse"];
                 };
             };
             /** @description Default error response */
@@ -20410,6 +22457,74 @@ export interface operations {
             };
         };
     };
+    WalletService_ImportChainWallet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportChainWalletRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportChainWalletResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    WalletService_TransferBetweenWallets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                fromWalletId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferBetweenWalletsRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferBetweenWalletsResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
     WalletService_GetWallet: {
         parameters: {
             query?: {
@@ -20541,6 +22656,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DepositAddress"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    WalletService_ExportChainWalletMnemonic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                walletId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportChainWalletMnemonicRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportChainWalletMnemonicResponse"];
                 };
             };
             /** @description Default error response */

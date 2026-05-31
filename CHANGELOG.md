@@ -11,7 +11,23 @@ Top-level entry is the aggregate snapshot.
 
 ## [Unreleased]
 
-(empty)
+### Contracts sync — regenerated `_generated` types (2026-06-01)
+
+Regenerated TS + Go generated types from `mashgate` contracts at `origin/main`
+(HEAD `b3a72bfa`), ahead of the last cut snapshot tag `contracts-2026-04-24`.
+Pipeline ran on the srv2 build host (`protoc` + `protoc-gen-openapi` → `openapi.yaml`
+→ `openapi-typescript` / `oapi-codegen`).
+
+- `sdk/typescript/src/_generated/{openapi.yaml,types.ts}` refreshed.
+- `sdk/go/_generated/{openapi.yaml,types.gen.go}` refreshed.
+- New contract surface pulled in since 2026-04-24: auth profile management
+  (`/v1/auth/account`, email verify, password change/reset, profile email/phone),
+  chain-rpc internal EVM + TRON `build-transfer-tx`, secrets CRUD, dashboard
+  counts (audit/module/tenant).
+- **Python SDK NOT regenerated** — no codegen target (`sdk/python` is
+  hand-maintained); update manually if Python consumers need the new endpoints.
+- No per-language version bump applied — generated-types refresh only; bumping
+  `go`/`@mashgate/sdk` versions is a separate release decision.
 
 ---
 
