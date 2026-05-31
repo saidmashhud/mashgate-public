@@ -4,10 +4,40 @@ Official Mashgate SDK for Go, TypeScript, and Python.
 
 > **Status:** initial extraction (v0.x). Targeting `v1.0.0` coordinated release — see [ROADMAP.md](ROADMAP.md).
 
-Mashgate is a developer-first BaaS platform (identity, payments, events, notifications, storage, flags, logs, billing). This repo is the single public entry point for integrating with Mashgate from your own application — whether that's a marketplace (Zist), commerce ops (Vint), or fintech (Kiro).
+**Mashgate** is a multi-tenant, API-first **Backend-as-a-Service** — the backend building blocks an application needs (identity, payments, wallets, billing, events, notifications, storage, and more) exposed as a coherent set of services behind one gateway, so product teams ship features instead of re-building plumbing. This repository is the single public entry point for integrating with Mashgate from your own application — whether that's a marketplace, commerce ops, or fintech product.
 
 **Repository:** `github.com/saidmashhud/mashgate-public`
 **License:** Apache 2.0
+
+---
+
+## What is Mashgate
+
+Mashgate is the shared backend for a family of products. Instead of every app re-implementing auth, money movement, payments, webhooks, and the rest, Mashgate provides them as **multi-tenant building blocks** with a single, contract-first API. You provision a tenant, get an API key, and call the modules you need.
+
+### Modules
+
+| Domain | What it gives you |
+|--------|-------------------|
+| **Identity** (mgID) | Users, organizations & multi-tenancy, roles/permissions (IAM), API keys, OIDC, sessions, phone/OTP & WebAuthn auth. |
+| **Payments** | Checkout sessions, a payments orchestrator, card processing, invoices, and payment links. |
+| **Wallets & Ledger** | A double-entry ledger as the single source of truth for money, multi-currency wallets, atomic inter-wallet transfers — plus on-chain crypto wallets (Solana / TRON / EVM) via the chain layer. |
+| **Billing & Subscriptions** | Subscription plans, metered usage, credits & promos, dunning. |
+| **Events & Webhooks** | An event stream and outbound webhook delivery (HookLine) with signed payloads. |
+| **Notifications** (mgNotify) | Transactional messaging across channels (email, SMS, push, messengers). |
+| **Storage** (mgStorage) | S3-compatible object storage. |
+| **Feature Flags** | Runtime flags & targeting. |
+| **Risk & Compliance** | KYC, compliance screening, fraud checks, and a policy guard. |
+| **Observability** | Structured logs, analytics, and usage metering per tenant. |
+
+### How it fits together
+
+- **Multi-tenant by default.** Every call is scoped to a tenant; isolation is enforced at the gateway (authorization) and in each service.
+- **Contract-first.** The API is defined as Protobuf/OpenAPI in the core repo; this SDK is generated from those contracts (see [Contract source of truth](#contract-source-of-truth)), so client types track the server exactly.
+- **gRPC microservices behind a gateway.** Internally Mashgate is a mesh of focused services; externally you talk to one API surface over REST/gRPC with an API key (and OIDC where applicable).
+- **Money is handled carefully.** The ledger is the authoritative record; wallet, payment, and billing flows reconcile against it rather than holding their own truth.
+
+> This SDK is the integration layer. The platform itself (deployment, infrastructure, internal service topology) lives in the private Mashgate core monorepo and is not part of this repo.
 
 ---
 
