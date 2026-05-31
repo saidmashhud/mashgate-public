@@ -1237,6 +1237,40 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /v1/auth/account:
+        delete:
+            tags:
+                - AuthService
+            description: |-
+                Account erasure (v1.4.0+). Hard-deletes the user from auth_users +
+                 cascades through Mashgate's tenant graph; downstream products handle
+                 their own read-models via the user.deleted event.
+            operationId: AuthService_DeleteAccount
+            parameters:
+                - name: userId
+                  in: query
+                  schema:
+                    type: string
+                - name: currentPassword
+                  in: query
+                  description: |-
+                    Soft confirmation: client must pass the user's current password
+                     (or a recent password_reset OTP) to prevent CSRF-style erasure.
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DeleteAccountResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /v1/auth/capabilities:
         get:
             tags:
@@ -1261,6 +1295,55 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/GetMyCapabilitiesResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/auth/email/verify/confirm:
+        post:
+            tags:
+                - AuthService
+            operationId: AuthService_ConfirmEmailVerification
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ConfirmEmailVerificationRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ConfirmEmailVerificationResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/auth/email/verify/send:
+        post:
+            tags:
+                - AuthService
+            description: Email verification (v1.4.0+).
+            operationId: AuthService_SendEmailVerification
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SendEmailVerificationRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SendEmailVerificationResponse'
                 default:
                     description: Default error response
                     content:
@@ -1359,6 +1442,111 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/VerifyOtpResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/auth/password/change:
+        post:
+            tags:
+                - AuthService
+            description: |-
+                Password lifecycle (v1.4.0+).
+                 Authenticated change: user knows current password + wants to set new one.
+            operationId: AuthService_ChangePassword
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChangePasswordRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ChangePasswordResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/auth/password/reset:
+        post:
+            tags:
+                - AuthService
+            description: |-
+                Forgot-password completion: user has a valid OTP (purpose=password_reset)
+                 for their email/phone and wants to set a new password.
+            operationId: AuthService_ResetPassword
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ResetPasswordRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ResetPasswordResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/auth/profile/email:
+        post:
+            tags:
+                - AuthService
+            operationId: AuthService_UpdateUserEmail
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UpdateUserEmailRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UpdateUserEmailResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/auth/profile/phone:
+        post:
+            tags:
+                - AuthService
+            description: |-
+                Profile mutations (v1.4.0+). Each requires a fresh OTP whose purpose
+                 matches the field being changed, defending against takeovers.
+            operationId: AuthService_UpdateUserPhone
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UpdateUserPhoneRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UpdateUserPhoneResponse'
                 default:
                     description: Default error response
                     content:
@@ -2100,6 +2288,70 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/PlanChangePreview'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/chain-rpc/internal/evm/build-transfer-tx:
+        post:
+            tags:
+                - ChainRpcService
+            description: |-
+                Build the EIP-1559 signing payload for an EVM transfer (Ethereum,
+                 BSC, Polygon, Base, or any other EVM-compatible network). chain-rpc
+                 fetches nonce + gas price + EIP-1559 fee bounds from the relevant
+                 node, RLP-encodes the transaction body, and returns the bytes to
+                 sign. Caller (ledger-core) signs keccak256(signing_payload) with the
+                 wallet's secp256k1 private key, packs the signed RLP, and submits
+                 via BroadcastTransaction.
+            operationId: ChainRpcService_BuildEvmTransferTx
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/BuildEvmTransferTxRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/BuildEvmTransferTxResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/chain-rpc/internal/tron/build-transfer-tx:
+        post:
+            tags:
+                - ChainRpcService
+            description: |-
+                Build an unsigned TRON transfer (native TRX or TRC-20). chain-rpc calls
+                 the TRON node's /wallet/createtransaction (TRX) or
+                 /wallet/triggersmartcontract (TRC-20) and returns the raw_data bytes the
+                 caller must sign. The caller (ledger-core) computes SHA-256 over
+                 raw_data, signs the digest with the wallet's secp256k1 private key, and
+                 hands the JSON-encoded {raw_data_hex, txID, signature} back to
+                 BroadcastTransaction.
+            operationId: ChainRpcService_BuildTronTransferTx
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/BuildTronTransferTxRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/BuildTronTransferTxResponse'
                 default:
                     description: Default error response
                     content:
@@ -3757,6 +4009,163 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /v1/developer/secrets:
+        get:
+            tags:
+                - DeveloperService
+            description: |-
+                ── Tenant secrets manager ─────────────────────────────────────────────────
+                 Per-tenant per-environment encrypted secrets. Values are AES-256-GCM
+                 encrypted at rest. List returns masked previews only — reveal requires
+                 an explicit RevealSecret call with audit_reason.
+            operationId: DeveloperService_ListSecrets
+            parameters:
+                - name: tenantId
+                  in: query
+                  schema:
+                    type: string
+                - name: environment
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListSecretsResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+        post:
+            tags:
+                - DeveloperService
+            operationId: DeveloperService_CreateSecret
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateSecretRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateSecretResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/developer/secrets/{secretId}:
+        delete:
+            tags:
+                - DeveloperService
+            operationId: DeveloperService_DeleteSecret
+            parameters:
+                - name: secretId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: tenantId
+                  in: query
+                  schema:
+                    type: string
+                - name: auditReason
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DeleteSecretResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/developer/secrets/{secretId}/reveal:
+        post:
+            tags:
+                - DeveloperService
+            operationId: DeveloperService_RevealSecret
+            parameters:
+                - name: secretId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/RevealSecretRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/RevealSecretResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/developer/secrets/{secretId}/rotate:
+        post:
+            tags:
+                - DeveloperService
+            operationId: DeveloperService_RotateSecret
+            parameters:
+                - name: secretId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/RotateSecretRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/RotateSecretResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /v1/events/deliveries:
         get:
             tags:
@@ -4882,6 +5291,68 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /v1/iam/api-keys/all:
+        get:
+            tags:
+                - IamService
+            description: |-
+                Platform-admin cross-tenant view. Returns api keys for all tenants the
+                 caller has visibility into; backend filters by ext-authz check.
+            operationId: IamService_ListAllApiKeys
+            parameters:
+                - name: statusFilter
+                  in: query
+                  schema:
+                    type: string
+                - name: modeFilter
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: tenantId
+                  in: query
+                  description: R1.b additions
+                  schema:
+                    type: string
+                - name: state
+                  in: query
+                  schema:
+                    type: string
+                - name: environment
+                  in: query
+                  schema:
+                    type: string
+                - name: cursor
+                  in: query
+                  schema:
+                    type: string
+                - name: limit
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListAllApiKeysResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /v1/iam/api-keys/{apiKeyId}:
         delete:
             tags:
@@ -4894,6 +5365,10 @@ paths:
                   schema:
                     type: string
                 - name: tenantId
+                  in: query
+                  schema:
+                    type: string
+                - name: reason
                   in: query
                   schema:
                     type: string
@@ -5321,6 +5796,38 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/Status'
     /v1/iam/policies:
+        get:
+            tags:
+                - IamService
+            operationId: IamService_ListPolicies
+            parameters:
+                - name: tenantId
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListPoliciesResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
         post:
             tags:
                 - IamService
@@ -5978,6 +6485,47 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/SuspendTenantResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/iam/users:
+        get:
+            tags:
+                - IamService
+            operationId: IamService_ListUsers
+            parameters:
+                - name: tenantId
+                  in: query
+                  schema:
+                    type: string
+                - name: emailQ
+                  in: query
+                  schema:
+                    type: string
+                - name: activeOnly
+                  in: query
+                  schema:
+                    type: boolean
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListUsersResponse'
                 default:
                     description: Default error response
                     content:
@@ -7635,6 +8183,30 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /v1/notify/telegram:
+        post:
+            tags:
+                - NotifyService
+            operationId: NotifyService_SendTelegram
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SendTelegramRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SendTelegramResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /v1/notify/templates:
         get:
             tags:
@@ -7982,6 +8554,98 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /v1/platform/api-keys:
+        get:
+            tags:
+                - IamService
+            description: |-
+                Platform-admin cross-tenant view. Returns api keys for all tenants the
+                 caller has visibility into; backend filters by ext-authz check.
+            operationId: IamService_ListAllApiKeysAlias
+            parameters:
+                - name: statusFilter
+                  in: query
+                  schema:
+                    type: string
+                - name: modeFilter
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: tenantId
+                  in: query
+                  description: R1.b additions
+                  schema:
+                    type: string
+                - name: state
+                  in: query
+                  schema:
+                    type: string
+                - name: environment
+                  in: query
+                  schema:
+                    type: string
+                - name: cursor
+                  in: query
+                  schema:
+                    type: string
+                - name: limit
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListAllApiKeysResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/platform/api-keys/{apiKeyId}/revoke:
+        post:
+            tags:
+                - IamService
+            operationId: IamService_RevokeApiKeyAlias
+            parameters:
+                - name: apiKeyId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/RevokeApiKeyRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/RevokeApiKeyResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /v1/platform/health:
         get:
             tags:
@@ -8061,6 +8725,33 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/GetPlatformMetricsResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/platform/metrics/dashboard:
+        get:
+            tags:
+                - PlatformService
+            description: |-
+                Aggregated control-plane dashboard counts (index.js L281-355). Single
+                 round-trip rollup of tenants / modules / audit_events. Optional tenant_id
+                 query param scopes module + audit counts.
+            operationId: PlatformService_GetDashboardMetrics
+            parameters:
+                - name: tenantId
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetDashboardMetricsResponse'
                 default:
                     description: Default error response
                     content:
@@ -8178,6 +8869,28 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /v1/platform/packs/catalog:
+        get:
+            tags:
+                - PlatformService
+            description: |-
+                GET /v1/platform/packs/catalog (R1.a 2026-05-27). Static pack catalog
+                 from contracts/registry/vertical-packs.yaml (NOT per-tenant state — that
+                 lives in ListEnabledPacks). Consumed by control-plane Packs Center page.
+            operationId: PlatformService_GetPacksCatalog
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPacksCatalogResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /v1/platform/packs/{packCode}/disable:
         post:
             tags:
@@ -8236,6 +8949,92 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/EnablePackResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/platform/plan/reconcile:
+        post:
+            tags:
+                - PlatformService
+            description: |-
+                Plan reconciliation (index.js L1190-1234, docs/product/vertical-packs-v1.md
+                 §4). Synchronous reconcile that subscription-service POSTs directly after a
+                 plan change, plus the ops audit-log read. Same logic path as the Kafka
+                 `billing.plan.changed` consumer — exposed here so the Node service can be
+                 retired. POST body mirrors EnableModule's `body: "*"`; the log read mirrors
+                 GetDashboardMetrics' GET-with-query convention.
+            operationId: PlatformService_ReconcilePlan
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ReconcilePlanRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ReconcilePlanResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/platform/plan/reconcile-log:
+        get:
+            tags:
+                - PlatformService
+            operationId: PlatformService_GetReconcileLog
+            parameters:
+                - name: tenantId
+                  in: query
+                  schema:
+                    type: string
+                - name: limit
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetReconcileLogResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/platform/quota-overrides:
+        put:
+            tags:
+                - MeteringService
+            description: |-
+                R1.d — platform-admin sets per-tenant override on top of plan default.
+                 Pass override_limit < 0 to clear the override (resets to plan default).
+            operationId: MeteringService_SetTenantQuotaOverride
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SetTenantQuotaOverrideRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SetTenantQuotaOverrideResponse'
                 default:
                     description: Default error response
                     content:
@@ -8585,6 +9384,65 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/SuspendTenantResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/platform/tenants/{tenantId}/users:
+        get:
+            tags:
+                - PlatformService
+            description: |-
+                List auth_users for a tenant (index.js L522-533). Path param mirrors the
+                 GetServiceHistory {service_name} convention: Node ":id" → {tenant_id}.
+            operationId: PlatformService_ListTenantUsers
+            parameters:
+                - name: tenantId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListTenantUsersResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/platform/usage:
+        get:
+            tags:
+                - MeteringService
+            description: |-
+                R1.c — cross-tenant usage view for platform admin (/admin/usage page).
+                 Aggregates per-tenant usage + quotas + plan info; module label is a
+                 static map from the metering resource enum.
+            operationId: MeteringService_ListPlatformUsage
+            parameters:
+                - name: tenantId
+                  in: query
+                  schema:
+                    type: string
+                - name: limit
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListPlatformUsageResponse'
                 default:
                     description: Default error response
                     content:
@@ -9958,6 +10816,78 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /v1/wallets/chain/import:
+        post:
+            tags:
+                - WalletService
+            description: |-
+                Import an existing non-custodial on-chain wallet from a caller-provided
+                 BIP-39 mnemonic. Server validates the mnemonic, derives the address
+                 (SLIP-0010), AES-encrypts the private key, and stores in `wallets`.
+                 Mnemonic_hash is UNIQUE per tenant — re-importing the same phrase для
+                 одного subject returns the existing wallet с `was_existing=true`
+                 (idempotent, recovery-friendly). Importing under a different subject_id
+                 returns `PERMISSION_DENIED` (credential-stuffing protection). Caller's
+                 mnemonic is NEVER persisted plaintext (only SHA-256 hash). Currently
+                 SOLANA only.
+            operationId: WalletService_ImportChainWallet
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ImportChainWalletRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ImportChainWalletResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/wallets/{fromWalletId}/transfer:
+        post:
+            tags:
+                - WalletService
+            description: |-
+                Internal transfer between two wallets within the same tenant. Atomic:
+                 both wallet_transactions rows + balance updates + outbox events
+                 (wallet.debit on source, wallet.credit on dest, wallet.transfer
+                 envelope) commit in one DB tx. Same-currency v1 only — cross-currency
+                 FX transfers are out of scope (a future Convert RPC would handle them).
+                 Idempotent via `idempotency_key` — replay returns the previously-built
+                 result without double-applying.
+            operationId: WalletService_TransferBetweenWallets
+            parameters:
+                - name: fromWalletId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/TransferBetweenWalletsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TransferBetweenWalletsResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /v1/wallets/{walletId}:
         get:
             tags:
@@ -10085,6 +11015,50 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/DepositAddress'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/wallets/{walletId}/export-mnemonic:
+        post:
+            tags:
+                - WalletService
+            description: |-
+                Export the BIP-39 mnemonic phrase for a non-custodial on-chain wallet.
+                 Money-critical: returns the secret that grants full control of the
+                 chain wallet. Authorization:
+                   - tenant_id from JWT (the caller must belong to the wallet's tenant).
+                   - subject_id is verified to match `wallets.subject_id` of the wallet
+                     being exported (subjects cannot export each other's wallets).
+                   - Requires the `export_mnemonic` IAM permission (granted only to
+                     the wallet owner subject, never to operators / merchants).
+                   - Caller is expected to re-authenticate the user (password / OTP)
+                     out-of-band BEFORE issuing this RPC. ledger-core does not
+                     re-prompt — the upstream auth gate is the contract.
+                 Audit: emits `wallet.mnemonic_exported` outbox event and increments
+                 `wallets.mnemonic_export_count` in the same DB tx.
+            operationId: WalletService_ExportChainWalletMnemonic
+            parameters:
+                - name: walletId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ExportChainWalletMnemonicRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ExportChainWalletMnemonicResponse'
                 default:
                     description: Default error response
                     content:
@@ -10613,6 +11587,8 @@ components:
                     type: string
                 setDefault:
                     type: boolean
+                idempotencyKey:
+                    type: string
         AddWalletPaymentMethodCommand:
             type: object
             properties:
@@ -10747,6 +11723,19 @@ components:
                 rotatedAt:
                     type: string
                 expiresAt:
+                    type: string
+                tenantCode:
+                    type: string
+                    description: R1.b additions for cross-tenant platform-admin view.
+                environment:
+                    type: string
+                lastUsedAt:
+                    type: string
+                state:
+                    type: string
+                revokedAt:
+                    type: string
+                revokeReason:
                     type: string
         AppPermission:
             type: object
@@ -11174,6 +12163,77 @@ components:
                 createdAt:
                     type: string
                     format: date-time
+        BuildEvmTransferTxRequest:
+            type: object
+            properties:
+                network:
+                    type: string
+                    description: |-
+                        Uppercase network code: ETHEREUM, BSC, POLYGON, BASE. chain-rpc maps
+                         it to chain_id (1 / 56 / 137 / 8453) and routes to the right
+                         EthereumProvider instance.
+                fromAddressHex:
+                    type: string
+                    description: |-
+                        0x-prefixed hex address (EIP-55 checksum optional — chain-rpc parses
+                         case-insensitively).
+                toAddressHex:
+                    type: string
+                amount:
+                    type: string
+                    description: |-
+                        Decimal string. For native ETH/BNB/MATIC, e.g. "1.5". For ERC-20 в
+                         token's major unit (USDT/USDC = 6 decimals, "100.50" → 100_500_000).
+                contractAddressHex:
+                    type: string
+                    description: ERC-20 contract address (0x-hex, optional). Empty = native transfer.
+                gasLimitOverride:
+                    type: string
+                    description: |-
+                        Optional override for gas_limit. 0 = pick chain default (21_000 for
+                         native, 60_000 for ERC-20 transfers based on average usage).
+        BuildEvmTransferTxResponse:
+            type: object
+            properties:
+                signingPayloadHex:
+                    type: string
+                    description: |-
+                        0x-prefixed hex of the EIP-1559 signing payload (`0x02 || rlp([...])`).
+                         Caller should keccak256-hash these bytes and sign the digest.
+                signingHashHex:
+                    type: string
+                    description: |-
+                        keccak256(signing_payload), hex. Echoed for sanity-checking — caller
+                         can recompute locally to confirm.
+                chainId:
+                    type: string
+                    description: |-
+                        The chain_id picked by chain-rpc based on `network`. Surfaced so the
+                         caller can pre-compute / display fee estimates client-side.
+                nonce:
+                    type: string
+                    description: |-
+                        The nonce / gas / fee values chain-rpc picked. Returned so ledger-core
+                         can re-build the signed RLP without a second roundtrip и so the
+                         outbox event captures actual values.
+                maxPriorityFeePerGas:
+                    type: string
+                maxFeePerGas:
+                    type: string
+                gasLimit:
+                    type: string
+                valueWei:
+                    type: string
+                dataHex:
+                    type: string
+                    description: Hex-encoded calldata (empty for native transfers).
+                estimatedFeeNative:
+                    type: string
+                    description: |-
+                        Estimated cost в native units (e.g. "0.0042" ETH) so the caller can
+                         pre-flight the sender's balance.
+                error:
+                    type: string
         BuildSolanaTransferTxRequest:
             type: object
             properties:
@@ -11205,6 +12265,18 @@ components:
                         Recent blockhash from GetRecentBlockhash. Caller is responsible for
                          refreshing it if the build → sign → broadcast roundtrip exceeds the
                          ~60-second blockhash validity window.
+                feePayerPubkeyBase58:
+                    type: string
+                    description: |-
+                        Optional sponsor / fee payer. When non-empty, the built message has
+                         two signers: the sponsor (first, pays the lamport fee + any SPL ATA
+                         rent) and the source (second, authorises the token movement). Empty
+                         string preserves the legacy single-signer layout where the source
+                         pays its own fee.
+
+                         Caller must hold the sponsor's signing key locally — chain-rpc only
+                         serialises the message; signing stays in ledger-core. The sponsor
+                         must differ from both the source and the destination.
         BuildSolanaTransferTxResponse:
             type: object
             properties:
@@ -11224,6 +12296,62 @@ components:
                     description: |-
                         Estimated fee in lamports (base 5000 + ATA rent if a new ATA needs
                          to be created for the recipient).
+                error:
+                    type: string
+        BuildTronTransferTxRequest:
+            type: object
+            properties:
+                fromAddressBase58:
+                    type: string
+                    description: |-
+                        TRON base58check address ("T..."), source / owner. chain-rpc passes
+                         it to the TRON node as `owner_address` with `visible=true`.
+                toAddressBase58:
+                    type: string
+                    description: TRON base58check destination address.
+                amount:
+                    type: string
+                    description: |-
+                        Decimal string. For native TRX e.g. "1.5" (multiplied by 1e6 sun).
+                         For TRC-20 in the token's major unit (USDT has 6 decimals — "100.50"
+                         becomes 100_500_000).
+                contractAddressBase58:
+                    type: string
+                    description: |-
+                        TRC-20 contract address (base58check). Empty = native TRX transfer.
+                         For USDT mainnet pass "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t".
+                feeLimitSun:
+                    type: string
+                    description: |-
+                        TRC-20 fee limit in sun. Default = 100_000_000 (100 TRX) when zero.
+                         Native TRX transfers ignore this field.
+        BuildTronTransferTxResponse:
+            type: object
+            properties:
+                rawDataHex:
+                    type: string
+                    description: |-
+                        The `raw_data_hex` from the TRON node. Caller must SHA-256-hash these
+                         bytes (decoded from hex) and sign the digest with the wallet's
+                         secp256k1 private key.
+                txIdHex:
+                    type: string
+                    description: |-
+                        Transaction ID == SHA-256(raw_data). Hex. Used by BroadcastTransaction
+                         and for status polling.
+                estimatedFeeTrx:
+                    type: string
+                    description: |-
+                        Estimated cost in TRX (decimal string). For native TRX it's mostly
+                         free (consumed bandwidth). For TRC-20 ~13.4 TRX worth of energy plus
+                         bandwidth. Treat as informational, not a precise fee bound.
+                transactionJson:
+                    type: string
+                    description: |-
+                        Full transaction JSON (sans signature) — caller passes this back to
+                         BroadcastTransaction as the body once the signature is attached. We
+                         surface it explicitly so the caller never has to round-trip raw_data
+                         back into TRON's JSON shape itself.
                 error:
                     type: string
         BulkTenantActionRequest:
@@ -11254,6 +12382,8 @@ components:
                     type: string
                 immediate:
                     type: boolean
+                idempotencyKey:
+                    type: string
         CancelSubscriptionRequest:
             type: object
             properties:
@@ -11322,6 +12452,20 @@ components:
                     type: string
                 luhnValid:
                     type: boolean
+        ChangePasswordRequest:
+            type: object
+            properties:
+                userId:
+                    type: string
+                currentPassword:
+                    type: string
+                newPassword:
+                    type: string
+        ChangePasswordResponse:
+            type: object
+            properties:
+                success:
+                    type: boolean
         ChangePlanRequest:
             type: object
             properties:
@@ -11332,6 +12476,12 @@ components:
                 interval:
                     type: integer
                     format: enum
+                idempotencyKey:
+                    type: string
+                    description: |-
+                        P1.2: client-supplied idempotency key. Replays within 24h return cached
+                         response without re-executing the plan change (no double subscription,
+                         no double dunning escalation). TTL 24h.
         ChatMessage:
             type: object
             properties:
@@ -11571,6 +12721,20 @@ components:
                 dueAt:
                     type: string
                     format: date-time
+        ConfirmEmailVerificationRequest:
+            type: object
+            properties:
+                userId:
+                    type: string
+                code:
+                    type: string
+        ConfirmEmailVerificationResponse:
+            type: object
+            properties:
+                success:
+                    type: boolean
+                emailVerified:
+                    type: boolean
         ConfirmOtpRequest:
             type: object
             properties:
@@ -11890,6 +13054,9 @@ components:
                 dueDate:
                     type: string
                     format: date-time
+                idempotencyKey:
+                    type: string
+                    description: 'P1.2: prevents duplicate invoice creation on retry (no double accounting entry).'
         CreateMailboxRequest:
             type: object
             properties:
@@ -11989,6 +13156,8 @@ components:
                 trialDays:
                     type: integer
                     format: int32
+                idempotencyKey:
+                    type: string
         CreatePromotionRequest:
             type: object
             properties:
@@ -12089,6 +13258,24 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/ReportFilter'
+        CreateSecretRequest:
+            type: object
+            properties:
+                tenantId:
+                    type: string
+                name:
+                    type: string
+                description:
+                    type: string
+                environment:
+                    type: string
+                value:
+                    type: string
+        CreateSecretResponse:
+            type: object
+            properties:
+                secret:
+                    $ref: '#/components/schemas/Secret'
         CreateSessionRequest:
             type: object
             properties:
@@ -12336,6 +13523,31 @@ components:
                     type: string
                 churnedCustomers:
                     type: string
+        DashboardAuditCounts:
+            type: object
+            properties:
+                total:
+                    type: string
+                last24h:
+                    type: string
+        DashboardModuleCounts:
+            type: object
+            properties:
+                active:
+                    type: string
+                trial:
+                    type: string
+                disabled:
+                    type: string
+        DashboardTenantCounts:
+            type: object
+            properties:
+                total:
+                    type: string
+                active:
+                    type: string
+                suspended:
+                    type: string
         DebitWalletRequest:
             type: object
             properties:
@@ -12371,6 +13583,11 @@ components:
                     type: array
                     items:
                         type: string
+        DeleteAccountResponse:
+            type: object
+            properties:
+                success:
+                    type: boolean
         DeleteApplicationResponse:
             type: object
             properties:
@@ -12402,6 +13619,11 @@ components:
                 success:
                     type: boolean
         DeleteRoleResponse:
+            type: object
+            properties:
+                success:
+                    type: boolean
+        DeleteSecretResponse:
             type: object
             properties:
                 success:
@@ -12958,6 +14180,53 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/AccessGrant'
+        ExportChainWalletMnemonicRequest:
+            type: object
+            properties:
+                tenantId:
+                    type: string
+                    description: |-
+                        tenant_id is overwritten from the authenticated context — body value
+                         is ignored. Documented here for proto symmetry with other wallet
+                         RPCs.
+                walletId:
+                    type: string
+                subjectId:
+                    type: string
+                    description: |-
+                        Subject who owns the wallet (must match `wallets.subject_id`). Set
+                         explicitly so the server can fail-fast before decryption if the
+                         caller is impersonating.
+                reason:
+                    type: string
+                    description: |-
+                        Free-text reason captured in the audit event. Optional but
+                         recommended ("user requested recovery on device X").
+        ExportChainWalletMnemonicResponse:
+            type: object
+            properties:
+                mnemonic:
+                    type: string
+                    description: |-
+                        BIP-39 mnemonic phrase (12 or 24 words). Plaintext over gRPC — the
+                         caller MUST surface it once and never persist it. ledger-core
+                         wraps the in-process buffer in Zeroizing; wire serialization is
+                         unavoidable.
+                walletId:
+                    type: string
+                exportCount:
+                    type: integer
+                    description: |-
+                        Number of times this wallet has had its mnemonic exported,
+                         including this call. Frontends surface this to the user as a
+                         "phrase revealed N times" awareness signal.
+                    format: int32
+                exportedAt:
+                    type: string
+                    description: |-
+                        ISO-8601 timestamp of this export (mirrored in the audit row /
+                         outbox event so clients can correlate).
+                    format: date-time
         FailureAnalysisResponse:
             type: object
             properties:
@@ -13246,6 +14515,17 @@ components:
             properties:
                 session:
                     $ref: '#/components/schemas/CheckoutSession'
+        GetDashboardMetricsResponse:
+            type: object
+            properties:
+                tenants:
+                    $ref: '#/components/schemas/DashboardTenantCounts'
+                modules:
+                    $ref: '#/components/schemas/DashboardModuleCounts'
+                auditEvents:
+                    $ref: '#/components/schemas/DashboardAuditCounts'
+                tenantScope:
+                    type: string
         GetDeliveryResponse:
             type: object
             properties:
@@ -13335,6 +14615,13 @@ components:
             properties:
                 client:
                     $ref: '#/components/schemas/OAuthClient'
+        GetPacksCatalogResponse:
+            type: object
+            properties:
+                packs:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/PackCatalogEntry'
         GetPlatformHealthResponse:
             type: object
             properties:
@@ -13366,6 +14653,13 @@ components:
                     type: string
                 error:
                     type: string
+        GetReconcileLogResponse:
+            type: object
+            properties:
+                rows:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ReconcileLogEntry'
         GetServiceHistoryResponse:
             type: object
             properties:
@@ -13589,6 +14883,48 @@ components:
                 expiresAt:
                     type: string
                     format: date-time
+        ImportChainWalletRequest:
+            type: object
+            properties:
+                tenantId:
+                    type: string
+                subjectId:
+                    type: string
+                subjectType:
+                    type: string
+                currency:
+                    type: string
+                network:
+                    type: string
+                mnemonic:
+                    type: string
+                    description: |-
+                        BIP-39 mnemonic phrase (12 or 24 words). Validated server-side;
+                         SHA-256-hashed before storage. Never persisted plaintext, never
+                         logged. Re-import same phrase для одного subject = idempotent
+                         (returns existing wallet by mnemonic_hash UNIQUE).
+                idempotencyKey:
+                    type: string
+        ImportChainWalletResponse:
+            type: object
+            properties:
+                wallet:
+                    $ref: '#/components/schemas/Wallet'
+                wasExisting:
+                    type: boolean
+                    description: |-
+                        True when the import resolved to an already-existing wallet (same
+                         mnemonic_hash, same subject). Lets the caller distinguish a recovery
+                         ("you already had this wallet, here it is") from a fresh import (UX:
+                         "✓ wallet imported successfully").
+                recoveredAt:
+                    type: string
+                    description: |-
+                        ISO-8601 timestamp echoing wallet.created_at on a fresh import, or
+                         wallet.updated_at on a recovery. Frontends use this to show
+                         "recovered" / "originally imported" labels without re-parsing the
+                         wallet object.
+                    format: date-time
         InitiateWithdrawalRequest:
             type: object
             properties:
@@ -13610,6 +14946,17 @@ components:
                     type: string
                 mint:
                     type: string
+                sponsorWalletId:
+                    type: string
+                    description: |-
+                        Replaces the earlier "mint=...;" hack in
+                         `description`. Ignored for bank withdrawals.
+                         Optional sponsor wallet for gasless withdrawals. When set, the chain
+                         fee (and any SPL ATA rent) is debited from this wallet's off-chain
+                         balance instead of the source. The end-user wallet needs no native SOL.
+                         Must be an active on-chain wallet in the same tenant + network. The
+                         tenant_admin role typically owns one omnibus sponsor wallet per network
+                         and references it on every customer withdrawal.
         InvestigationFinding:
             type: object
             properties:
@@ -13810,6 +15157,22 @@ components:
                         $ref: '#/components/schemas/ComplianceAlert'
                 nextCursor:
                     type: string
+        ListAllApiKeysResponse:
+            type: object
+            properties:
+                apiKeys:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ApiKey'
+                totalCount:
+                    type: integer
+                    format: int32
+                nextCursor:
+                    type: string
+                    description: |-
+                        R1.b: next page token (empty when no more pages). Encoded as the next
+                         page number string for the simple page-based scheme; clients pass it
+                         back in `cursor`.
         ListApiKeysResponse:
             type: object
             properties:
@@ -14102,6 +15465,23 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/PlatformPlan'
+        ListPlatformUsageResponse:
+            type: object
+            properties:
+                tenants:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/TenantUsageSummary'
+        ListPoliciesResponse:
+            type: object
+            properties:
+                policies:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Policy'
+                totalCount:
+                    type: integer
+                    format: int32
         ListPromotionsResponse:
             type: object
             properties:
@@ -14190,6 +15570,16 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/ScheduledReport'
+        ListSecretsResponse:
+            type: object
+            properties:
+                secrets:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Secret'
+                totalCount:
+                    type: integer
+                    format: int32
         ListStreamsResponse:
             type: object
             properties:
@@ -14253,6 +15643,16 @@ components:
                         $ref: '#/components/schemas/WalletTransaction'
                 nextCursor:
                     type: string
+        ListUsersResponse:
+            type: object
+            properties:
+                users:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/User'
+                totalCount:
+                    type: integer
+                    format: int32
         ListWalletMovementsResponse:
             type: object
             properties:
@@ -14850,6 +16250,8 @@ components:
                 updatedAt:
                     type: string
                     format: date-time
+                telegramText:
+                    type: string
         OAuthClient:
             type: object
             properties:
@@ -14999,6 +16401,65 @@ components:
                     format: enum
                 overrideNote:
                     type: string
+        PackBilling:
+            type: object
+            properties:
+                planMinimum:
+                    type: string
+                overageModel:
+                    type: string
+        PackCatalogEntry:
+            type: object
+            properties:
+                code:
+                    type: string
+                description:
+                    type: string
+                targetClass:
+                    type: string
+                referenceDownstream:
+                    type: string
+                status:
+                    type: string
+                modules:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/PackCatalogModule'
+                packServices:
+                    type: array
+                    items:
+                        type: string
+                roleTemplates:
+                    type: array
+                    items:
+                        type: string
+                eventTopics:
+                    type: array
+                    items:
+                        type: string
+                uiModules:
+                    type: array
+                    items:
+                        type: string
+                quotasPreset:
+                    type: string
+                billing:
+                    $ref: '#/components/schemas/PackBilling'
+                constraints:
+                    type: array
+                    items:
+                        type: string
+        PackCatalogModule:
+            type: object
+            properties:
+                key:
+                    type: string
+                required:
+                    type: boolean
+            description: |-
+                Pack catalog entries (R1.a). Mirrors contracts/registry/vertical-packs.yaml
+                 1:1 so frontend can render the full pack definition (description, billing,
+                 role templates, event topics, ui modules).
         PackStatus:
             type: object
             properties:
@@ -15049,6 +16510,11 @@ components:
                     type: string
                 methodId:
                     type: string
+                idempotencyKey:
+                    type: string
+                    description: |-
+                        P1.2: most money-critical RPC. Replay with same key returns cached
+                         response without re-charging the payment method or re-marking invoice.
         PaymentDetailsResponse:
             type: object
             properties:
@@ -15420,6 +16886,77 @@ components:
                         $ref: '#/components/schemas/AlertEvidence'
                 idempotencyKey:
                     type: string
+        ReconcileDelta:
+            type: object
+            properties:
+                modulesAdded:
+                    type: array
+                    items:
+                        type: string
+                modulesRemoved:
+                    type: array
+                    items:
+                        type: string
+                packsAdded:
+                    type: array
+                    items:
+                        type: string
+                packsRemoved:
+                    type: array
+                    items:
+                        type: string
+        ReconcileLogEntry:
+            type: object
+            properties:
+                id:
+                    type: string
+                eventId:
+                    type: string
+                fromPlan:
+                    type: string
+                toPlan:
+                    type: string
+                transition:
+                    type: string
+                modulesAdded:
+                    type: array
+                    items:
+                        type: string
+                modulesRemoved:
+                    type: array
+                    items:
+                        type: string
+                packsAdded:
+                    type: array
+                    items:
+                        type: string
+                packsRemoved:
+                    type: array
+                    items:
+                        type: string
+                reconciledAt:
+                    type: string
+                    format: date-time
+        ReconcilePlanRequest:
+            type: object
+            properties:
+                tenantId:
+                    type: string
+                fromPlan:
+                    type: string
+                toPlan:
+                    type: string
+                transition:
+                    type: string
+                eventId:
+                    type: string
+        ReconcilePlanResponse:
+            type: object
+            properties:
+                reconciled:
+                    type: boolean
+                delta:
+                    $ref: '#/components/schemas/ReconcileDelta'
         RedeemPromoCodeRequest:
             type: object
             properties:
@@ -15427,6 +16964,9 @@ components:
                     type: string
                 code:
                     type: string
+                idempotencyKey:
+                    type: string
+                    description: 'P1.2: prevents double credit + double promo usage on retry.'
         RefreshTokenRequest:
             type: object
             properties:
@@ -15715,6 +17255,26 @@ components:
                     $ref: '#/components/schemas/KycCheck'
                 redirectUrl:
                     type: string
+        ResetPasswordRequest:
+            type: object
+            properties:
+                email:
+                    type: string
+                    description: Exactly one of identifier — the channel where the OTP was sent.
+                phone:
+                    type: string
+                code:
+                    type: string
+                newPassword:
+                    type: string
+            description: |-
+                ResetPassword is the forgot-password completion. Caller has previously
+                 run SendOtp(purpose="password_reset") and received a 6-digit code.
+        ResetPasswordResponse:
+            type: object
+            properties:
+                success:
+                    type: boolean
         ResolveAlertRequest:
             type: object
             properties:
@@ -15784,6 +17344,22 @@ components:
             properties:
                 delivery:
                     $ref: '#/components/schemas/Delivery'
+        RevealSecretRequest:
+            type: object
+            properties:
+                secretId:
+                    type: string
+                tenantId:
+                    type: string
+                auditReason:
+                    type: string
+        RevealSecretResponse:
+            type: object
+            properties:
+                value:
+                    type: string
+                secret:
+                    $ref: '#/components/schemas/Secret'
         RevenueMetrics:
             type: object
             properties:
@@ -15831,6 +17407,15 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/RevenueTimeSeriesPoint'
+        RevokeApiKeyRequest:
+            type: object
+            properties:
+                tenantId:
+                    type: string
+                apiKeyId:
+                    type: string
+                reason:
+                    type: string
         RevokeApiKeyResponse:
             type: object
             properties:
@@ -16044,15 +17629,19 @@ components:
         RotateSecretRequest:
             type: object
             properties:
-                endpointId:
+                secretId:
                     type: string
                 tenantId:
+                    type: string
+                newValue:
+                    type: string
+                auditReason:
                     type: string
         RotateSecretResponse:
             type: object
             properties:
-                endpoint:
-                    $ref: '#/components/schemas/Endpoint'
+                secret:
+                    $ref: '#/components/schemas/Secret'
         RuleCondition:
             type: object
             properties:
@@ -16183,6 +17772,35 @@ components:
                     type: string
                 screenedAt:
                     type: string
+        Secret:
+            type: object
+            properties:
+                secretId:
+                    type: string
+                tenantId:
+                    type: string
+                name:
+                    type: string
+                description:
+                    type: string
+                environment:
+                    type: string
+                valuePreview:
+                    type: string
+                createdAt:
+                    type: string
+                updatedAt:
+                    type: string
+                rotatedAt:
+                    type: string
+                lastRevealedAt:
+                    type: string
+                revealCount:
+                    type: integer
+                    format: int32
+            description: |-
+                Returned by List/Create/Rotate. Value preview is the last <=4 chars of the
+                 plaintext for visual hint; the actual secret is only available via Reveal.
         Segment:
             type: object
             properties:
@@ -16205,6 +17823,19 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/Segment'
+        SendEmailVerificationRequest:
+            type: object
+            properties:
+                userId:
+                    type: string
+                email:
+                    type: string
+                    description: Optional override — by default sends to the user's current email.
+        SendEmailVerificationResponse:
+            type: object
+            properties:
+                success:
+                    type: boolean
         SendInvoiceRequest:
             type: object
             properties:
@@ -16214,6 +17845,9 @@ components:
                     type: string
                 recipientEmail:
                     type: string
+                idempotencyKey:
+                    type: string
+                    description: 'P1.2: prevents double email send (real cost via SMTP provider).'
         SendInvoiceResponse:
             type: object
             properties:
@@ -16257,6 +17891,13 @@ components:
                     type: object
                     additionalProperties:
                         type: string
+                idempotencyKey:
+                    type: string
+                    description: |-
+                        P1.2: client-supplied idempotency key. If a request with the same
+                         (tenant_id, idempotency_key) has been processed before, the cached
+                         response is returned without re-sending (no double SMS/email/push).
+                         TTL 24h (notify-service config).
         SendNotificationResponse:
             type: object
             properties:
@@ -16279,6 +17920,37 @@ components:
             properties:
                 success:
                     type: boolean
+        SendTelegramRequest:
+            type: object
+            properties:
+                tenantId:
+                    type: string
+                chatId:
+                    type: string
+                templateKey:
+                    type: string
+                variables:
+                    type: object
+                    additionalProperties:
+                        type: string
+                rawText:
+                    type: string
+                idempotencyKey:
+                    type: string
+                    description: |-
+                        P1.2: client-supplied idempotency key. If a request with the same
+                         (tenant_id, idempotency_key) has been processed before, the cached
+                         response is returned without re-sending. TTL 24h (notify-service config).
+        SendTelegramResponse:
+            type: object
+            properties:
+                notificationId:
+                    type: string
+                providerMsgId:
+                    type: string
+                status:
+                    type: integer
+                    format: enum
         ServiceHistoryPoint:
             type: object
             properties:
@@ -16352,6 +18024,32 @@ components:
                     type: string
                 config:
                     $ref: '#/components/schemas/ProviderConfig'
+        SetTenantQuotaOverrideRequest:
+            type: object
+            properties:
+                tenantId:
+                    type: string
+                resource:
+                    type: integer
+                    format: enum
+                overrideLimit:
+                    type: string
+                    description: override_limit < 0 → clear the override (reverts to plan default).
+                reason:
+                    type: string
+            description: R1.d — platform admin override request.
+        SetTenantQuotaOverrideResponse:
+            type: object
+            properties:
+                tenantId:
+                    type: string
+                resource:
+                    type: integer
+                    format: enum
+                effectiveLimit:
+                    type: string
+                hasOverride:
+                    type: boolean
         SettlementConfig:
             type: object
             properties:
@@ -16655,6 +18353,23 @@ components:
                     format: date-time
                 cancelAtPeriodEnd:
                     type: boolean
+        TenantUsageSummary:
+            type: object
+            properties:
+                tenantId:
+                    type: string
+                tenantCode:
+                    type: string
+                plan:
+                    type: string
+                dimensions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/UsageDimension'
+                overQuota:
+                    type: boolean
+                updatedAt:
+                    type: string
         TenantUser:
             type: object
             properties:
@@ -16786,6 +18501,49 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/TopCustomer'
+        TransferBetweenWalletsRequest:
+            type: object
+            properties:
+                tenantId:
+                    type: string
+                fromWalletId:
+                    type: string
+                toWalletId:
+                    type: string
+                amount:
+                    type: string
+                    description: Decimal string — see Wallet.balance notes. Must be > 0.
+                reason:
+                    type: integer
+                    description: |-
+                        Audit/ledger reason classifier (TRANSACTION_REASON_*). Defaults to
+                         TRANSACTION_REASON_ADJUSTMENT if UNSPECIFIED.
+                    format: enum
+                description:
+                    type: string
+                idempotencyKey:
+                    type: string
+                merchantId:
+                    type: string
+                    description: |-
+                        Merchant context for the wallet.{credit,debit,transfer} envelope events.
+                         wallet.transfer.json doesn't require it but the debit/credit pair does
+                         (skipped if absent — money state still commits, see outbox helpers).
+                note:
+                    type: string
+                    description: Optional free-text note attached to the wallet.transfer event.
+        TransferBetweenWalletsResponse:
+            type: object
+            properties:
+                transferId:
+                    type: string
+                    description: |-
+                        Stable UUID identifying the transfer (used as outbox event aggregate_id
+                         and `transfer_id` in the wallet.transfer payload). Generated server-side.
+                debit:
+                    $ref: '#/components/schemas/WalletTransaction'
+                credit:
+                    $ref: '#/components/schemas/WalletTransaction'
         UnbindPolicyRequest:
             type: object
             properties:
@@ -17196,6 +18954,42 @@ components:
                     type: object
                     additionalProperties:
                         type: string
+        UpdateUserEmailRequest:
+            type: object
+            properties:
+                userId:
+                    type: string
+                newEmail:
+                    type: string
+                code:
+                    type: string
+                    description: |-
+                        OTP code sent to new_email with purpose="phone_verify"
+                         (re-using the OTP plumbing — proto label is legacy).
+        UpdateUserEmailResponse:
+            type: object
+            properties:
+                success:
+                    type: boolean
+                email:
+                    type: string
+        UpdateUserPhoneRequest:
+            type: object
+            properties:
+                userId:
+                    type: string
+                newPhone:
+                    type: string
+                code:
+                    type: string
+                    description: OTP code that was sent to new_phone with purpose="phone_verify".
+        UpdateUserPhoneResponse:
+            type: object
+            properties:
+                success:
+                    type: boolean
+                phone:
+                    type: string
         UpdateUserProfileRequest:
             type: object
             properties:
@@ -17297,6 +19091,23 @@ components:
             properties:
                 role:
                     $ref: '#/components/schemas/Role'
+        UsageDimension:
+            type: object
+            properties:
+                module:
+                    type: string
+                dimension:
+                    type: string
+                unit:
+                    type: string
+                used:
+                    type: string
+                quota:
+                    type: string
+                overrideQuota:
+                    type: string
+                periodEnd:
+                    type: string
         UsageSummary:
             type: object
             properties:
@@ -17333,6 +19144,27 @@ components:
                 limit:
                     type: string
                 projected:
+                    type: string
+        User:
+            type: object
+            properties:
+                userId:
+                    type: string
+                tenantId:
+                    type: string
+                email:
+                    type: string
+                name:
+                    type: string
+                roles:
+                    type: array
+                    items:
+                        type: string
+                isActive:
+                    type: boolean
+                createdAt:
+                    type: string
+                updatedAt:
                     type: string
         UserInfoResponse:
             type: object
@@ -17429,6 +19261,12 @@ components:
                     type: string
                 purpose:
                     type: string
+                phone:
+                    type: string
+                    description: |-
+                        Phone-based verification path (for first-time signup / passwordless
+                         before user_id exists). Exactly one of user_id or phone must be set,
+                         matching SendOtpRequest semantics.
         VerifyOtpResponse:
             type: object
             properties:
@@ -17442,6 +19280,8 @@ components:
                 invoiceId:
                     type: string
                 reason:
+                    type: string
+                idempotencyKey:
                     type: string
         VoidPaymentCommand:
             type: object
