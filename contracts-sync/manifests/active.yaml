@@ -15,10 +15,12 @@ snapshot:
   source_path: contracts
   fetched_at: 2026-06-01       # TS + Go regenerated on srv2 (protoc+protoc-gen-openapi → openapi → openapi-typescript / oapi-codegen)
 
-sdk_versions:
-  go: "1.7.0"
-  typescript: "0.1.0"
-  python: "0.1.0"      # NOTE: this field is out of sync with real package versions (see CHANGELOG: go v1.12.0, @mashgate/sdk 1.6.0). 2026-06-01 regen refreshed _generated types only; version bump is a separate release decision.
+sdk_versions:           # mirrors the real published versions (package.json / pyproject / git tags)
+  go: "1.13.0"
+  typescript: "1.7.0"
+  python: "0.7.0"
+  # 2026-06-01 contracts-sync regen refreshed _generated types only; it sits in CHANGELOG [Unreleased]
+  # until the next normal per-language release (no bump applied here).
 
 platform_compatibility:
   min: "mashgate@v2.0.0"   # Wave 2 control-plane release
