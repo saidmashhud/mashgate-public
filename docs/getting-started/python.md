@@ -125,9 +125,10 @@ except MashgateError as e:
 from mashgate import verify_webhook_signature
 
 ok = verify_webhook_signature(
-    body=raw_request_body,
-    signature=request.headers["X-Mashgate-Signature"],
+    payload=raw_request_body,
+    signature=request.headers["x-hl-signature"],
     secret=os.environ["WEBHOOK_SECRET"],
+    timestamp=request.headers["x-hl-timestamp"],
 )
 ```
 

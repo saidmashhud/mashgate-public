@@ -153,7 +153,7 @@ from mashgate.webhooks import verify_webhook_signature
 @app.post("/webhooks")
 def handler(request):
     body = request.get_data()  # raw bytes, before JSON parsing
-    if not verify_webhook_signature(body, request.headers["X-Mashgate-Signature"], SECRET):
+    if not verify_webhook_signature(body, request.headers["x-hl-signature"], SECRET):
         return ("", 401)
     event = json.loads(body)
     if already_processed(event.get("id") or event.get("event_id")):

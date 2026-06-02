@@ -148,12 +148,13 @@ try {
 ```ts
 import { verifyWebhookSignature } from "@mashgate/sdk";
 
-app.post("/webhooks/mashgate", express.raw({ type: "application/json" }), (req, res) => {
-  const ok = verifyWebhookSignature({
-    body: req.body,
-    signature: req.header("x-mashgate-signature")!,
-    secret: process.env.WEBHOOK_SECRET!,
-  });
+app.post("/webhooks/mashgate", express.raw({ type: "application/json" }), async (req, res) => {
+  const ok = await verifyWebhookSignature(
+    req.body,
+    req.header("x-hl-signature")!,
+    process.env.WEBHOOK_SECRET!,
+    req.header("x-hl-timestamp")!,
+  );
   if (!ok) return res.status(401).end();
   // handle event
 });

@@ -115,11 +115,12 @@ try {
 ```ts
 import { verifyWebhookSignature } from "@mashgate/sdk";
 
-const ok = verifyWebhookSignature({
-  body: rawRequestBody,
-  signature: req.header("x-mashgate-signature")!,
-  secret: process.env.WEBHOOK_SECRET!,
-});
+const ok = await verifyWebhookSignature(
+  rawRequestBody,
+  req.header("x-hl-signature")!,
+  process.env.WEBHOOK_SECRET!,
+  req.header("x-hl-timestamp")!,
+);
 ```
 
 ## Next steps

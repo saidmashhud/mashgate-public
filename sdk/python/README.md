@@ -144,8 +144,9 @@ from mashgate import verify_webhook_signature
 @app.post("/webhooks/mashgate")
 async def webhook(request):
     body = await request.body()
-    sig = request.headers["X-Mashgate-Signature"]
-    if not verify_webhook_signature(body=body, signature=sig, secret=SECRET):
+    sig = request.headers["x-hl-signature"]
+    ts = request.headers["x-hl-timestamp"]
+    if not verify_webhook_signature(payload=body, signature=sig, secret=SECRET, timestamp=ts):
         return Response(status_code=401)
     # handle event
 ```
