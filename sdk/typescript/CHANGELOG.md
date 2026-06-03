@@ -9,6 +9,20 @@ Aggregate changelog for all languages: [`../../CHANGELOG.md`](../../CHANGELOG.md
 
 ---
 
+## [Unreleased]
+
+### Security
+
+- `verifyWebhookSignature()` (and `mg.webhooks.verify` / `handleRequest`) now
+  enforce a replay window: a signature whose `x-hl-timestamp` is more than
+  `maxAgeMs` (default **300_000 ms = 5 min**) from now — in either direction —
+  is rejected, matching the Go and Python SDK verifiers. Previously the TS
+  verifier checked only the HMAC and ignored timestamp age. Pass `maxAgeMs = 0`
+  to opt out. **Behavior change:** webhooks signed more than 5 minutes ago are
+  now rejected by default.
+
+---
+
 ## [1.7.0] — 2026-05-19
 
 ### Added — EVM chain provider Phase 1
