@@ -75,11 +75,11 @@ const session = await mg.checkout.createSession({
   ],
 });
 
-console.log("redirect customer to:", session.checkoutUrl);
+console.log("redirect customer to:", session.url);
 ```
 
 `session` is a typed `CheckoutSession` with `sessionId`, `status`
-(`pending | completed | expired | cancelled`), `totalAmount`, `checkoutUrl`,
+(`pending | completed | expired | cancelled`), `totalAmount`, `url`,
 `successUrl`, `cancelUrl`, `expiresAt`, and `createdAt`.
 
 ### Or: a single payment
@@ -90,7 +90,7 @@ const payment = await mg.payments.create({
   currency: "UZS",
   description: "Pro plan",
 });
-console.log(payment.id, payment.status);
+console.log(payment.paymentId, payment.status);
 ```
 
 ### Errors
@@ -115,11 +115,15 @@ try {
 ```ts
 import { verifyWebhookSignature } from "@mashgate/sdk";
 
-const ok = verifyWebhookSignature({
-  body: rawRequestBody,
-  signature: req.header("x-mashgate-signature")!,
-  secret: process.env.WEBHOOK_SECRET!,
-});
+// `rawRequestBody` must be the RAW bytes (e.g. express.raw), not parsed JSON.
+// HookLine signs HMAC-SHA256 over `{timestamp}.{body}` and sends the signature
+// as `x-hl-signature: v1=<hex>` plus `x-hl-timestamp` (Unix ms).
+const ok = await verifyWebhookSignature(
+  rawRequestBody,
+  req.header("x-hl-signature")!,
+  process.env.WEBHOOK_SECRET!,
+  req.header("x-hl-timestamp")!,
+);
 ```
 
 ## Next steps

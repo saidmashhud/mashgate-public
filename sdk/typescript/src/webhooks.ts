@@ -1,15 +1,37 @@
 /**
- * Verify a webhook signature using HMAC-SHA256 with timing-safe comparison.
- * Works in both Node.js and browser (WebCrypto API) environments.
+ * Verify a HookLine webhook signature using HMAC-SHA256 with timing-safe
+ * comparison. Works in both Node.js and browser (WebCrypto API) environments.
+ *
+ * HookLine signs HMAC-SHA256 over `{timestamp}.{body}` and sends the signature
+ * as `x-hl-signature: v1=<hex>` plus an `x-hl-timestamp` (Unix epoch ms). To
+ * mitigate replay, a signature whose timestamp is more than `maxAgeMs` from now
+ * (in either direction) is rejected; pass `maxAgeMs = 0` to disable the window.
+ * This matches the Go and Python SDK verifiers.
+ *
+ * @param payload   raw request body (string or bytes), NOT re-serialized JSON
+ * @param signatureHeader `x-hl-signature` header value (`v1=<hex>`)
+ * @param secret    the endpoint signing secret
+ * @param timestamp `x-hl-timestamp` header value (Unix epoch milliseconds)
+ * @param maxAgeMs  replay window in ms (default 300_000 = 5 min; 0 disables it)
  */
 export async function verifyWebhookSignature(
   payload: string | Uint8Array,
   signatureHeader: string,
   secret: string,
   timestamp: string,
+  maxAgeMs: number = 300_000,
 ): Promise<boolean> {
   if (!signatureHeader?.startsWith("v1=") || !timestamp) {
     return false;
+  }
+
+  // Replay-window check (fail fast, before the HMAC). The timestamp is Unix
+  // epoch milliseconds; reject anything outside ±maxAgeMs of now.
+  if (maxAgeMs > 0) {
+    const tsMs = Number(timestamp);
+    if (!Number.isFinite(tsMs) || Math.abs(Date.now() - tsMs) > maxAgeMs) {
+      return false;
+    }
   }
 
   const encoder = new TextEncoder();

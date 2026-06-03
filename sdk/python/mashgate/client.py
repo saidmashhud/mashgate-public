@@ -21,6 +21,17 @@ from mashgate.resources.storage import StorageResource
 from mashgate.resources.logs import LogsResource
 from mashgate.resources.flags import FlagsResource
 from mashgate.resources.wallet_admin import WalletAdminResource
+from mashgate.resources.billing import BillingResource
+from mashgate.resources.subscriptions import SubscriptionsResource
+from mashgate.resources.invoices import InvoicesResource
+from mashgate.resources.payment_links import PaymentLinksResource
+from mashgate.resources.iam import IamResource
+from mashgate.resources.analytics import AnalyticsResource
+from mashgate.resources.metering import MeteringResource
+from mashgate.resources.mail import MailResource
+from mashgate.resources.guard import GuardResource
+from mashgate.resources.chain import ChainResource
+from mashgate.resources.local_payments import LocalPaymentsResource
 
 
 class MashgateClient:
@@ -75,6 +86,28 @@ class MashgateClient:
         # Admin/merchant-side WalletService — full wallet.v1.WalletService.
         # End-user wallet ops (saved cards, balance) live on `self.wallet`.
         self.wallet_admin = WalletAdminResource(self)
+        # Platform billing (subscription, plans, credits) for the tenant.
+        self.billing = BillingResource(self)
+        # Recurring billing plans + customer subscriptions.
+        self.subscriptions = SubscriptionsResource(self)
+        # Merchant invoices.
+        self.invoices = InvoicesResource(self)
+        # Shareable payment links.
+        self.payment_links = PaymentLinksResource(self)
+        # IAM (mgID) — tenants, roles, groups, policies, API keys, scopes.
+        self.iam = IamResource(self)
+        # Payment + customer analytics (read-only).
+        self.analytics = AnalyticsResource(self)
+        # Usage metering + quota status.
+        self.metering = MeteringResource(self)
+        # Mail (mgMail) — mailboxes, messages, domains, DKIM.
+        self.mail = MailResource(self)
+        # Guard — per-tenant rate limiting + IP blocklisting.
+        self.guard = GuardResource(self)
+        # Chain (mgChain) — crypto rails: wallets, payments, swaps, escrow.
+        self.chain = ChainResource(self)
+        # Local payments — country-specific providers (TJ/UZ).
+        self.local_payments = LocalPaymentsResource(self)
 
     # ── Token management ──────────────────────────────────────────────
 

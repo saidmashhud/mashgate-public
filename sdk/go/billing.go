@@ -52,7 +52,7 @@ func (b *BillingClient) GetSubscription(ctx context.Context) (*BillingSubscripti
 // ChangePlan switches the tenant's subscription to a new plan.
 func (b *BillingClient) ChangePlan(ctx context.Context, req ChangePlanRequest) (*BillingSubscription, error) {
 	var out BillingSubscription
-	if err := b.c.do(ctx, "POST", "/v1/billing/subscription/change-plan", req, &out); err != nil {
+	if err := b.c.do(ctx, "POST", "/v1/billing/subscription/change", req, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -72,7 +72,7 @@ func (b *BillingClient) CancelPlan(ctx context.Context, req CancelPlanRequest) (
 // plan switch without applying it. Useful for confirmation UIs.
 func (b *BillingClient) PreviewPlanChange(ctx context.Context, req PreviewPlanChangeRequest) (*PreviewPlanChangeResponse, error) {
 	var out PreviewPlanChangeResponse
-	if err := b.c.do(ctx, "POST", "/v1/billing/subscription/preview-change", req, &out); err != nil {
+	if err := b.c.do(ctx, "POST", "/v1/billing/subscription/preview", req, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -145,7 +145,7 @@ func (b *BillingClient) PayInvoice(ctx context.Context, invoiceID string) (*Bill
 // GetCreditBalance returns the tenant's current credit balance.
 func (b *BillingClient) GetCreditBalance(ctx context.Context) (*CreditBalance, error) {
 	var out CreditBalance
-	if err := b.c.do(ctx, "GET", "/v1/billing/credit-balance", nil, &out); err != nil {
+	if err := b.c.do(ctx, "GET", "/v1/billing/credits", nil, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -157,7 +157,7 @@ func (b *BillingClient) RedeemPromoCode(ctx context.Context, code string) (*Rede
 	req := struct {
 		Code string `json:"code"`
 	}{Code: code}
-	if err := b.c.do(ctx, "POST", "/v1/billing/promo/redeem", req, &out); err != nil {
+	if err := b.c.do(ctx, "POST", "/v1/billing/credits/redeem", req, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil

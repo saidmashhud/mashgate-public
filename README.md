@@ -58,7 +58,7 @@ New to building on Mashgate? Start here:
 |----------|---------|-------------|--------|
 | Go | `github.com/saidmashhud/mashgate-public/sdk/go` | Go 1.22 | stable (v0.x) |
 | TypeScript | `@mashgate/sdk` (npm) | Node 18 | stable (v0.x) |
-| Python | `mashgate-sdk` (PyPI) | Python 3.10 | stable (v0.x) |
+| Python | `mashgate` (PyPI) | Python 3.10 | stable (v0.x) |
 
 ---
 
@@ -106,9 +106,13 @@ const session = await client.checkout.create({ amount: "100000", currency: "UZS"
 ### Python
 
 ```python
-from mashgate import Mashgate
+import os
+from mashgate import MashgateClient
 
-client = Mashgate(api_key=os.environ["MASHGATE_API_KEY"])
+client = MashgateClient(
+    base_url=os.environ["MASHGATE_API_URL"],
+    api_key=os.environ["MASHGATE_API_KEY"],
+)
 session = client.checkout.create(amount="100000", currency="UZS")
 ```
 
@@ -122,7 +126,7 @@ mashgate-public/
 │   ├── go/                Core Mashgate SDK
 │   │   └── fintech/       Fintech Pack (KYC, compliance, merchant, wallet)
 │   ├── typescript/        Core Mashgate SDK (npm: @mashgate/sdk)
-│   └── python/            Core Mashgate SDK (PyPI: mashgate-sdk)
+│   └── python/            Core Mashgate SDK (PyPI: mashgate)
 ├── docs/
 │   ├── guides/            How-to guides (building a vertical, data modeling & identity)
 │   ├── best-practices.md  Cross-cutting patterns (idempotency, money, multi-tenancy, …)

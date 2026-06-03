@@ -126,6 +126,7 @@ type Client struct {
 	Mail *MailClient
 
 	// Part 4 service clients — available after calling New().
+	Billing       *BillingClient
 	Subscriptions *SubscriptionsClient
 	Invoices      *InvoicesClient
 	PaymentLinks  *PaymentLinksClient
@@ -149,6 +150,7 @@ func initClients(c *Client) {
 	c.Flags = &FlagsClient{c: c}
 	c.Logs = &LogsClient{c: c}
 	c.Mail = &MailClient{c: c}
+	c.Billing = &BillingClient{c: c}
 	c.Subscriptions = &SubscriptionsClient{c: c}
 	c.Invoices = &InvoicesClient{c: c}
 	c.PaymentLinks = &PaymentLinksClient{c: c}

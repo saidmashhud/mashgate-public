@@ -81,8 +81,9 @@ export class WebhooksResource {
    * @param body      Raw request body string (before any JSON parsing)
    * @param signature `x-hl-signature` header value (e.g. `"v1=abc123..."`)
    * @param secret    Signing secret from your webhook endpoint settings
-   * @param timestamp `x-hl-timestamp` header value (Unix epoch string)
-   * @returns `true` if the signature is valid and timestamp is within 5 minutes
+   * @param timestamp `x-hl-timestamp` header value (Unix epoch milliseconds)
+   * @param maxAgeMs  replay window in ms (default 300_000 = 5 min; 0 disables it)
+   * @returns `true` if the signature is valid and the timestamp is within the window
    *
    * @example
    * ```typescript
@@ -95,8 +96,9 @@ export class WebhooksResource {
     signature: string,
     secret: string,
     timestamp: string,
+    maxAgeMs: number = 300_000,
   ): Promise<boolean> {
-    return verifyWebhookSignature(body, signature, secret, timestamp);
+    return verifyWebhookSignature(body, signature, secret, timestamp, maxAgeMs);
   }
 
   // ── Event routing ───────────────────────────────────────────────────
@@ -136,8 +138,9 @@ export class WebhooksResource {
     signature: string,
     secret: string,
     timestamp: string,
+    maxAgeMs: number = 300_000,
   ): Promise<void> {
-    const valid = await this.verify(body, signature, secret, timestamp);
+    const valid = await this.verify(body, signature, secret, timestamp, maxAgeMs);
     if (!valid) throw new Error("Invalid webhook signature");
 
     const event = JSON.parse(body) as WebhookEvent;
