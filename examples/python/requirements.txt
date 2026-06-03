@@ -1,0 +1,6 @@
+# Mashgate Python SDK (pulls in httpx as its only runtime dependency).
+mashgate>=0.7.0
+
+# Optional: used by the webhook receiver when running `python quickstart.py serve`.
+# Without it the example automatically falls back to the stdlib http.server.
+flask>=3.0

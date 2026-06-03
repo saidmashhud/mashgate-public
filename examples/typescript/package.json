@@ -1,0 +1,22 @@
+{
+  "name": "mashgate-sdk-example-typescript",
+  "version": "1.0.0",
+  "description": "Runnable quickstart for the Mashgate TypeScript SDK: checkout, payment, and webhook verification.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "checkout": "tsx index.ts checkout",
+    "payment": "tsx index.ts payment",
+    "webhook": "tsx index.ts webhook"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "@mashgate/sdk": "^1.7.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.12.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0"
+  }
+}
