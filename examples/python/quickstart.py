@@ -119,15 +119,19 @@ def run_demo() -> None:
 # ──────────────────────────────────────────────────────────────────────────
 # 3. Webhook receiver — verify the signature, then act on the event
 # ──────────────────────────────────────────────────────────────────────────
-# Mashgate signs every webhook with HMAC-SHA256 over the RAW request body and
-# sends the hex digest in the X-Mashgate-Signature header. Always verify
-# against the unparsed bytes — re-serialized JSON will not match.
+# HookLine signs every webhook with HMAC-SHA256 over `{timestamp}.{body}` (the
+# RAW request body, NOT re-serialized JSON) and sends:
+#   x-hl-signature  →  "v1=<hex>"
+#   x-hl-timestamp  →  Unix epoch milliseconds (signed alongside the body)
+# Always verify against the unparsed bytes — re-serialized JSON will not match.
 #
 # NOTE: the real SDK helper signature is
-#   verify_webhook_signature(payload, signature, secret) -> bool
-# The first positional arg is the raw payload (str or bytes).
+#   verify_webhook_signature(payload, signature, secret, timestamp) -> bool
+# It strips the "v1=" prefix, recomputes the HMAC over "{timestamp}.{body}",
+# and enforces a 5-minute replay window on the timestamp.
 
-SIGNATURE_HEADER = "X-Mashgate-Signature"
+SIGNATURE_HEADER = "x-hl-signature"
+TIMESTAMP_HEADER = "x-hl-timestamp"
 
 
 def handle_event(event: dict) -> None:
@@ -158,8 +162,9 @@ def serve_flask(secret: str, port: int) -> bool:
     def webhook():  # noqa: ANN202
         raw = request.get_data()  # raw bytes — do not use request.json here
         sig = request.headers.get(SIGNATURE_HEADER, "")
-        # verify_webhook_signature(payload, signature, secret)
-        if not verify_webhook_signature(raw, sig, secret):
+        ts = request.headers.get(TIMESTAMP_HEADER, "")
+        # verify_webhook_signature(payload, signature, secret, timestamp)
+        if not verify_webhook_signature(raw, sig, secret, ts):
             return Response("invalid signature", status=401)
         handle_event(request.get_json(force=True))
         return Response(status=204)  # ack fast; do heavy work async
@@ -183,8 +188,9 @@ def serve_stdlib(secret: str, port: int) -> None:
             length = int(self.headers.get("Content-Length", 0))
             raw = self.rfile.read(length)  # raw bytes for signature verification
             sig = self.headers.get(SIGNATURE_HEADER, "")
-            # verify_webhook_signature(payload, signature, secret)
-            if not verify_webhook_signature(raw, sig, secret):
+            ts = self.headers.get(TIMESTAMP_HEADER, "")
+            # verify_webhook_signature(payload, signature, secret, timestamp)
+            if not verify_webhook_signature(raw, sig, secret, ts):
                 self.send_response(401)
                 self.end_headers()
                 self.wfile.write(b"invalid signature")
