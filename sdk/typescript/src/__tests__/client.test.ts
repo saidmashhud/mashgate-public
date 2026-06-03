@@ -1,6 +1,39 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MashgateClient } from "../client.js";
 import { MashgateError } from "../errors.js";
+import * as pkg from "../index.js";
+
+// Derived directly from the `readonly <name>: <Name>Resource` properties
+// declared on MashgateClient (src/client.ts) and assigned in its constructor.
+// If a resource is added/removed in client.ts but not here, the "exact set"
+// assertion below fails — keeping this list honest against the real source.
+const RESOURCE_PROPERTIES = [
+  "auth",
+  "payments",
+  "checkout",
+  "wallet",
+  "risk",
+  "webhooks",
+  "developer",
+  "settings",
+  "chat",
+  "notify",
+  "storage",
+  "flags",
+  "logs",
+  "subscriptions",
+  "invoices",
+  "paymentLinks",
+  "guard",
+  "chain",
+  "localPayments",
+  "iam",
+  "metering",
+  "billing",
+  "analytics",
+  "walletAdmin",
+  "mail",
+] as const;
 
 function createMockFetch(response: {
   status?: number;
@@ -169,5 +202,55 @@ describe("Resource integration", () => {
     });
 
     expect(result.endpoint.signingSecret).toBe("whsec_abc");
+  });
+});
+
+describe("MashgateClient resource wiring", () => {
+  let client: MashgateClient;
+
+  beforeEach(() => {
+    client = new MashgateClient({
+      baseUrl: "https://api.mashgate.uz",
+      apiKey: "mg_test_key",
+      fetch: vi.fn(),
+    });
+  });
+
+  it.each(RESOURCE_PROPERTIES)("wires the %s resource", (prop) => {
+    const resource = (client as unknown as Record<string, unknown>)[prop];
+    // Would be undefined if the constructor assignment were dropped.
+    expect(resource).toBeDefined();
+    expect(resource).not.toBeNull();
+    // A wired resource is a real instance, not a leftover empty slot.
+    expect(typeof resource).toBe("object");
+  });
+
+  it("wires exactly the expected set of resources (no missing, no orphan)", () => {
+    const wired = RESOURCE_PROPERTIES.filter((prop) => {
+      const value = (client as unknown as Record<string, unknown>)[prop];
+      return value !== undefined && value !== null && typeof value === "object";
+    });
+    // Fails if any listed resource is unwired, catching a regressed constructor.
+    expect(wired).toEqual([...RESOURCE_PROPERTIES]);
+    expect(wired).toHaveLength(25);
+  });
+});
+
+describe("package entrypoint exports", () => {
+  it("exports verifyWebhookSignature as a function", () => {
+    expect(pkg.verifyWebhookSignature).toBeDefined();
+    expect(typeof pkg.verifyWebhookSignature).toBe("function");
+  });
+
+  it("exports the MashgateError error class", () => {
+    expect(pkg.MashgateError).toBeDefined();
+    expect(typeof pkg.MashgateError).toBe("function");
+    // It is re-exported from the entrypoint and is the same class.
+    expect(pkg.MashgateError).toBe(MashgateError);
+    // Behaves as a real Error subclass, not a placeholder.
+    const err = new pkg.MashgateError({ message: "boom", status: 500 });
+    expect(err).toBeInstanceOf(Error);
+    expect(err.message).toBe("boom");
+    expect(err.status).toBe(500);
   });
 });
