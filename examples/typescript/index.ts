@@ -105,7 +105,7 @@ async function createPayment(mg: MashgateClient): Promise<PaymentIntent> {
 //
 // Mashgate (and HookLine on its behalf) POSTs events here with two headers:
 //   x-hl-signature  →  "v1=<hex hmac-sha256>"
-//   x-hl-timestamp  →  Unix epoch seconds (signed alongside the body)
+//   x-hl-timestamp  →  Unix epoch milliseconds (signed alongside the body)
 //
 // IMPORTANT: verify against the RAW request body, before any JSON parsing —
 // re-serializing changes bytes and breaks the HMAC. `express.raw()` gives us

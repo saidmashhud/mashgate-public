@@ -16,14 +16,10 @@ export MASHGATE_BASE_URL="https://api.mashgate.uz"   # or http://localhost:9661 
 export MASHGATE_API_KEY="mg_test_..."
 ```
 
-The example depends on `@mashgate/sdk` from npm. To run it against this repo's
-local SDK source instead, point the dependency at a relative path before
-installing:
-
-```jsonc
-// package.json
-"@mashgate/sdk": "file:../../sdk/typescript"
-```
+This repo checkout uses the local SDK package via
+`"@mashgate/sdk": "file:../../sdk/typescript"` so the example is runnable before
+the first public npm release. In a real app, replace it with the published
+version, for example `"@mashgate/sdk": "^1.7.0"`.
 
 ## Run
 
@@ -39,7 +35,8 @@ npm run webhook    # start an Express receiver on :3000 that verifies signatures
 - `mg.checkout.createSession(...)` → `session.url` is where you redirect the buyer.
 - `mg.payments.create(...)` → `payment.paymentId` / `payment.status`.
 - `await verifyWebhookSignature(rawBody, signature, secret, timestamp)` using the
-  `x-hl-signature` and `x-hl-timestamp` headers, against the **raw** request body.
+  `x-hl-signature` and `x-hl-timestamp` headers (Unix epoch milliseconds),
+  against the **raw** request body.
 - `eventKey()` / `eventPayload()` + `WebhookTopic` for routing both envelope-v1
   and legacy event shapes.
 - `MashgateError` (carries `status`, `code`, `requestId`).
