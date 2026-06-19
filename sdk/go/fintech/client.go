@@ -70,7 +70,10 @@ func (c *Client) do(ctx context.Context, method, path string, body any, idempote
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Authorization", "Bearer "+c.apiKey)
+	// Tenant API keys (mg_test_/mg_live_) authenticate via X-API-Key. Sending
+	// them as `Authorization: Bearer` makes ext-authz treat the key as a JWT →
+	// 401 "Invalid or expired token". See reference_mashgate_apikey_header.
+	req.Header.Set("X-API-Key", c.apiKey)
 	req.Header.Set("X-Tenant-ID", c.tenantID)
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
