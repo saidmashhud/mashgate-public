@@ -49,49 +49,49 @@ type KycRiskSignal struct {
 }
 
 type KycCheck struct {
-	CheckID       string          `json:"check_id"`
-	TenantID      string          `json:"tenant_id"`
-	SubjectID     string          `json:"subject_id"`
-	SubjectType   KycSubjectType  `json:"subject_type"`
-	CheckType     KycCheckType    `json:"check_type"`
+	CheckID       string          `json:"checkId"`
+	TenantID      string          `json:"tenantId"`
+	SubjectID     string          `json:"subjectId"`
+	SubjectType   KycSubjectType  `json:"subjectType"`
+	CheckType     KycCheckType    `json:"checkType"`
 	Status        KycStatus       `json:"status"`
 	Provider      string          `json:"provider"`
-	ProviderRef   string          `json:"provider_ref"`
-	RiskSignals   []KycRiskSignal `json:"risk_signals"`
-	FailureCode   string          `json:"failure_code"`
-	FailureReason string          `json:"failure_reason"`
-	OverrideBy    string          `json:"override_by"`
-	OverrideNote  string          `json:"override_note"`
-	CreatedAt     string          `json:"created_at"`
-	UpdatedAt     string          `json:"updated_at"`
-	ExpiresAt     *string         `json:"expires_at,omitempty"`
+	ProviderRef   string          `json:"providerRef"`
+	RiskSignals   []KycRiskSignal `json:"riskSignals"`
+	FailureCode   string          `json:"failureCode"`
+	FailureReason string          `json:"failureReason"`
+	OverrideBy    string          `json:"overrideBy"`
+	OverrideNote  string          `json:"overrideNote"`
+	CreatedAt     string          `json:"createdAt"`
+	UpdatedAt     string          `json:"updatedAt"`
+	ExpiresAt     *string         `json:"expiresAt,omitempty"`
 }
 
 type RequestCheckRequest struct {
-	TenantID       string            `json:"tenant_id"`
-	SubjectID      string            `json:"subject_id"`
-	SubjectType    KycSubjectType    `json:"subject_type"`
-	CheckType      KycCheckType      `json:"check_type"`
+	TenantID       string            `json:"tenantId"`
+	SubjectID      string            `json:"subjectId"`
+	SubjectType    KycSubjectType    `json:"subjectType"`
+	CheckType      KycCheckType      `json:"checkType"`
 	Provider       string            `json:"provider,omitempty"`
 	Metadata       map[string]string `json:"metadata,omitempty"`
-	IdempotencyKey string            `json:"idempotency_key,omitempty"`
+	IdempotencyKey string            `json:"idempotencyKey,omitempty"`
 }
 
 type RequestCheckResponse struct {
 	Check       KycCheck `json:"check"`
-	RedirectURL *string  `json:"redirect_url,omitempty"`
+	RedirectURL *string  `json:"redirectUrl,omitempty"`
 }
 
 type ListChecksResponse struct {
 	Checks     []KycCheck `json:"checks"`
-	NextCursor *string    `json:"next_cursor,omitempty"`
+	NextCursor *string    `json:"nextCursor,omitempty"`
 }
 
 type OverrideCheckRequest struct {
-	TenantID     string    `json:"tenant_id"`
-	CheckID      string    `json:"check_id"`
+	TenantID     string    `json:"tenantId"`
+	CheckID      string    `json:"checkId"`
 	Status       KycStatus `json:"status"`
-	OverrideNote string    `json:"override_note"`
+	OverrideNote string    `json:"overrideNote"`
 }
 
 // ── RPCs ──────────────────────────────────────────────────────────────

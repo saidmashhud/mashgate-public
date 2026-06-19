@@ -30,55 +30,55 @@ const (
 )
 
 type MerchantConfig struct {
-	AcceptedCurrencies    []string          `json:"accepted_currencies"`
-	MaxTransactionAmount  string            `json:"max_transaction_amount"`
-	DailyVolumeLimit      string            `json:"daily_volume_limit"`
-	MonthlyVolumeLimit    string            `json:"monthly_volume_limit"`
-	PrimaryCurrency       string            `json:"primary_currency"`
-	CryptoEnabled         bool              `json:"crypto_enabled"`
-	FiatEnabled           bool              `json:"fiat_enabled"`
-	AllowedPaymentMethods []string          `json:"allowed_payment_methods"`
+	AcceptedCurrencies    []string          `json:"acceptedCurrencies"`
+	MaxTransactionAmount  string            `json:"maxTransactionAmount"`
+	DailyVolumeLimit      string            `json:"dailyVolumeLimit"`
+	MonthlyVolumeLimit    string            `json:"monthlyVolumeLimit"`
+	PrimaryCurrency       string            `json:"primaryCurrency"`
+	CryptoEnabled         bool              `json:"cryptoEnabled"`
+	FiatEnabled           bool              `json:"fiatEnabled"`
+	AllowedPaymentMethods []string          `json:"allowedPaymentMethods"`
 	Metadata              map[string]string `json:"metadata,omitempty"`
 }
 
 type MerchantProfile struct {
-	MerchantID         string         `json:"merchant_id"`
-	TenantID           string         `json:"tenant_id"`
-	SubjectID          string         `json:"subject_id"`
-	MerchantType       MerchantType   `json:"merchant_type"`
+	MerchantID         string         `json:"merchantId"`
+	TenantID           string         `json:"tenantId"`
+	SubjectID          string         `json:"subjectId"`
+	MerchantType       MerchantType   `json:"merchantType"`
 	Status             MerchantStatus `json:"status"`
-	DisplayName        string         `json:"display_name"`
-	LegalName          string         `json:"legal_name"`
-	RegistrationNumber string         `json:"registration_number"`
-	CountryCode        string         `json:"country_code"`
-	KycCheckID         string         `json:"kyc_check_id"`
+	DisplayName        string         `json:"displayName"`
+	LegalName          string         `json:"legalName"`
+	RegistrationNumber string         `json:"registrationNumber"`
+	CountryCode        string         `json:"countryCode"`
+	KycCheckID         string         `json:"kycCheckId"`
 	Config             MerchantConfig `json:"config"`
-	AcceptedBy         string         `json:"accepted_by"`
-	RejectedBy         string         `json:"rejected_by"`
-	RejectionReason    string         `json:"rejection_reason"`
-	SuspendedBy        string         `json:"suspended_by"`
-	SuspendReason      string         `json:"suspend_reason"`
-	CreatedAt          string         `json:"created_at"`
-	UpdatedAt          string         `json:"updated_at"`
-	AcceptedAt         *string        `json:"accepted_at,omitempty"`
-	SuspendedAt        *string        `json:"suspended_at,omitempty"`
+	AcceptedBy         string         `json:"acceptedBy"`
+	RejectedBy         string         `json:"rejectedBy"`
+	RejectionReason    string         `json:"rejectionReason"`
+	SuspendedBy        string         `json:"suspendedBy"`
+	SuspendReason      string         `json:"suspendReason"`
+	CreatedAt          string         `json:"createdAt"`
+	UpdatedAt          string         `json:"updatedAt"`
+	AcceptedAt         *string        `json:"acceptedAt,omitempty"`
+	SuspendedAt        *string        `json:"suspendedAt,omitempty"`
 }
 
 type OnboardMerchantRequest struct {
-	TenantID           string         `json:"tenant_id"`
-	SubjectID          string         `json:"subject_id"`
-	MerchantType       MerchantType   `json:"merchant_type"`
-	DisplayName        string         `json:"display_name"`
-	LegalName          string         `json:"legal_name"`
-	RegistrationNumber string         `json:"registration_number"`
-	CountryCode        string         `json:"country_code"`
+	TenantID           string         `json:"tenantId"`
+	SubjectID          string         `json:"subjectId"`
+	MerchantType       MerchantType   `json:"merchantType"`
+	DisplayName        string         `json:"displayName"`
+	LegalName          string         `json:"legalName"`
+	RegistrationNumber string         `json:"registrationNumber"`
+	CountryCode        string         `json:"countryCode"`
 	Config             MerchantConfig `json:"config"`
-	IdempotencyKey     string         `json:"idempotency_key,omitempty"`
+	IdempotencyKey     string         `json:"idempotencyKey,omitempty"`
 }
 
 type ListMerchantsResponse struct {
 	Merchants  []MerchantProfile `json:"merchants"`
-	NextCursor *string           `json:"next_cursor,omitempty"`
+	NextCursor *string           `json:"nextCursor,omitempty"`
 }
 
 func (s *MerchantService) Onboard(ctx context.Context, req OnboardMerchantRequest, idempotencyKey string) (*MerchantProfile, error) {

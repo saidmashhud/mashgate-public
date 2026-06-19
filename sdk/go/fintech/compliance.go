@@ -42,51 +42,51 @@ const (
 )
 
 type AlertEvidence struct {
-	EvidenceType string `json:"evidence_type"`
-	ReferenceID  string `json:"reference_id"`
+	EvidenceType string `json:"evidenceType"`
+	ReferenceID  string `json:"referenceId"`
 	Description  string `json:"description"`
 	URL          string `json:"url"`
 }
 
 type ComplianceAlert struct {
-	AlertID      string          `json:"alert_id"`
-	TenantID     string          `json:"tenant_id"`
-	SubjectID    string          `json:"subject_id"`
-	SubjectType  string          `json:"subject_type"`
+	AlertID      string          `json:"alertId"`
+	TenantID     string          `json:"tenantId"`
+	SubjectID    string          `json:"subjectId"`
+	SubjectType  string          `json:"subjectType"`
 	Category     AlertCategory   `json:"category"`
 	Severity     AlertSeverity   `json:"severity"`
 	Status       AlertStatus     `json:"status"`
 	Source       string          `json:"source"`
-	SourceRef    string          `json:"source_ref"`
+	SourceRef    string          `json:"sourceRef"`
 	Description  string          `json:"description"`
 	Evidence     []AlertEvidence `json:"evidence"`
-	AssignedTo   string          `json:"assigned_to"`
-	ResolvedBy   string          `json:"resolved_by"`
-	ResolveNote  string          `json:"resolve_note"`
-	EscalatedTo  string          `json:"escalated_to"`
-	EscalateNote string          `json:"escalate_note"`
-	SarID        string          `json:"sar_id"`
-	CreatedAt    string          `json:"created_at"`
-	UpdatedAt    string          `json:"updated_at"`
-	DueAt        *string         `json:"due_at,omitempty"`
+	AssignedTo   string          `json:"assignedTo"`
+	ResolvedBy   string          `json:"resolvedBy"`
+	ResolveNote  string          `json:"resolveNote"`
+	EscalatedTo  string          `json:"escalatedTo"`
+	EscalateNote string          `json:"escalateNote"`
+	SarID        string          `json:"sarId"`
+	CreatedAt    string          `json:"createdAt"`
+	UpdatedAt    string          `json:"updatedAt"`
+	DueAt        *string         `json:"dueAt,omitempty"`
 }
 
 type RaiseAlertRequest struct {
-	TenantID       string          `json:"tenant_id"`
-	SubjectID      string          `json:"subject_id"`
-	SubjectType    string          `json:"subject_type"`
+	TenantID       string          `json:"tenantId"`
+	SubjectID      string          `json:"subjectId"`
+	SubjectType    string          `json:"subjectType"`
 	Category       AlertCategory   `json:"category"`
 	Severity       AlertSeverity   `json:"severity"`
 	Source         string          `json:"source"`
-	SourceRef      string          `json:"source_ref"`
+	SourceRef      string          `json:"sourceRef"`
 	Description    string          `json:"description"`
 	Evidence       []AlertEvidence `json:"evidence,omitempty"`
-	IdempotencyKey string          `json:"idempotency_key,omitempty"`
+	IdempotencyKey string          `json:"idempotencyKey,omitempty"`
 }
 
 type ListAlertsResponse struct {
 	Alerts     []ComplianceAlert `json:"alerts"`
-	NextCursor *string           `json:"next_cursor,omitempty"`
+	NextCursor *string           `json:"nextCursor,omitempty"`
 }
 
 func (s *ComplianceService) Raise(ctx context.Context, req RaiseAlertRequest, idempotencyKey string) (*ComplianceAlert, error) {

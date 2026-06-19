@@ -61,70 +61,70 @@ const (
 // Wallet — money fields are minor units as string to avoid JS precision
 // loss when the same JSON crosses the Kiro frontend boundary.
 type Wallet struct {
-	WalletID     string       `json:"wallet_id"`
-	TenantID     string       `json:"tenant_id"`
-	SubjectID    string       `json:"subject_id"`
-	SubjectType  string       `json:"subject_type"` // "user" | "merchant"
-	WalletType   WalletType   `json:"wallet_type"`
+	WalletID     string       `json:"walletId"`
+	TenantID     string       `json:"tenantId"`
+	SubjectID    string       `json:"subjectId"`
+	SubjectType  string       `json:"subjectType"` // "user" | "merchant"
+	WalletType   WalletType   `json:"walletType"`
 	Status       WalletStatus `json:"status"`
 	Currency     Currency     `json:"currency"`
 	Balance      string       `json:"balance"`
 	Pending      string       `json:"pending"`
-	FreezeReason string       `json:"freeze_reason"`
-	FrozenBy     string       `json:"frozen_by"`
-	CreatedAt    string       `json:"created_at"`
-	UpdatedAt    string       `json:"updated_at"`
-	FrozenAt     *string      `json:"frozen_at,omitempty"`
+	FreezeReason string       `json:"freezeReason"`
+	FrozenBy     string       `json:"frozenBy"`
+	CreatedAt    string       `json:"createdAt"`
+	UpdatedAt    string       `json:"updatedAt"`
+	FrozenAt     *string      `json:"frozenAt,omitempty"`
 }
 
 type WalletTransaction struct {
-	TransactionID string            `json:"transaction_id"`
-	WalletID      string            `json:"wallet_id"`
-	TenantID      string            `json:"tenant_id"`
+	TransactionID string            `json:"transactionId"`
+	WalletID      string            `json:"walletId"`
+	TenantID      string            `json:"tenantId"`
 	Type          TransactionType   `json:"type"`
 	Status        TransactionStatus `json:"status"`
 	Reason        TransactionReason `json:"reason"`
 	Amount        string            `json:"amount"`
 	Currency      Currency          `json:"currency"`
-	BalanceAfter  string            `json:"balance_after"`
-	ReferenceID   string            `json:"reference_id"`
-	ReferenceType string            `json:"reference_type"`
+	BalanceAfter  string            `json:"balanceAfter"`
+	ReferenceID   string            `json:"referenceId"`
+	ReferenceType string            `json:"referenceType"`
 	Description   string            `json:"description"`
-	ExternalRef   string            `json:"external_ref"`
+	ExternalRef   string            `json:"externalRef"`
 	Metadata      map[string]string `json:"metadata,omitempty"`
-	CreatedAt     string            `json:"created_at"`
-	SettledAt     *string           `json:"settled_at,omitempty"`
+	CreatedAt     string            `json:"createdAt"`
+	SettledAt     *string           `json:"settledAt,omitempty"`
 }
 
 type DepositAddress struct {
-	WalletID  string   `json:"wallet_id"`
+	WalletID  string   `json:"walletId"`
 	Currency  Currency `json:"currency"`
 	Network   Network  `json:"network"`
 	Address   string   `json:"address"`
 	Memo      *string  `json:"memo,omitempty"`
-	ExpiresAt *string  `json:"expires_at,omitempty"`
+	ExpiresAt *string  `json:"expiresAt,omitempty"`
 }
 
 // Request types
 
 type CreateWalletRequest struct {
-	TenantID       string     `json:"tenant_id"`
-	SubjectID      string     `json:"subject_id"`
-	SubjectType    string     `json:"subject_type"`
-	WalletType     WalletType `json:"wallet_type"`
+	TenantID       string     `json:"tenantId"`
+	SubjectID      string     `json:"subjectId"`
+	SubjectType    string     `json:"subjectType"`
+	WalletType     WalletType `json:"walletType"`
 	Currency       Currency   `json:"currency"`
-	IdempotencyKey string     `json:"idempotency_key,omitempty"`
+	IdempotencyKey string     `json:"idempotencyKey,omitempty"`
 }
 
 type CreditRequest struct {
-	TenantID       string            `json:"tenant_id"`
-	WalletID       string            `json:"wallet_id"`
+	TenantID       string            `json:"tenantId"`
+	WalletID       string            `json:"walletId"`
 	Amount         string            `json:"amount"`
 	Reason         TransactionReason `json:"reason"`
-	ReferenceID    string            `json:"reference_id"`
-	ReferenceType  string            `json:"reference_type"`
+	ReferenceID    string            `json:"referenceId"`
+	ReferenceType  string            `json:"referenceType"`
 	Description    string            `json:"description"`
-	IdempotencyKey string            `json:"idempotency_key,omitempty"`
+	IdempotencyKey string            `json:"idempotencyKey,omitempty"`
 }
 
 type DebitRequest = CreditRequest
@@ -137,19 +137,19 @@ type DebitRequest = CreditRequest
 // (both balances updated + two wallet_transactions rows + three outbox
 // events: wallet.debit, wallet.credit, wallet.transfer) or none of it.
 type TransferRequest struct {
-	TenantID       string            `json:"tenant_id"`
-	FromWalletID   string            `json:"from_wallet_id"`
-	ToWalletID     string            `json:"to_wallet_id"`
+	TenantID       string            `json:"tenantId"`
+	FromWalletID   string            `json:"fromWalletId"`
+	ToWalletID     string            `json:"toWalletId"`
 	Amount         string            `json:"amount"`
 	Reason         TransactionReason `json:"reason,omitempty"`
 	Description    string            `json:"description,omitempty"`
-	IdempotencyKey string            `json:"idempotency_key,omitempty"`
+	IdempotencyKey string            `json:"idempotencyKey,omitempty"`
 	// MerchantID is included in the paired wallet.debit / wallet.credit
 	// envelope events. Required if those events must be contract-valid
 	// per contracts/events/wallet.{credit,debit}.json. Empty = movement
 	// events are emitted without merchant_id and dropped by consumers
 	// that require it (money state still commits).
-	MerchantID string `json:"merchant_id,omitempty"`
+	MerchantID string `json:"merchantId,omitempty"`
 	// Note is optional free-text attached to the wallet.transfer envelope.
 	Note string `json:"note,omitempty"`
 }
@@ -159,20 +159,20 @@ type TransferRequest struct {
 // transfer_id correlates with `transfer_id` in the wallet.transfer
 // outbox event and with `reference_id` on both wallet_transactions rows.
 type TransferResponse struct {
-	TransferID string            `json:"transfer_id"`
+	TransferID string            `json:"transferId"`
 	Debit      WalletTransaction `json:"debit"`
 	Credit     WalletTransaction `json:"credit"`
 }
 
 type WithdrawRequest struct {
-	TenantID        string  `json:"tenant_id"`
-	WalletID        string  `json:"wallet_id"`
+	TenantID        string  `json:"tenantId"`
+	WalletID        string  `json:"walletId"`
 	Amount          string  `json:"amount"`
-	DestinationType string  `json:"destination_type"`
-	DestinationID   string  `json:"destination_id"`
+	DestinationType string  `json:"destinationType"`
+	DestinationID   string  `json:"destinationId"`
 	Network         Network `json:"network,omitempty"`
 	Description     string  `json:"description,omitempty"`
-	IdempotencyKey  string  `json:"idempotency_key,omitempty"`
+	IdempotencyKey  string  `json:"idempotencyKey,omitempty"`
 	// SPL token mint (base58). Empty = native SOL. Required for SPL token
 	// withdrawals; ignored for bank_account destinations. L2 of ADR-0016.
 	Mint Mint `json:"mint,omitempty"`
@@ -181,7 +181,7 @@ type WithdrawRequest struct {
 	// withdrawals: a customer holding USDT but zero SOL can still move
 	// tokens off-chain. Sponsor must be in the same tenant + same network,
 	// active, and on-chain.
-	SponsorWalletID string `json:"sponsor_wallet_id,omitempty"`
+	SponsorWalletID string `json:"sponsorWalletId,omitempty"`
 }
 
 // CreateChainWalletRequest creates a non-custodial on-chain wallet — BIP-39
@@ -189,12 +189,12 @@ type WithdrawRequest struct {
 // Caller MUST surface the mnemonic to the end user and never persist it.
 // Currently SOLANA only.
 type CreateChainWalletRequest struct {
-	TenantID       string   `json:"tenant_id"`
-	SubjectID      string   `json:"subject_id"`
-	SubjectType    string   `json:"subject_type"` // "user" | "merchant"
+	TenantID       string   `json:"tenantId"`
+	SubjectID      string   `json:"subjectId"`
+	SubjectType    string   `json:"subjectType"` // "user" | "merchant"
 	Currency       Currency `json:"currency"`
 	Network        Network  `json:"network"`
-	IdempotencyKey string   `json:"idempotency_key,omitempty"`
+	IdempotencyKey string   `json:"idempotencyKey,omitempty"`
 }
 
 type CreateChainWalletResponse struct {
@@ -211,13 +211,13 @@ type CreateChainWalletResponse struct {
 // (credential-stuffing protection). Mnemonic never logged / never
 // persisted plaintext.
 type ImportChainWalletRequest struct {
-	TenantID       string   `json:"tenant_id"`
-	SubjectID      string   `json:"subject_id"`
-	SubjectType    string   `json:"subject_type"` // "user" | "merchant"
+	TenantID       string   `json:"tenantId"`
+	SubjectID      string   `json:"subjectId"`
+	SubjectType    string   `json:"subjectType"` // "user" | "merchant"
 	Currency       Currency `json:"currency"`
 	Network        Network  `json:"network"`
 	Mnemonic       string   `json:"mnemonic"`
-	IdempotencyKey string   `json:"idempotency_key,omitempty"`
+	IdempotencyKey string   `json:"idempotencyKey,omitempty"`
 }
 
 // ImportChainWalletResponse carries the resolved wallet plus a flag that
@@ -228,32 +228,32 @@ type ImportChainWalletResponse struct {
 	// True when the import resolved to a pre-existing row — a recovery
 	// rather than a new wallet. Frontends use this to render
 	// "✓ wallet recovered" vs "✓ wallet imported".
-	WasExisting bool `json:"was_existing"`
+	WasExisting bool `json:"wasExisting"`
 	// RFC-3339 timestamp echoing wallet.created_at on fresh imports or
 	// wallet.updated_at on recoveries. Optional — empty on older servers.
-	RecoveredAt string `json:"recovered_at,omitempty"`
+	RecoveredAt string `json:"recoveredAt,omitempty"`
 }
 
 type FreezeWalletRequest struct {
-	TenantID     string `json:"tenant_id"`
-	WalletID     string `json:"wallet_id"`
-	FreezeReason string `json:"freeze_reason"`
+	TenantID     string `json:"tenantId"`
+	WalletID     string `json:"walletId"`
+	FreezeReason string `json:"freezeReason"`
 }
 
 type UnfreezeWalletRequest struct {
-	TenantID string `json:"tenant_id"`
-	WalletID string `json:"wallet_id"`
+	TenantID string `json:"tenantId"`
+	WalletID string `json:"walletId"`
 	Note     string `json:"note,omitempty"`
 }
 
 type ListTransactionsResponse struct {
 	Transactions []WalletTransaction `json:"transactions"`
-	NextCursor   *string             `json:"next_cursor,omitempty"`
+	NextCursor   *string             `json:"nextCursor,omitempty"`
 }
 
 type ListWalletsResponse struct {
 	Wallets    []Wallet `json:"wallets"`
-	NextCursor *string  `json:"next_cursor,omitempty"`
+	NextCursor *string  `json:"nextCursor,omitempty"`
 }
 
 // ── RPCs ──────────────────────────────────────────────────────────────
