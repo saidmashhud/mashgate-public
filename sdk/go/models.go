@@ -47,8 +47,8 @@ type CheckoutSession struct {
 	SuccessURL    string `json:"successUrl"`
 	CancelURL     string `json:"cancelUrl"`
 	CustomerEmail string `json:"customerEmail"`
-	ExpiresAt     int64  `json:"expiresAt"`
-	CreatedAt     int64  `json:"createdAt"`
+	ExpiresAt     int64  `json:"expiresAt,string"`
+	CreatedAt     int64  `json:"createdAt,string"`
 }
 
 // LineItem is a single product or service in a checkout session.
