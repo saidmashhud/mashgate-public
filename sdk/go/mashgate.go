@@ -25,6 +25,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/saidmashhud/mashgate-public/sdk/go/fintech"
 )
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -106,6 +108,7 @@ func WithHTTPClient(hc *http.Client) Option {
 type Client struct {
 	baseURL    string
 	apiKey     string
+	tenantID   string
 	httpClient *http.Client
 	maxRetries int
 
@@ -141,6 +144,15 @@ type Client struct {
 	Risk          *RiskClient
 	Settings      *SettingsClient
 	WalletAdmin   *WalletAdminClient
+
+	// Fintech capabilities — canonical wallet ledger / KYC / merchant acceptance /
+	// compliance. ADR-0015: these are first-class platform modules, NOT a separate
+	// "fintech pack" SDK tier. Wired by NewWithTenant; nil when built via
+	// New/NewClient without a tenant (they need an explicit X-Tenant-ID).
+	Wallet     *fintech.WalletService
+	KYC        *fintech.KYCService
+	Merchant   *fintech.MerchantService
+	Compliance *fintech.ComplianceService
 }
 
 func initClients(c *Client) {
@@ -202,6 +214,26 @@ func NewClient(apiKey string, opts ...Option) *Client {
 		opt(c)
 	}
 	initClients(c)
+	return c
+}
+
+// NewWithTenant creates a client wired for BOTH the general BaaS surface
+// (invoices / payment-links / payments / IAM / …) AND the tenant-scoped fintech
+// capabilities (Wallet ledger / KYC / Merchant / Compliance). Use this for
+// server-side tenant integrations so callers hold ONE client — not a separate
+// "fintech pack" client (ADR-0015: a pack is config, not an SDK/code tier).
+//
+//	baseURL  — e.g. "http://localhost:9661" or the tenant gateway
+//	tenantID — tenant UUID; sent as X-Tenant-ID on fintech calls
+//	apiKey   — mg_test_/mg_live_ tenant API key
+func NewWithTenant(baseURL, tenantID, apiKey string) *Client {
+	c := New(baseURL, apiKey)
+	c.tenantID = tenantID
+	fin := fintech.New(baseURL, tenantID, apiKey)
+	c.Wallet = fin.Wallet
+	c.KYC = fin.KYC
+	c.Merchant = fin.Merchant
+	c.Compliance = fin.Compliance
 	return c
 }
 

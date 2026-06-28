@@ -1,10 +1,16 @@
-// Package mashgate is Kiro's client for Mashgate Fintech Pack APIs.
+// Package fintech holds the Mashgate fintech capability clients — canonical
+// wallet ledger, KYC, merchant acceptance, compliance.
 //
-// Wire contracts mirror mashgate/contracts/proto/v1/{kyc,compliance,merchant,wallet}.proto
-// and their TypeScript counterparts in kiro/packages/mashgate-types.
+// ADR-0015 (pack is config, not code): these are first-class platform modules,
+// NOT a separate "fintech pack". Downstream should NOT instantiate this package
+// directly — use the top-level client `mashgate.NewWithTenant(...)`, which
+// exposes these services as `client.Wallet/.KYC/.Merchant/.Compliance` on the
+// single unified client. This package remains the type/impl home (and a
+// compatibility shim for existing callers); a future major may fold the types
+// up via aliases so callers drop the `fintech` import entirely.
 //
-// All mutating calls accept an idempotency key — callers MUST provide one
-// derived from Kiro domain IDs. See docs/mashgate-integration-matrix.md §8.
+// Wire contracts mirror mashgate/contracts/proto/v1/{kyc,compliance,merchant,wallet}.proto.
+// All mutating calls accept an idempotency key — callers MUST provide one.
 package fintech
 
 import (
@@ -30,6 +36,12 @@ type Client struct {
 	Wallet     *WalletService
 }
 
+// New constructs a standalone fintech client.
+//
+// Deprecated: prefer the unified top-level client `mashgate.NewWithTenant(baseURL,
+// tenantID, apiKey)`, which exposes Wallet/KYC/Merchant/Compliance alongside the
+// rest of the BaaS surface on one client (ADR-0015 — fintech is not a separate
+// pack SDK). Kept as a compatibility shim.
 func New(baseURL, tenantID, apiKey string) *Client {
 	c := &Client{
 		baseURL:  strings.TrimRight(baseURL, "/"),
