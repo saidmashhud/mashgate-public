@@ -64,10 +64,10 @@ and transfer between accounts. Money fields are **decimal strings** in minor or
 major units (never floats) to avoid precision loss. Mutating calls take an
 **idempotency key** — pass a stable key derived from your domain id.
 
-**Go** (fintech pack — construct with `fintech.New(baseURL, tenantID, apiKey)`)
+**Go** (unified tenant client — construct with `mashgate.NewWithTenant(baseURL, tenantID, apiKey)`)
 
 ```go
-fc := fintech.New(baseURL, tenantID, apiKey)
+fc := mashgate.NewWithTenant(baseURL, tenantID, apiKey)
 
 w, err := fc.Wallet.Create(ctx, fintech.CreateWalletRequest{
     SubjectID:   "user_123",

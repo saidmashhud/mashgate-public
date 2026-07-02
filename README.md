@@ -79,11 +79,12 @@ session, err := client.CreateCheckout(ctx, mashgate.CreateCheckoutRequest{
 ### Fintech Pack (Go)
 
 ```go
+import mashgate "github.com/saidmashhud/mashgate-public/sdk/go"
 import "github.com/saidmashhud/mashgate-public/sdk/go/fintech"
 
-fc := fintech.New("https://api.mashgate.uz", tenantID, apiKey)
+client := mashgate.NewWithTenant("https://api.mashgate.uz", tenantID, apiKey)
 
-check, err := fc.KYC.Request(ctx, fintech.RequestCheckRequest{
+check, err := client.KYC.Request(ctx, fintech.RequestCheckRequest{
     SubjectID:   userID,
     SubjectType: fintech.KycSubjectIndividual,
     CheckType:   fintech.KycCheckFull,
@@ -135,8 +136,7 @@ mashgate-public/
 │   └── migration/         Migration guides (from in-tree SDK, from hand-rolled clients)
 ├── contracts-sync/        Pinned snapshots + generators for protos/openapi/events
 ├── examples/              Working examples per language
-├── tests/                 Cross-language contract + compat tests
-└── tooling/               Generator wrappers + release scripts
+└── sdk/*/tests            Language-specific SDK tests
 ```
 
 See [`docs/specs/sdk-repository-separation.md`](https://github.com/saidmashhud/mashgate/blob/main/docs/specs/sdk-repository-separation.md) in the Mashgate core monorepo for the full RFC governing this repo.

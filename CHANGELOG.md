@@ -11,6 +11,22 @@ Top-level entry is the aggregate snapshot.
 
 ## [Unreleased]
 
+### External readiness — installability, docs, contracts-sync
+
+- Cleaned public docs for current SDK surface: Go tenant flows now use
+  `mashgate.NewWithTenant(...)`; stale TS/Python examples referencing
+  non-existent `client.fintech` / `Mashgate` APIs were replaced.
+- Python parity docs now match the implementation: the Python SDK exposes the
+  same 25 resource namespaces and is guarded by `test_client_parity.py`.
+- Added missing `docs/migration/from-monorepo-v0.x.md`.
+- Fixed `contracts-sync/scripts/sync.sh` so it accepts git worktrees and can run
+  the pinned OpenAPI/Go/TS generation pipeline directly on srv2 without `make`
+  or SSH-back-to-self.
+- Regenerated Go/TypeScript `_generated` artefacts from Mashgate
+  `9c8d4d25e9f335f0099a2b4278294a5b008988e1`.
+- Aligned package metadata with the repo license/runtime: Apache-2.0 and Python
+  3.10+.
+
 ### Contracts sync — regenerated `_generated` types (2026-06-01)
 
 Regenerated TS + Go generated types from `mashgate` contracts at `origin/main`

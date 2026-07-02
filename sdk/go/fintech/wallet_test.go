@@ -216,7 +216,7 @@ func TestWalletService_FreezeAndUnfreeze(t *testing.T) {
 
 func TestWalletService_GetTransaction(t *testing.T) {
 	cap := &capture{}
-	srv := mockServer(t, http.StatusOK, `{"transaction_id":"tx-99","wallet_id":"w-1"}`, cap)
+	srv := mockServer(t, http.StatusOK, `{"transactionId":"tx-99","walletId":"w-1"}`, cap)
 	defer srv.Close()
 
 	c := New(srv.URL, "tenant-A", "key-xyz")
@@ -237,7 +237,7 @@ func TestWalletService_GetTransaction(t *testing.T) {
 
 func TestWalletService_List_PassesCursorAndLimit(t *testing.T) {
 	cap := &capture{}
-	respJSON := `{"wallets":[{"wallet_id":"w-1"}],"next_cursor":"opaque-token"}`
+	respJSON := `{"wallets":[{"walletId":"w-1"}],"nextCursor":"opaque-token"}`
 	srv := mockServer(t, http.StatusOK, respJSON, cap)
 	defer srv.Close()
 
@@ -530,8 +530,8 @@ func TestWalletService_Withdraw_PassesSponsorWalletID(t *testing.T) {
 	if err := json.Unmarshal(cap.body, &sent); err != nil {
 		t.Fatalf("decode body: %v", err)
 	}
-	if sent["sponsor_wallet_id"] != "spon-uuid" {
-		t.Errorf("sponsor_wallet_id not forwarded: %v", sent["sponsor_wallet_id"])
+	if sent["sponsorWalletId"] != "spon-uuid" {
+		t.Errorf("sponsorWalletId not forwarded: %v", sent["sponsorWalletId"])
 	}
 	if cap.path != "/v1/wallets/w-from/withdraw" {
 		t.Errorf("path mismatch: %s", cap.path)
@@ -590,16 +590,16 @@ func TestWalletService_Transfer_SendsExpectedShape(t *testing.T) {
 	if cap.idempotencyKey != "idem-xfer-1" {
 		t.Errorf("idempotency header missing: %q", cap.idempotencyKey)
 	}
-	// Body must echo the tenant_id (client overwrites) and carry the
+	// Body must echo the tenantId (client overwrites) and carry the
 	// caller-provided fields verbatim.
 	var sent map[string]any
 	if err := json.Unmarshal(cap.body, &sent); err != nil {
 		t.Fatalf("decode body: %v", err)
 	}
-	if sent["tenant_id"] != "tenant-A" {
-		t.Errorf("tenant_id mismatch in body: %v", sent["tenant_id"])
+	if sent["tenantId"] != "tenant-A" {
+		t.Errorf("tenantId mismatch in body: %v", sent["tenantId"])
 	}
-	if sent["from_wallet_id"] != "w-from" || sent["to_wallet_id"] != "w-to" {
+	if sent["fromWalletId"] != "w-from" || sent["toWalletId"] != "w-to" {
 		t.Errorf("wallet ids mismatch: %v", sent)
 	}
 	if sent["amount"] != "25.50" {
@@ -653,8 +653,8 @@ func TestWalletService_Transfer_MirrorsIdempotencyKeyIntoBody(t *testing.T) {
 
 	var sent map[string]any
 	_ = json.Unmarshal(cap.body, &sent)
-	if sent["idempotency_key"] != "via-header-arg" {
-		t.Errorf("idempotency_key not mirrored into body: %v", sent["idempotency_key"])
+	if sent["idempotencyKey"] != "via-header-arg" {
+		t.Errorf("idempotencyKey not mirrored into body: %v", sent["idempotencyKey"])
 	}
 	if cap.idempotencyKey != "via-header-arg" {
 		t.Errorf("idempotency header missing: %q", cap.idempotencyKey)

@@ -1,4 +1,4 @@
-"""Mashgate Payment Gateway — Python SDK."""
+"""Mashgate BaaS platform — Python SDK."""
 
 from mashgate.client import MashgateClient
 from mashgate.errors import MashgateError

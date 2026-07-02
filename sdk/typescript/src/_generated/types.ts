@@ -3132,6 +3132,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/iam/users/{userId}/reset-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Admin-initiated password reset (no OTP). Caller must hold
+         *      platform:users:update or platform_admin. Tenant-scoped unless platform.
+         */
+        post: operations["IamService_AdminResetPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/invoices": {
         parameters: {
             query?: never;
@@ -5556,6 +5576,14 @@ export interface components {
         };
         AddWalletPaymentMethodResponse: {
             paymentMethod?: components["schemas"]["WalletPaymentMethodView"];
+        };
+        AdminResetPasswordRequest: {
+            userId?: string;
+            newPassword?: string;
+            tenantId?: string;
+        };
+        AdminResetPasswordResponse: {
+            success?: boolean;
         };
         AdminSubscription: {
             tenantId?: string;
@@ -17487,6 +17515,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ListUsersResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    IamService_AdminResetPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminResetPasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminResetPasswordResponse"];
                 };
             };
             /** @description Default error response */

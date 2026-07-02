@@ -1,16 +1,10 @@
 # Getting started — Python
 
 The Python SDK gives you a synchronous, typed client (`httpx` under the hood) for
-the core Mashgate flows: payments, checkout, identity/auth, wallets, webhooks, and
-several BaaS modules.
-
-> **Coverage note.** The Python SDK ships **fewer resources** than Go and
-> TypeScript today. The modules currently available on the client are:
-> `auth`, `payments`, `checkout`, `wallet`, `wallet_admin`, `risk`, `webhooks`,
-> `developer`, `settings`, `chat`, `notify`, `storage`, `logs`, and `flags`.
-> For anything outside that list — billing, subscriptions, invoices, payment
-> links, guard, iam, metering, analytics, chain, local payments, mail — use the
-> [Go](./go.md) or [TypeScript](./typescript.md) SDK, which cover the full surface.
+the Mashgate gateway. It exposes the same 25 resource namespaces as the Go and
+TypeScript SDKs: payments, checkout, identity/auth, wallets, webhooks, billing,
+subscriptions, invoices, payment links, IAM, analytics, metering, mail, guard,
+chain, local payments, and the other core BaaS modules.
 
 ## Install
 
@@ -18,7 +12,7 @@ several BaaS modules.
 pip install mashgate
 ```
 
-This documents **v0.7.0** (Development Status: Beta). Requires **Python 3.9+**.
+This documents **v0.7.0** (Development Status: Beta). Requires **Python 3.10+**.
 The only runtime dependency is `httpx`.
 
 > The PyPI distribution name is `mashgate`; you import it as `mashgate`.
@@ -140,5 +134,3 @@ ok = verify_webhook_signature(
   truth, multi-tenancy, webhook handling, error handling.
 - [Service catalog](../modules/service-catalog.md) — the full module / RPC
   reference.
-- Need a module the Python SDK doesn't expose yet? Reach for the
-  [Go](./go.md) or [TypeScript](./typescript.md) quickstart.

@@ -66,8 +66,9 @@ events — never poll.
 
 ### 0. Init the clients
 
-Two clients: the main client (auth, checkout, billing, subscriptions, webhooks)
-and the **fintech** client (the wallet ledger lives in the Fintech Pack).
+Use one unified Go tenant client for auth, checkout, billing, subscriptions,
+webhooks, and wallet-ledger calls. Import `fintech` only for wallet request and
+enum types.
 
 ```go
 import (
@@ -75,8 +76,7 @@ import (
     "github.com/saidmashhud/mashgate-public/sdk/go/fintech"
 )
 
-mg := mashgate.New(os.Getenv("MASHGATE_BASE_URL"), os.Getenv("MASHGATE_API_KEY"))
-fin := fintech.New(os.Getenv("MASHGATE_BASE_URL"), tenantID, os.Getenv("MASHGATE_API_KEY"))
+mg := mashgate.NewWithTenant(os.Getenv("MASHGATE_BASE_URL"), tenantID, os.Getenv("MASHGATE_API_KEY"))
 ```
 
 ```ts
@@ -87,13 +87,13 @@ const mg = new MashgateClient({
   apiKey:  process.env.MASHGATE_API_KEY!,
 });
 // TS: checkout / billing / subscriptions are first-class resources.
-// The wallet *ledger* (Wallet.Credit/Debit) is Fintech-Pack and Go-only today —
+// The wallet ledger (Wallet.Credit/Debit) is Go-only today —
 // call it from your Go service, or hit the REST endpoints directly from TS.
 ```
 
-> **Python:** `checkout` and `wallet` (saved cards / balance read) exist, but
-> there is no `billing`, `subscriptions`, or wallet-**ledger** resource. For the
-> subscription and coin-ledger steps below, **use Go/TS**.
+> **Python:** `checkout`, `billing`, and `subscriptions` exist. The wallet-ledger
+> write surface below is typed in Go; call it from a Go service or use the REST
+> endpoint directly.
 
 Take `userId`/`tenantId` from the validated token, not the request body
 ([best practices §5](../best-practices.md)).

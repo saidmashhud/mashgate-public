@@ -7,7 +7,7 @@ Mashgate SDK is a polyglot repo. Each language has its own build + test flow.
 ```
 sdk/go/         Go module (go 1.22+)
 sdk/typescript/ npm package (@mashgate/sdk)
-sdk/python/     PyPI package (mashgate-sdk)
+sdk/python/     PyPI package (mashgate)
 ```
 
 ## Language-specific commands
@@ -26,9 +26,9 @@ go test ./...
 
 ```bash
 cd sdk/typescript
-pnpm install
-pnpm build
-pnpm test
+npm ci
+npm run build
+npm test
 ```
 
 ### Python
@@ -47,7 +47,7 @@ SDK consumes pinned contract snapshots from the Mashgate core monorepo. To refre
 ./contracts-sync/scripts/sync.sh
 ```
 
-Updates `contracts-sync/generated/` from the snapshot tag in `contracts-sync/manifests/active.yaml`. Don't edit generated files by hand.
+Updates `sdk/go/_generated/` and `sdk/typescript/src/_generated/` from the snapshot in `contracts-sync/manifests/active.yaml`. Don't edit generated files by hand.
 
 ## Releases
 
@@ -78,4 +78,4 @@ Breaking changes require:
 - Modify contracts in this repo. SoT is `mashgate/contracts/` in the core monorepo.
 - Include HookLine SDK code. That's a separate product (see [`github.com/saidmashhud/hookline`](https://github.com/saidmashhud/hookline)).
 - Mix languages in a single PR. Go changes → Go PR. TS changes → TS PR.
-- Skip tests (`go test`, `pnpm test`, `pytest` must pass in CI).
+- Skip tests (`go test`, `npm test`, `pytest` must pass in CI).

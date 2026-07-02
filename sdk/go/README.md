@@ -199,7 +199,7 @@ err = client.SetDefaultPaymentMethod(ctx, paymentMethodID)
 err = client.RemoveSavedPaymentMethod(ctx, paymentMethodID)
 ```
 
-### Wallet (admin/merchant API, `fintech` subpackage)
+### Wallet (admin/merchant API, unified tenant client)
 
 The full `wallet.v1.WalletService` from
 [`mashgate/contracts/proto/v1/wallet.proto`](https://github.com/saidmashhud/mashgate/blob/main/contracts/proto/v1/wallet.proto),
@@ -212,9 +212,10 @@ constants (`fintech.CurrencyUSDC`, `fintech.NetworkSolana`,
 on the wire, so callers using string literals stay compatible.
 
 ```go
+import mashgate "github.com/saidmashhud/mashgate-public/sdk/go"
 import "github.com/saidmashhud/mashgate-public/sdk/go/fintech"
 
-c := fintech.New("https://api.mashgate.io", tenantID, apiKey)
+c := mashgate.NewWithTenant("https://api.mashgate.uz", tenantID, apiKey)
 
 // Off-chain wallet
 w, err := c.Wallet.Create(ctx, fintech.CreateWalletRequest{

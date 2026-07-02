@@ -6532,6 +6532,39 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /v1/iam/users/{userId}/reset-password:
+        post:
+            tags:
+                - IamService
+            description: |-
+                Admin-initiated password reset (no OTP). Caller must hold
+                 platform:users:update or platform_admin. Tenant-scoped unless platform.
+            operationId: IamService_AdminResetPassword
+            parameters:
+                - name: userId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AdminResetPasswordRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AdminResetPasswordResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /v1/invoices:
         get:
             tags:
@@ -11627,6 +11660,20 @@ components:
             properties:
                 paymentMethod:
                     $ref: '#/components/schemas/WalletPaymentMethodView'
+        AdminResetPasswordRequest:
+            type: object
+            properties:
+                userId:
+                    type: string
+                newPassword:
+                    type: string
+                tenantId:
+                    type: string
+        AdminResetPasswordResponse:
+            type: object
+            properties:
+                success:
+                    type: boolean
         AdminSubscription:
             type: object
             properties:

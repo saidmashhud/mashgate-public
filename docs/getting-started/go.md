@@ -2,8 +2,8 @@
 
 The Go SDK is the most complete Mashgate client: payments, checkout, identity,
 wallets, webhooks, and the full BaaS suite (chat, notify, storage, flags, logs,
-guard, invoices, subscriptions, analytics, and more), plus a `fintech` subpackage
-for KYC / compliance / merchant / wallet-admin flows.
+guard, invoices, subscriptions, analytics, and more), plus tenant-scoped KYC /
+compliance / merchant / wallet-ledger flows on `NewWithTenant`.
 
 ## Install
 
@@ -160,7 +160,9 @@ if err != nil {
   truth, multi-tenancy, webhook handling, error handling.
 - [Service catalog](../modules/service-catalog.md) — the full module / RPC
   reference.
-- Fintech Pack — for KYC, compliance, merchant, and admin wallet flows, import
-  `github.com/saidmashhud/mashgate-public/sdk/go/fintech` and construct it with
-  `fintech.New(baseURL, tenantID, apiKey)`. See the
+- Fintech capabilities — for KYC, compliance, merchant, and admin wallet flows,
+  construct one unified client with
+  `mashgate.NewWithTenant(baseURL, tenantID, apiKey)`. Import
+  `github.com/saidmashhud/mashgate-public/sdk/go/fintech` only for request/enum
+  types. See the
   [Go SDK README](../../sdk/go/README.md) for examples.

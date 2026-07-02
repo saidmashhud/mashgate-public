@@ -66,8 +66,8 @@ for seconds or hours — design the UI and the gate for that.
 
 ### 0. Init the clients
 
-The KYC client is part of the **Fintech Pack** (`fintech.New`), separate from the
-main client. The main client gives you auth + webhook verification.
+The KYC client is wired on the unified Go tenant client. Import `fintech` for
+request and enum types; use the same `mg` client for auth, KYC, and webhooks.
 
 ```go
 import (
@@ -75,12 +75,11 @@ import (
     "github.com/saidmashhud/mashgate-public/sdk/go/fintech"
 )
 
-mg := mashgate.New(os.Getenv("MASHGATE_BASE_URL"), os.Getenv("MASHGATE_API_KEY"))
-fin := fintech.New(os.Getenv("MASHGATE_BASE_URL"), tenantID, os.Getenv("MASHGATE_API_KEY"))
+mg := mashgate.NewWithTenant(os.Getenv("MASHGATE_BASE_URL"), tenantID, os.Getenv("MASHGATE_API_KEY"))
 ```
 
-> **TypeScript / Python:** there is **no dedicated typed KYC resource** in the TS
-> or Python SDKs today — the typed `KYCService` is **Go-only**. For the screening
+> **TypeScript / Python:** there is no dedicated typed KYC resource in the TS
+> or Python SDKs today. For the screening
 > calls below, **use Go** (run them from your Go service / worker), or call the
 > `/v1/kyc/checks` REST endpoints directly with an `Idempotency-Key` header. You
 > can still verify and route the resulting `kyc.*` webhooks from any language.
@@ -97,7 +96,7 @@ from the user id** so a retry doesn't open a second check
 
 ```go
 // your DB: UPSERT gate_status (mg_user_id, tenant_id, status) VALUES (?, ?, 'unverified') ...
-resp, err := fin.KYC.Request(ctx, fintech.RequestCheckRequest{
+resp, err := mg.KYC.Request(ctx, fintech.RequestCheckRequest{
     SubjectID:   userID,                         // mgID user_id
     SubjectType: fintech.KycSubjectIndividual,
     CheckType:   fintech.KycCheckIdentity,       // identity + age document check

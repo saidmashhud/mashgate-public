@@ -1,104 +1,95 @@
-# Migration — from Hand-Rolled Clients
+# Migration - from Hand-Rolled Clients
 
-If your product currently has a hand-rolled Mashgate client (like Kiro's
-`backend/internal/mashgate/` or `frontend/packages/mashgate-types/`, or
-Zist/Vint ad-hoc HTTP calls), this is the migration path.
-
----
+Use this when a downstream product has its own Mashgate HTTP client, copied
+types, or endpoint-specific wrappers. The goal is to move one flow at a time to
+`mashgate-public`, without changing your product domain code in the same PR.
 
 ## When to migrate
 
 Migrate when:
-- You want upstream fixes / new endpoints without copying them.
-- You're about to implement a flow that the public SDK already has.
-- You're going to maintain at least one service consuming Mashgate for > 6 months.
+
+- You need upstream fixes, new endpoints, or webhook helpers without copying
+  code.
+- The integration will be maintained for more than a short experiment.
+- The public SDK already exposes the flow you are about to implement.
 
 Delay migration when:
-- Your hand-rolled client has domain-specific logic not in the public SDK.
-- You're in a hard feature-freeze and risk-averse.
 
----
+- Your hand-rolled client owns product-specific orchestration that should stay
+  in your service layer.
+- You are in a hard release freeze and cannot run a focused regression pass.
 
-## Go — from `internal/mashgate` (Kiro pattern)
+## Go - from `internal/mashgate`
 
 Before:
 
 ```go
-// backend/internal/mashgate/client.go
-import "internal/mashgate"
+import oldmg "my-service/internal/mashgate"
 
-c := mashgate.New(baseURL, tenantID, apiKey)
-check, err := c.KYC.Request(ctx, mashgate.RequestCheckRequest{...}, idempotencyKey)
+c := oldmg.New(baseURL, tenantID, apiKey)
+check, err := c.KYC.Request(ctx, oldmg.RequestCheckRequest{...}, idempotencyKey)
 ```
 
 After:
 
 ```go
+import mashgate "github.com/saidmashhud/mashgate-public/sdk/go"
 import "github.com/saidmashhud/mashgate-public/sdk/go/fintech"
 
-c := fintech.New(baseURL, tenantID, apiKey)
+c := mashgate.NewWithTenant(baseURL, tenantID, apiKey)
 check, err := c.KYC.Request(ctx, fintech.RequestCheckRequest{...}, idempotencyKey)
 ```
 
-### Step-by-step
+Step-by-step:
 
-1. `cd backend && go get github.com/saidmashhud/mashgate-public/sdk/go/fintech@latest`
-2. Replace imports: `sed -i '' 's|internal/mashgate|github.com/saidmashhud/mashgate-public/sdk/go/fintech|g' $(grep -rl internal/mashgate --include='*.go')`
-3. Rename package usage: `mashgate.` → `fintech.` in call sites.
-4. Delete `internal/mashgate/` directory.
-5. `go mod tidy && go build ./... && go test ./...`.
+1. `cd backend && go get github.com/saidmashhud/mashgate-public/sdk/go@latest`
+2. Replace the local client constructor with `mashgate.New(...)` for general
+   API calls, or `mashgate.NewWithTenant(...)` for KYC, compliance, merchant,
+   and wallet-ledger flows.
+3. Import `sdk/go/fintech` only for fintech request and enum types.
+4. Move domain-specific retry/idempotency decisions out of the old client and
+   into your service layer.
+5. Delete the local client package only after the migrated flow is covered by
+   tests.
 
-### What moved
+`fintech.New(baseURL, tenantID, apiKey)` still exists as a compatibility shim,
+but new integrations should use `NewWithTenant` so one client owns the whole
+Mashgate surface.
 
-| Kiro hand-rolled symbol | Public SDK equivalent |
-|-------------------------|------------------------|
-| `internal/mashgate.Client` | `fintech.Client` |
-| `internal/mashgate.KYCService` | `fintech.KYCService` |
-| `internal/mashgate.ComplianceService` | `fintech.ComplianceService` |
-| `internal/mashgate.MerchantService` | `fintech.MerchantService` |
-| `internal/mashgate.WalletService` | `fintech.WalletService` |
-| All enum string consts (KycStatusPassed, MerchantStatusAccepted, …) | Same names under `fintech.*` |
-| `WithTraceparent(ctx, tp)` | `fintech.WithTraceparent(ctx, tp)` |
-
-Public SDK adds:
-- Automatic retry with exponential backoff (planned v0.2).
-- Trace context helpers integrated with OTel (planned v1.1).
-
----
-
-## TypeScript — from `@kiro/mashgate-types`
+## TypeScript - from copied types or manual `fetch`
 
 Before:
 
 ```ts
-import type * as kyc from "@kiro/mashgate-types/kyc";
-import type * as wallet from "@kiro/mashgate-types/wallet";
-
-// types only — client was hand-rolled per-service
-const response: kyc.RequestCheckResponse = await fetch(...);
+const response = await fetch(`${baseUrl}/v1/checkout/sessions`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json", "X-API-Key": apiKey },
+  body: JSON.stringify(body),
+});
+const session = await response.json();
 ```
 
 After:
 
 ```ts
-import { MashgateClient, fintech } from "@mashgate/sdk";
+import { MashgateClient } from "@mashgate/sdk";
 
-const client = new MashgateClient({ baseUrl, apiKey, tenantId });
-const response = await client.fintech.kyc.request({ ... });
-// response is typed as fintech.RequestCheckResponse
+const mg = new MashgateClient({ baseUrl, apiKey });
+const session = await mg.checkout.createSession(body);
 ```
 
-### Step-by-step
+Step-by-step:
 
-1. `pnpm remove @kiro/mashgate-types && pnpm add @mashgate/sdk`
-2. Replace `import type * as X from "@kiro/mashgate-types/X"` with `import type { X } from "@mashgate/sdk"` (or use namespaced `fintech.X`).
-3. Replace manual `fetch` / axios calls to Mashgate with `client.*` methods.
-4. Delete `packages/mashgate-types/` directory (no longer needed).
-5. Update `pnpm-workspace.yaml` to remove the deleted package.
+1. `npm install @mashgate/sdk`
+2. Replace copied DTO imports with exported SDK types where available.
+3. Replace manual calls flow-by-flow: checkout, payments, webhooks, billing,
+   IAM, mail, storage, and walletAdmin are first-class resources.
+4. For KYC, compliance, and merchant flows, use the REST endpoint via
+   `mg.request(...)` until typed TS resources land, or call them from a Go
+   service using `NewWithTenant`.
+5. Remove copied type packages after the last call site is migrated.
 
----
-
-## Python — from ad-hoc `requests` usage
+## Python - from ad-hoc `requests`
 
 Before:
 
@@ -106,52 +97,57 @@ Before:
 import requests
 
 resp = requests.post(
-    f"{MASHGATE_API}/v1/kyc/checks",
-    headers={"Authorization": f"Bearer {api_key}", "X-Tenant-ID": tenant_id},
-    json={...},
+    f"{base_url}/v1/payments",
+    headers={"X-API-Key": api_key},
+    json={"amount": "150000.00", "currency": "UZS"},
 )
+payment = resp.json()
 ```
 
 After:
 
 ```python
-from mashgate import Mashgate
+from mashgate import MashgateClient
 
-client = Mashgate(api_key=api_key, tenant_id=tenant_id)
-check = client.fintech.kyc.request(subject_id="...", subject_type="individual", ...)
+mg = MashgateClient(base_url=base_url, api_key=api_key)
+payment = mg.payments.create(amount="150000.00", currency="UZS")
 ```
 
----
+The Python SDK exposes the same 25 resource namespaces as Go and TypeScript.
+For flows that are intentionally not typed yet, such as KYC/Compliance/Merchant,
+use the public `mg.request(...)` helper with the REST path and keep the
+translation in one small adapter.
 
 ## Shared gotchas
 
+### API key header
+
+Tenant API keys authenticate as `X-API-Key`. Do not send them as
+`Authorization: Bearer`; the gateway treats Bearer as a user JWT.
+
 ### Idempotency keys
 
-Keep your existing idempotency key scheme. The public SDK forwards whatever you pass in — it doesn't auto-generate keys (by design, to avoid silent double-submit masking).
-
-### Status enum values
-
-Public SDK uses the same proto enum string values as Mashgate wire format (`KYC_STATUS_PASSED`, `MERCHANT_STATUS_ACCEPTED`, etc.). If your hand-rolled client used different internal names, you'll need a mapping layer in your domain code.
+Keep your existing idempotency scheme. Mutating money and provisioning calls
+must receive a stable key derived from your domain id, for example
+`checkout:<order_id>` or `wallet:<user_id>:create`.
 
 ### Event payload parsing
 
-Public SDK includes envelope v1 type definitions. If you were parsing envelope payloads manually, switch to `mashgate.EnvelopeV1<YourPayloadType>` (Go) / `EnvelopeV1<YourPayloadType>` (TS) / `mashgate.EnvelopeV1` (Python).
+Do not parse webhook events before signature verification. Verify the raw body
+using the SDK helper, then use `eventKey` / `eventPayload` helpers so both
+Envelope v1 and legacy event shapes work during rollout.
 
 ### Trace propagation
 
-Public SDK Go: `ctx = fintech.WithTraceparent(ctx, r.Header.Get("traceparent"))`
-Public SDK TS: `client.withTrace(traceparent).fintech.kyc.request(...)`
-Public SDK Python: `client.set_trace(traceparent)`
-
-All three emit `traceparent` + `tracestate` on outbound requests, matching HookLine webhook delivery conventions.
-
----
+Go fintech calls can carry trace context with `fintech.WithTraceparent(ctx, tp)`.
+For TypeScript and Python, pass `traceparent` as an extra header when calling
+lower-level request helpers until typed trace helpers are added.
 
 ## Rollback
 
-If migration causes a regression, revert by:
-1. Restore `internal/mashgate/` or `packages/mashgate-types/` from git.
-2. Remove the public SDK dependency.
-3. Open an issue in this repo describing the incompatibility.
+Rollback is ordinary dependency rollback:
 
-The public SDK won't break your hand-rolled client — it's just a separate code path. Migrations can be incremental: migrate one service at a time.
+1. Restore the old local client package from git.
+2. Remove the public SDK dependency from the service.
+3. Open an issue in `mashgate-public` with the missing endpoint, wire mismatch,
+   or SDK behavior that forced the rollback.

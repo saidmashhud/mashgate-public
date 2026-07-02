@@ -1,6 +1,6 @@
 # mashgate (Python SDK)
 
-Official Python SDK for the Mashgate Payment Gateway API. Mirrors the
+Official Python SDK for the Mashgate BaaS platform. Mirrors the
 gRPC contracts in
 [mashgate/contracts/proto/v1/](https://github.com/saidmashhud/mashgate/tree/main/contracts/proto/v1)
 and reaches the gateway over REST (gRPC-JSON transcoding via Envoy).
@@ -11,7 +11,7 @@ and reaches the gateway over REST (gRPC-JSON transcoding via Envoy).
 pip install mashgate
 ```
 
-Requires Python 3.9+.
+Requires Python 3.10+.
 
 ## Quick start
 

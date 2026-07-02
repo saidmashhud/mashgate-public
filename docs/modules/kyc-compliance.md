@@ -21,9 +21,10 @@ vertical decides what to allow. See [Best practices](#best-practices).
 
 ## Key operations
 
-The fintech pack is Go-only today (`fintech.New(baseURL, tenantID, apiKey)`
-exposes `KYC`, `Compliance`, `Merchant`). The `risk` and `guard` resources are
-available in Go and TypeScript (`risk` also in Python).
+KYC, Compliance, and Merchant are exposed by the Go SDK on the unified
+tenant client (`mashgate.NewWithTenant(baseURL, tenantID, apiKey)`). Import
+`sdk/go/fintech` for request and enum types. The `risk` and `guard` resources
+are available as normal client resources across SDKs.
 
 ### KYC checks
 
@@ -35,9 +36,9 @@ poll with `Get` / `List` or react to `kyc.*` events; a fresh check starts
 **Go**
 
 ```go
-fc := fintech.New(baseURL, tenantID, apiKey)
+mg := mashgate.NewWithTenant(baseURL, tenantID, apiKey)
 
-res, err := fc.KYC.Request(ctx, fintech.RequestCheckRequest{
+res, err := mg.KYC.Request(ctx, fintech.RequestCheckRequest{
     SubjectID:   "user_123",
     SubjectType: fintech.KycSubjectIndividual,
     CheckType:   fintech.KycCheckFull, // IDENTITY | AML | SANCTIONS | PEP | FULL
@@ -46,21 +47,22 @@ if res.RedirectURL != nil {
     redirectUser(*res.RedirectURL) // provider-hosted verification
 }
 
-check, err := fc.KYC.Get(ctx, res.Check.CheckID)
+check, err := mg.KYC.Get(ctx, res.Check.CheckID)
 if check.Status == fintech.KycStatusPassed {
     // proceed
 }
 
-list, err := fc.KYC.List(ctx, "user_123", fintech.KycStatusPassed, 20, "")
+list, err := mg.KYC.List(ctx, "user_123", fintech.KycStatusPassed, 20, "")
 
 // Operator-only manual override.
-_, err = fc.KYC.Override(ctx, fintech.OverrideCheckRequest{
+_, err = mg.KYC.Override(ctx, fintech.OverrideCheckRequest{
     CheckID: check.CheckID, Status: fintech.KycStatusOverridden,
     OverrideNote: "manual review cleared",
 })
 ```
 
-**TypeScript / Python:** the KYC service is not yet available — use Go.
+**TypeScript / Python:** use the REST endpoints directly for KYC until typed
+KYC/Compliance/Merchant resources are added to those SDKs.
 
 ### Compliance alerts
 
@@ -71,24 +73,25 @@ merchant withdrawals.
 **Go**
 
 ```go
-alert, err := fc.Compliance.Raise(ctx, fintech.RaiseAlertRequest{
+alert, err := mg.Compliance.Raise(ctx, fintech.RaiseAlertRequest{
     SubjectID: "user_123", SubjectType: "user",
     Category: fintech.AlertCategorySanctions,
     Severity: fintech.AlertSeverityHigh,
     Source:   "screening", Description: "OFAC name match",
 }, "alert:user_123:ofac")
 
-open, err := fc.Compliance.HasOpenAlerts(ctx, "user_123")
+open, err := mg.Compliance.HasOpenAlerts(ctx, "user_123")
 if open {
     // block withdrawal
 }
 
-_, err = fc.Compliance.Escalate(ctx, alert.AlertID, "compliance-team", "needs SAR review")
-_, err = fc.Compliance.Resolve(ctx, alert.AlertID, "false positive — verified")
-list, err := fc.Compliance.List(ctx, "user_123", fintech.AlertStatusOpen, "", 20, "")
+_, err = mg.Compliance.Escalate(ctx, alert.AlertID, "compliance-team", "needs SAR review")
+_, err = mg.Compliance.Resolve(ctx, alert.AlertID, "false positive — verified")
+list, err := mg.Compliance.List(ctx, "user_123", fintech.AlertStatusOpen, "", 20, "")
 ```
 
-**TypeScript / Python:** not yet available — use Go.
+**TypeScript / Python:** use the REST endpoints directly until typed resources
+land in those SDKs.
 
 ### Merchant onboarding
 
@@ -100,7 +103,7 @@ config (accepted currencies, limits, fiat/crypto toggles); accept/reject/suspend
 **Go**
 
 ```go
-m, err := fc.Merchant.Onboard(ctx, fintech.OnboardMerchantRequest{
+m, err := mg.Merchant.Onboard(ctx, fintech.OnboardMerchantRequest{
     SubjectID:   "user_123",
     MerchantType: fintech.MerchantTypeBusiness,
     DisplayName: "Acme Store", LegalName: "Acme LLC",
@@ -112,13 +115,14 @@ m, err := fc.Merchant.Onboard(ctx, fintech.OnboardMerchantRequest{
     },
 }, "merchant:user_123:onboard")
 
-_, err = fc.Merchant.Accept(ctx, m.MerchantID, "KYC passed")
+_, err = mg.Merchant.Accept(ctx, m.MerchantID, "KYC passed")
 // or Reject(id, reason) / Suspend(id, reason) / Reinstate(id, note)
 
-list, err := fc.Merchant.List(ctx, fintech.MerchantStatusUnderReview, 20, "")
+list, err := mg.Merchant.List(ctx, fintech.MerchantStatusUnderReview, 20, "")
 ```
 
-**TypeScript / Python:** not yet available — use Go.
+**TypeScript / Python:** use the REST endpoints directly until typed resources
+land in those SDKs.
 
 ### Risk scoring & blocklist
 

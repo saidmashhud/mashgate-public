@@ -9,14 +9,14 @@
 version: 1
 
 snapshot:
-  tag: contracts-2026-04-24    # last cut tag; 2026-06-01 regen ran from origin/main HEAD ahead of it
-  head_ref: b3a72bfa           # origin/main HEAD used for the 2026-06-01 TS+Go regen
+  tag: contracts-2026-04-24    # last cut tag; regenerated from origin/main HEAD ahead of it
+  head_ref: 9c8d4d25e9f335f0099a2b4278294a5b008988e1
   source: github.com/saidmashhud/mashgate
   source_path: contracts
-  fetched_at: 2026-06-01       # TS + Go regenerated on srv2 (protoc+protoc-gen-openapi → openapi → openapi-typescript / oapi-codegen)
+  fetched_at: 2026-07-02       # TS + Go regenerated on srv2 (protoc+protoc-gen-openapi -> openapi -> openapi-typescript / oapi-codegen)
 
 sdk_versions:           # mirrors the real published versions (package.json / pyproject / git tags)
-  go: "1.13.0"
+  go: "1.17.0"
   typescript: "1.7.0"
   python: "0.7.0"
   # 2026-06-01 contracts-sync regen refreshed _generated types only; it sits in CHANGELOG [Unreleased]

@@ -95,6 +95,18 @@ type AddWalletPaymentMethodResponse struct {
 	PaymentMethod *WalletPaymentMethodView `json:"paymentMethod,omitempty"`
 }
 
+// AdminResetPasswordRequest defines model for AdminResetPasswordRequest.
+type AdminResetPasswordRequest struct {
+	NewPassword *string `json:"newPassword,omitempty"`
+	TenantId    *string `json:"tenantId,omitempty"`
+	UserId      *string `json:"userId,omitempty"`
+}
+
+// AdminResetPasswordResponse defines model for AdminResetPasswordResponse.
+type AdminResetPasswordResponse struct {
+	Success *bool `json:"success,omitempty"`
+}
+
 // AdminSubscription defines model for AdminSubscription.
 type AdminSubscription struct {
 	Currency   *string    `json:"currency,omitempty"`
@@ -6581,6 +6593,9 @@ type IamServiceUpdateTenantQuotaJSONRequestBody = UpdateTenantQuotaRequest
 
 // IamServiceSuspendTenantJSONRequestBody defines body for IamServiceSuspendTenant for application/json ContentType.
 type IamServiceSuspendTenantJSONRequestBody = SuspendTenantRequest
+
+// IamServiceAdminResetPasswordJSONRequestBody defines body for IamServiceAdminResetPassword for application/json ContentType.
+type IamServiceAdminResetPasswordJSONRequestBody = AdminResetPasswordRequest
 
 // InvoiceServiceCreateInvoiceJSONRequestBody defines body for InvoiceServiceCreateInvoice for application/json ContentType.
 type InvoiceServiceCreateInvoiceJSONRequestBody = CreateInvoiceRequest

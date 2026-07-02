@@ -35,7 +35,7 @@ from mashgate.resources.local_payments import LocalPaymentsResource
 
 
 class MashgateClient:
-    """Main entry-point for the Mashgate Payment Gateway API.
+    """Main entry-point for the Mashgate BaaS API.
 
     Usage::
 
