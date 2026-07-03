@@ -13,6 +13,11 @@ Top-level entry is the aggregate snapshot.
 
 ### External readiness — installability, docs, contracts-sync
 
+- Added `scripts/external-alpha-smoke.sh`, the single reproducible gate for
+  Go/TypeScript/Python SDK installability, quickstart compilation, pinned
+  contract artifacts, and HookLine verifier parity.
+- Added `docs/external-alpha.md`, defining the invite-only developer handoff
+  checklist and GO/NO-GO criteria.
 - Cleaned public docs for current SDK surface: Go tenant flows now use
   `mashgate.NewWithTenant(...)`; stale TS/Python examples referencing
   non-existent `client.fintech` / `Mashgate` APIs were replaced.

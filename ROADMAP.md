@@ -9,6 +9,8 @@ Status: `planned` / `in-progress` / `shipped`.
 - ✅ Repo bootstrapped from Mashgate monorepo SDK.
 - ✅ Go + TypeScript + Python SDKs relocated, module paths updated.
 - ✅ Go `sdk/go/fintech` subpackage (KYC / compliance / merchant / wallet).
+- ✅ External alpha gate: SDK installability, quickstarts, contracts snapshot,
+  and HookLine verifier parity.
 - ⏳ TypeScript `@mashgate/sdk/fintech` — port types from `@kiro/mashgate-types`.
 - ⏳ Python `mashgate.fintech` — port types + thin client.
 - ⏳ Contract-sync pipeline (pinned-snapshot mode).

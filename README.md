@@ -2,7 +2,10 @@
 
 Official Mashgate SDK for Go, TypeScript, and Python.
 
-> **Status:** initial extraction (v0.x). Targeting `v1.0.0` coordinated release — see [ROADMAP.md](ROADMAP.md).
+> **Status:** external alpha, invite-only. The SDKs, examples, pinned contract
+> snapshot, and HookLine verifier surface are gated by
+> `scripts/external-alpha-smoke.sh`. Targeting `v1.0.0` coordinated release —
+> see [ROADMAP.md](ROADMAP.md).
 
 **Mashgate** is a multi-tenant, API-first **Backend-as-a-Service** — the backend building blocks an application needs (identity, payments, wallets, billing, events, notifications, storage, and more) exposed as a coherent set of services behind one gateway, so product teams ship features instead of re-building plumbing. This repository is the single public entry point for integrating with Mashgate from your own application — whether that's a marketplace, commerce ops, or fintech product.
 
@@ -46,6 +49,7 @@ Mashgate is the shared backend for a family of products. Instead of every app re
 New to building on Mashgate? Start here:
 
 - **[Building a vertical](docs/guides/building-a-vertical.md)** — the end-to-end path: provision a tenant, scaffold, wire the modules you need, build your domain, deploy.
+- **[External alpha pack](docs/external-alpha.md)** — the reproducible gate and handoff checklist for invited developers.
 - **[Data modeling & identity](docs/guides/data-modeling-and-identity.md)** — how your tables join to Mashgate ids (you don't extend Mashgate's users table — you key your own table by `user_id`).
 - **[Best practices](docs/best-practices.md)** — idempotency, money/ledger as source of truth, multi-tenancy, webhooks, error handling, versioning.
 - **[Service catalog](docs/modules/service-catalog.md)** — the full module/RPC reference.
@@ -56,13 +60,22 @@ New to building on Mashgate? Start here:
 
 | Language | Package | Min version | Status |
 |----------|---------|-------------|--------|
-| Go | `github.com/saidmashhud/mashgate-public/sdk/go` | Go 1.22 | stable (v0.x) |
-| TypeScript | `@mashgate/sdk` (npm) | Node 18 | stable (v0.x) |
-| Python | `mashgate` (PyPI) | Python 3.10 | stable (v0.x) |
+| Go | `github.com/saidmashhud/mashgate-public/sdk/go` | Go 1.22 | external alpha |
+| TypeScript | `@mashgate/sdk` (npm) | Node 18 | external alpha |
+| Python | `mashgate` (PyPI) | Python 3.10 | external alpha |
 
 ---
 
 ## Quick start
+
+Before handing the SDK to an external developer, run the alpha gate:
+
+```bash
+bash scripts/external-alpha-smoke.sh
+```
+
+Set `HOOKLINE_REPO=/path/to/hookline` if HookLine is not checked out beside
+this repo.
 
 ### Go
 
@@ -136,6 +149,7 @@ mashgate-public/
 │   └── migration/         Migration guides (from in-tree SDK, from hand-rolled clients)
 ├── contracts-sync/        Pinned snapshots + generators for protos/openapi/events
 ├── examples/              Working examples per language
+├── scripts/               External alpha smoke gate
 └── sdk/*/tests            Language-specific SDK tests
 ```
 
