@@ -26,16 +26,16 @@ type NotifyTemplate struct {
 
 // NotificationLog is a record of a sent notification.
 type NotificationLog struct {
-	ID           string    `json:"id"`
-	TenantID     string    `json:"tenantId"`
-	Channel      string    `json:"channel"`
-	Recipient    string    `json:"recipient"`
-	TemplateKey  string    `json:"templateKey,omitempty"`
-	Status       string    `json:"status"`
-	Provider     string    `json:"provider,omitempty"`
-	ProviderMsgID string   `json:"providerMsgId,omitempty"`
-	Error        string    `json:"error,omitempty"`
-	SentAt       time.Time `json:"sentAt"`
+	ID            string    `json:"id"`
+	TenantID      string    `json:"tenantId"`
+	Channel       string    `json:"channel"`
+	Recipient     string    `json:"recipient"`
+	TemplateKey   string    `json:"templateKey,omitempty"`
+	Status        string    `json:"status"`
+	Provider      string    `json:"provider,omitempty"`
+	ProviderMsgID string    `json:"providerMsgId,omitempty"`
+	Error         string    `json:"error,omitempty"`
+	SentAt        time.Time `json:"sentAt"`
 }
 
 // ────────────────────────────────────────────────────────────────────────────

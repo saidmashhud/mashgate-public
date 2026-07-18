@@ -15,20 +15,20 @@ import (
 // CreatePaymentRequest creates a payment intent.
 // Set CaptureMode to "MANUAL" to authorize first and capture later.
 type CreatePaymentRequest struct {
-	Amount         Money              `json:"amount"`
-	OrderID        string             `json:"orderId"`
-	CaptureMode    string             `json:"captureMode,omitempty"` // "AUTO" | "MANUAL", default "AUTO"
-	Card           *CardPaymentMethod `json:"card,omitempty"`
-	Metadata       map[string]string  `json:"metadata,omitempty"`
+	Amount      Money              `json:"amount"`
+	OrderID     string             `json:"orderId"`
+	CaptureMode string             `json:"captureMode,omitempty"` // "AUTO" | "MANUAL", default "AUTO"
+	Card        *CardPaymentMethod `json:"card,omitempty"`
+	Metadata    map[string]string  `json:"metadata,omitempty"`
 	// IdempotencyKey is sent as a header. Auto-generated with uuid if empty.
 	IdempotencyKey string `json:"-"`
 }
 
 // RefundRequest requests a (partial) refund on a captured payment.
 type RefundRequest struct {
-	Amount         Money  `json:"amount"`
-	Reason         string `json:"reason,omitempty"`
-	Note           string `json:"note,omitempty"`
+	Amount Money  `json:"amount"`
+	Reason string `json:"reason,omitempty"`
+	Note   string `json:"note,omitempty"`
 	// IdempotencyKey is sent as a header. Auto-generated with uuid if empty.
 	IdempotencyKey string `json:"-"`
 }

@@ -78,6 +78,15 @@ go_example() {
   run_container golang:1.24-alpine "$ROOT/examples/go" 'go build -o /tmp/mashgate-go-quickstart .'
 }
 
+go_exchange_example() {
+  if command -v go >/dev/null 2>&1; then
+    (cd "$ROOT/examples/exchange/go" && go build -o /tmp/mashgate-go-exchange-example .)
+    return
+  fi
+  can_run_container || { red "go not found and container fallback unavailable"; return 1; }
+  run_container golang:1.24-alpine "$ROOT/examples/exchange/go" 'go build -o /tmp/mashgate-go-exchange-example .'
+}
+
 ts_sdk() {
   need npm || return 1
   (cd "$ROOT/sdk/typescript" && npm ci && npm run build && npm test)
@@ -86,6 +95,11 @@ ts_sdk() {
 ts_example() {
   need npm || return 1
   (cd "$ROOT/examples/typescript" && npm ci && npm run build)
+}
+
+ts_exchange_example() {
+  need npm || return 1
+  (cd "$ROOT/examples/exchange/typescript" && npm install --package-lock=false && npm run build)
 }
 
 python_sdk() {
@@ -99,6 +113,7 @@ python_sdk() {
      rm -rf ./*.egg-info &&
      python -m pytest &&
      PYTHONPATH=. python -m py_compile ../../examples/python/quickstart.py &&
+     PYTHONPATH=. python -m py_compile ../../examples/exchange/python/main.py &&
      PYTHONPATH=. python - <<'"'"'PY'"'"'
 from mashgate import MashgateClient, verify_webhook_signature
 assert MashgateClient is not None
@@ -116,7 +131,8 @@ python_sdk_host() {
   "$venv/bin/python" -m pip install -e "$ROOT/sdk/python[dev]" >/dev/null || return 1
   (cd "$ROOT/sdk/python" && "$venv/bin/python" -m pytest)
   PYTHONPATH="$ROOT/sdk/python" "$venv/bin/python" -m py_compile \
-    "$ROOT/examples/python/quickstart.py"
+    "$ROOT/examples/python/quickstart.py" \
+    "$ROOT/examples/exchange/python/main.py"
   PYTHONPATH="$ROOT/sdk/python" "$venv/bin/python" - <<'PY'
 from mashgate import MashgateClient, verify_webhook_signature
 assert MashgateClient is not None
@@ -133,6 +149,12 @@ contract_snapshot() {
   test -s "$ROOT/sdk/go/_generated/types.gen.go"
   test -s "$ROOT/sdk/typescript/src/_generated/openapi.yaml"
   test -s "$ROOT/sdk/typescript/src/_generated/types.ts"
+  test -s "$ROOT/contracts-sync/manifests/exchange-alpha.yaml"
+  test -s "$ROOT/contracts-sync/snapshots/exchange/exchange.proto"
+  for event in order trade deposit withdrawal market; do
+    test -s "$ROOT/contracts-sync/snapshots/exchange/exchange.${event}.updated.json" || \
+      test -s "$ROOT/contracts-sync/snapshots/exchange/exchange.${event}.executed.json"
+  done
 }
 
 contract_sync_check() {
@@ -165,8 +187,10 @@ info "hookline: $HOOKLINE_REPO"
 
 [[ "$SKIP_GO" == "1" ]] || run "Go SDK tests" go_sdk
 [[ "$SKIP_GO" == "1" ]] || run "Go quickstart builds" go_example
+[[ "$SKIP_GO" == "1" ]] || run "Go Exchange example builds" go_exchange_example
 [[ "$SKIP_TS" == "1" ]] || run "TypeScript SDK build + tests" ts_sdk
 [[ "$SKIP_TS" == "1" ]] || run "TypeScript quickstart builds" ts_example
+[[ "$SKIP_TS" == "1" ]] || run "TypeScript Exchange example builds" ts_exchange_example
 [[ "$SKIP_PYTHON" == "1" ]] || run "Python SDK install + tests" python_sdk
 run "contract snapshot presence" contract_snapshot
 [[ "$RUN_CONTRACT_SYNC" == "1" ]] && run "contract sync check" contract_sync_check

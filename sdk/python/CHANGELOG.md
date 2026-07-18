@@ -9,6 +9,13 @@ Aggregate changelog for all languages: [`../../CHANGELOG.md`](../../CHANGELOG.md
 
 ---
 
+## [0.8.0] - 2026-07-18
+
+### Added
+
+- Custodial spot `exchange` resource with idempotent trading and funding flows.
+- Structural `merchant_id` ownership on payment links.
+
 ## [0.7.0] — 2026-05-19
 
 ### Added — EVM chain provider Phase 1

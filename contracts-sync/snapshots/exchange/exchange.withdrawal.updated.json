@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mashgate.io/contracts/events/exchange.withdrawal.updated.json",
+  "title": "ExchangeWithdrawalUpdated",
+  "allOf": [
+    { "$ref": "./_envelope.v1.json" },
+    {
+      "type": "object",
+      "required": ["payload"],
+      "properties": {
+        "topic": { "const": "exchange.withdrawal.updated" },
+        "event_type": { "const": "exchange.withdrawal.updated" },
+        "payload": {
+          "type": "object",
+          "required": ["withdrawal_id", "account_id", "wallet_id", "asset", "network", "destination", "amount", "status", "hold_id", "compliance_status"],
+          "properties": {
+            "withdrawal_id": { "type": "string", "format": "uuid" },
+            "account_id": { "type": "string", "format": "uuid" },
+            "wallet_id": { "type": "string", "format": "uuid" },
+            "asset": { "enum": ["BTC", "ETH", "SOL", "USDT"] },
+            "network": { "enum": ["BITCOIN", "ETHEREUM", "SOLANA", "TRON", "BTC_TESTNET", "ETH_SEPOLIA", "SOL_DEVNET", "TRON_NILE"] },
+            "destination": { "type": "string" },
+            "amount": { "type": "string" },
+            "status": { "enum": ["pending_hold", "compliance_review", "escalated", "approved", "rejected", "signing", "broadcast", "confirmed", "failed"] },
+            "hold_id": { "type": ["string", "null"], "format": "uuid" },
+            "compliance_status": { "enum": ["pending", "approved", "rejected", "escalated"] },
+            "compliance_case_id": { "type": ["string", "null"], "format": "uuid" },
+            "reviewed_by": { "type": ["string", "null"], "format": "uuid" },
+            "tx_hash": { "type": ["string", "null"] },
+            "reason": { "type": ["string", "null"] }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  ]
+}

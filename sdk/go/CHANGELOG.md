@@ -9,6 +9,14 @@ Aggregate changelog for all languages: [`../../CHANGELOG.md`](../../CHANGELOG.md
 
 ---
 
+## [v1.18.0] - 2026-07-18 - `sdk/go/v1.18.0`
+
+### Added
+
+- Custodial spot `ExchangeClient` for markets, books, trades, balances,
+  idempotent order/cancel, deposit addresses, deposits, and withdrawals.
+- Structural `merchant_id` ownership on payment links.
+
 ## [v1.13.0] — 2026-05-19 — `sdk/go/v1.13.0`
 
 ### Added — EVM chain provider Phase 1 (Ethereum / BSC / Polygon / Base)

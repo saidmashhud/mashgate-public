@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mashgate.io/contracts/events/exchange.trade.executed.json",
+  "title": "ExchangeTradeExecuted",
+  "allOf": [
+    { "$ref": "./_envelope.v1.json" },
+    {
+      "type": "object",
+      "required": ["payload"],
+      "properties": {
+        "topic": { "const": "exchange.trade.executed" },
+        "event_type": { "const": "exchange.trade.executed" },
+        "payload": {
+          "type": "object",
+          "required": ["trade_id", "market", "maker_order_id", "taker_order_id", "maker_account_id", "taker_account_id", "taker_side", "price", "quantity", "quote_quantity", "maker_fee", "taker_fee", "sequence"],
+          "properties": {
+            "trade_id": { "type": "string", "format": "uuid" },
+            "market": { "enum": ["BTC/USDT", "ETH/USDT", "SOL/USDT"] },
+            "maker_order_id": { "type": "string", "format": "uuid" },
+            "taker_order_id": { "type": "string", "format": "uuid" },
+            "maker_account_id": { "type": "string", "format": "uuid" },
+            "taker_account_id": { "type": "string", "format": "uuid" },
+            "taker_side": { "enum": ["buy", "sell"] },
+            "price": { "type": "string" },
+            "quantity": { "type": "string" },
+            "quote_quantity": { "type": "string" },
+            "maker_fee": { "type": "string" },
+            "taker_fee": { "type": "string" },
+            "sequence": { "type": "integer", "minimum": 1 }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  ]
+}

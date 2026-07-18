@@ -14,15 +14,15 @@ import (
 // returning `respBody` (JSON) with status 200. The handler also captures the
 // last request body so tests can assert on it.
 type capture struct {
-	body            []byte
-	authHeader      string
-	tenantHeader    string
-	idempotencyKey  string
-	contentType     string
-	rawQuery        string
-	method          string
-	path            string
-	traceparent     string
+	body           []byte
+	authHeader     string
+	tenantHeader   string
+	idempotencyKey string
+	contentType    string
+	rawQuery       string
+	method         string
+	path           string
+	traceparent    string
 }
 
 func mockServer(t *testing.T, status int, respBody string, cap *capture) *httptest.Server {

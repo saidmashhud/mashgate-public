@@ -1,0 +1,209 @@
+syntax = "proto3";
+
+package exchange.v1;
+
+option go_package = "github.com/mashgate/mashgate/gen/exchange/v1;exchangev1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+// Public spot API. The authenticated identity determines tenant, subject and
+// exchange account; mutation requests intentionally contain no ownership IDs.
+service ExchangeService {
+  rpc ListMarkets(ListMarketsRequest) returns (ListMarketsResponse) {
+    option (google.api.http) = { get: "/v1/exchange/markets" };
+  }
+  rpc GetOrderBook(GetOrderBookRequest) returns (OrderBook) {
+    option (google.api.http) = { get: "/v1/exchange/order-book" };
+  }
+  rpc ListTrades(ListTradesRequest) returns (ListTradesResponse) {
+    option (google.api.http) = { get: "/v1/exchange/trades" };
+  }
+  rpc ListBalances(ListBalancesRequest) returns (ListBalancesResponse) {
+    option (google.api.http) = { get: "/v1/exchange/balances" };
+  }
+  rpc GetDepositAddress(GetExchangeDepositAddressRequest) returns (ExchangeDepositAddress) {
+    option (google.api.http) = { get: "/v1/exchange/deposits/address" };
+  }
+  rpc ListDeposits(ListDepositsRequest) returns (ListDepositsResponse) {
+    option (google.api.http) = { get: "/v1/exchange/deposits" };
+  }
+  rpc RequestWithdrawal(RequestWithdrawalRequest) returns (Withdrawal) {
+    option (google.api.http) = { post: "/v1/exchange/withdrawals" body: "*" };
+  }
+  rpc ListWithdrawals(ListWithdrawalsRequest) returns (ListWithdrawalsResponse) {
+    option (google.api.http) = { get: "/v1/exchange/withdrawals" };
+  }
+  rpc GetWithdrawal(GetWithdrawalRequest) returns (Withdrawal) {
+    option (google.api.http) = { get: "/v1/exchange/withdrawals/{withdrawal_id}" };
+  }
+  rpc PlaceOrder(PlaceOrderRequest) returns (Order) {
+    option (google.api.http) = { post: "/v1/exchange/orders" body: "*" };
+  }
+  rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse) {
+    option (google.api.http) = { get: "/v1/exchange/orders" };
+  }
+  rpc GetOrder(GetOrderRequest) returns (Order) {
+    option (google.api.http) = { get: "/v1/exchange/orders/{order_id}" };
+  }
+  rpc CancelOrder(CancelOrderRequest) returns (Order) {
+    option (google.api.http) = { post: "/v1/exchange/orders/{order_id}/cancel" body: "*" };
+  }
+}
+
+enum OrderSide {
+  ORDER_SIDE_UNSPECIFIED = 0;
+  ORDER_SIDE_BUY = 1;
+  ORDER_SIDE_SELL = 2;
+}
+
+enum OrderKind {
+  ORDER_KIND_UNSPECIFIED = 0;
+  ORDER_KIND_LIMIT = 1;
+  ORDER_KIND_MARKET = 2;
+}
+
+enum TimeInForce {
+  TIME_IN_FORCE_UNSPECIFIED = 0;
+  TIME_IN_FORCE_GTC = 1;
+  TIME_IN_FORCE_IOC = 2;
+}
+
+enum OrderStatus {
+  ORDER_STATUS_UNSPECIFIED = 0;
+  ORDER_STATUS_PENDING_RESERVE = 1;
+  ORDER_STATUS_ACCEPTED = 2;
+  ORDER_STATUS_PARTIALLY_FILLED = 3;
+  ORDER_STATUS_FILLED = 4;
+  ORDER_STATUS_CANCELLED = 5;
+  ORDER_STATUS_REJECTED = 6;
+}
+
+message Market {
+  string market = 1;
+  string base_asset = 2;
+  string quote_asset = 3;
+  uint32 price_scale = 4;
+  uint32 quantity_scale = 5;
+  string min_quantity = 6;
+  string min_notional = 7;
+  string status = 8;
+}
+
+message Order {
+  string order_id = 1;
+  string account_id = 2;
+  string market = 3;
+  OrderSide side = 4;
+  OrderKind kind = 5;
+  TimeInForce time_in_force = 6;
+  string price = 7;
+  string quantity = 8;
+  string filled_quantity = 9;
+  string remaining_quantity = 10;
+  OrderStatus status = 11;
+  bool post_only = 12;
+  google.protobuf.Timestamp created_at = 13;
+  google.protobuf.Timestamp updated_at = 14;
+}
+
+message Trade {
+  string trade_id = 1;
+  string market = 2;
+  string price = 3;
+  string quantity = 4;
+  string quote_quantity = 5;
+  OrderSide taker_side = 6;
+  google.protobuf.Timestamp executed_at = 7;
+}
+
+message Balance {
+  string asset = 1;
+  string available = 2;
+  string held = 3;
+  string total = 4;
+}
+
+message PriceLevel {
+  string price = 1;
+  string quantity = 2;
+  uint32 order_count = 3;
+}
+
+message OrderBook {
+  string market = 1;
+  uint64 sequence = 2;
+  repeated PriceLevel bids = 3;
+  repeated PriceLevel asks = 4;
+}
+
+message ExchangeDepositAddress {
+  string asset = 1;
+  string network = 2;
+  string address = 3;
+  string memo = 4;
+}
+
+message Deposit {
+  string deposit_id = 1;
+  string asset = 2;
+  string network = 3;
+  string amount = 4;
+  string address = 5;
+  string tx_hash = 6;
+  uint32 confirmations = 7;
+  string status = 8;
+  google.protobuf.Timestamp detected_at = 9;
+  google.protobuf.Timestamp credited_at = 10;
+}
+
+message Withdrawal {
+  string withdrawal_id = 1;
+  string asset = 2;
+  string network = 3;
+  string amount = 4;
+  string destination = 5;
+  string status = 6;
+  string tx_hash = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+message ListMarketsRequest {}
+message ListMarketsResponse { repeated Market markets = 1; }
+message GetOrderBookRequest { string market = 1; uint32 depth = 2; }
+message ListTradesRequest { string market = 1; uint32 limit = 2; string cursor = 3; }
+message ListTradesResponse { repeated Trade trades = 1; string next_cursor = 2; }
+message ListBalancesRequest {}
+message ListBalancesResponse { repeated Balance balances = 1; }
+message GetExchangeDepositAddressRequest { string asset = 1; string network = 2; }
+message ListDepositsRequest { string asset = 1; string status = 2; uint32 limit = 3; string cursor = 4; }
+message ListDepositsResponse { repeated Deposit deposits = 1; string next_cursor = 2; }
+
+// Requires Idempotency-Key metadata at the edge. The service persists scope
+// tenant + subject + operation + key and rejects payload drift with ALREADY_EXISTS.
+message RequestWithdrawalRequest {
+  string asset = 1;
+  string network = 2;
+  string amount = 3;
+  string destination = 4;
+}
+
+message ListWithdrawalsRequest { string asset = 1; string status = 2; uint32 limit = 3; string cursor = 4; }
+message ListWithdrawalsResponse { repeated Withdrawal withdrawals = 1; string next_cursor = 2; }
+message GetWithdrawalRequest { string withdrawal_id = 1; }
+
+message PlaceOrderRequest {
+  string market = 1;
+  OrderSide side = 2;
+  OrderKind kind = 3;
+  TimeInForce time_in_force = 4;
+  string price = 5;
+  string quantity = 6;
+  bool post_only = 7;
+}
+
+message ListOrdersRequest { string market = 1; OrderStatus status = 2; uint32 limit = 3; string cursor = 4; }
+message ListOrdersResponse { repeated Order orders = 1; string next_cursor = 2; }
+message GetOrderRequest { string order_id = 1; }
+message CancelOrderRequest { string order_id = 1; }

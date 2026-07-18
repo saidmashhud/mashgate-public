@@ -25,6 +25,7 @@ import { BillingResource } from "./resources/billing.js";
 import { AnalyticsResource } from "./resources/analytics.js";
 import { WalletAdminResource } from "./resources/walletAdmin.js";
 import { MailResource } from "./resources/mail.js";
+import { ExchangeResource } from "./resources/exchange.js";
 
 export class MashgateClient {
   private readonly baseUrl: string;
@@ -73,6 +74,8 @@ export class MashgateClient {
    * / `mail.sent` / `mail.delivered` / `mail.bounced` events via webhooks.
    */
   readonly mail: MailResource;
+  /** Custodial spot Exchange API. Ownership is resolved from accessToken. */
+  readonly exchange: ExchangeResource;
 
   constructor(options: MashgateClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/+$/, "");
@@ -113,6 +116,7 @@ export class MashgateClient {
     this.analytics = new AnalyticsResource(this);
     this.walletAdmin = new WalletAdminResource(this);
     this.mail = new MailResource(this);
+    this.exchange = new ExchangeResource(this);
   }
 
   setAccessToken(token: string | undefined): void {

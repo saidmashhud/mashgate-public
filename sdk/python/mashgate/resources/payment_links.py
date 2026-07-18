@@ -20,6 +20,7 @@ class PaymentLinksResource:
         self,
         *,
         tenant_id: str,
+        merchant_id: str | None = None,
         amount: int,
         currency: str,
         description: str | None = None,
@@ -33,13 +34,18 @@ class PaymentLinksResource:
         }
         if description is not None:
             body["description"] = description
+        if merchant_id is not None:
+            body["merchantId"] = merchant_id
         if expires_at is not None:
             body["expiresAt"] = expires_at
         return self._c.request("POST", "/v1/payment-links", body=body)
 
-    def list(self, tenant_id: str) -> dict[str, Any]:
+    def list(self, tenant_id: str, merchant_id: str | None = None) -> dict[str, Any]:
         """Return all payment links for a tenant."""
-        return self._c.request("GET", "/v1/payment-links", query={"tenantId": tenant_id})
+        query = {"tenantId": tenant_id}
+        if merchant_id is not None:
+            query["merchantId"] = merchant_id
+        return self._c.request("GET", "/v1/payment-links", query=query)
 
     def get(self, link_id: str) -> dict[str, Any]:
         """Return a payment link by ID."""

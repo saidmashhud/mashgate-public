@@ -11,6 +11,17 @@ Top-level entry is the aggregate snapshot.
 
 ## [Unreleased]
 
+### Exchange external alpha
+
+- Added custodial spot Exchange resources to Go 1.18.0, TypeScript 1.8.0,
+  and Python 0.8.0 with account ownership derived from end-user access tokens.
+- Added idempotent order/cancel/withdrawal methods, three-language examples,
+  Exchange proto/event snapshots, and the testnet operations runbook.
+- Added structural payment-link merchant ownership and removed description
+  parsing from downstream consumers.
+- Pinned Exchange contracts to Mashgate
+  `8a8fbb025875fcb13068bc93650f20eac42f67f4`.
+
 ### External readiness — installability, docs, contracts-sync
 
 - Added `scripts/external-alpha-smoke.sh`, the single reproducible gate for

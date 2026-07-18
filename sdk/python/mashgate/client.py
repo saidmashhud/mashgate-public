@@ -32,6 +32,7 @@ from mashgate.resources.mail import MailResource
 from mashgate.resources.guard import GuardResource
 from mashgate.resources.chain import ChainResource
 from mashgate.resources.local_payments import LocalPaymentsResource
+from mashgate.resources.exchange import ExchangeResource
 
 
 class MashgateClient:
@@ -108,6 +109,8 @@ class MashgateClient:
         self.chain = ChainResource(self)
         # Local payments — country-specific providers (TJ/UZ).
         self.local_payments = LocalPaymentsResource(self)
+        # Custodial spot exchange. Account ownership comes from access_token.
+        self.exchange = ExchangeResource(self)
 
     # ── Token management ──────────────────────────────────────────────
 

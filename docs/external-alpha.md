@@ -9,6 +9,7 @@ the public SDKs and HookLine webhooks.
 - TypeScript SDK: `@mashgate/sdk`
 - Python SDK: `mashgate`
 - Runnable Go, TypeScript, and Python quickstarts
+- Runnable Go, TypeScript, and Python Exchange examples
 - Pinned contract snapshot in `contracts-sync/manifests/active.yaml`
 - HookLine webhook delivery and verifier SDKs
 
@@ -29,6 +30,7 @@ It validates:
 - TypeScript SDK install/build/tests and TypeScript quickstart compilation.
 - Python SDK clean venv install/tests and Python quickstart syntax.
 - Pinned contract snapshot and generated Go/TypeScript artifacts.
+- Vendored Exchange proto/event snapshot and parity checks.
 - HookLine Go/JS/Python webhook verifier gate from the sibling HookLine repo.
 - This document and the webhook module docs are present.
 
@@ -52,8 +54,15 @@ MASHGATE_SRC=/path/to/mashgate \
 bash scripts/external-alpha-smoke.sh
 ```
 
-Run this only in an isolated checkout or on the build host. `sync.sh` may check
-out the core repo at the pinned `head_ref`.
+Run the general generator only in an isolated checkout. Sync the additive
+Exchange proto and event schemas without changing the core checkout:
+
+```bash
+MASHGATE_SRC=/path/to/mashgate \
+contracts-sync/scripts/sync-exchange.sh
+CHECK_ONLY=1 MASHGATE_SRC=/path/to/mashgate \
+contracts-sync/scripts/sync-exchange.sh
+```
 
 ## Developer Handoff Checklist
 
@@ -66,6 +75,8 @@ Before handing the pack to an external developer:
 - Webhook handlers verify `x-hl-signature`, dedupe event ids, and return 2xx
   quickly.
 - Money-moving calls use stable idempotency keys.
+- Exchange consumers pass no caller-selected account ownership and implement
+  the inbox lifecycle described in `docs/modules/exchange.md`.
 
 ## Alpha Limits
 

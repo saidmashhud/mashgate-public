@@ -447,24 +447,24 @@ type PreviewPlanChangeRequest struct {
 
 // PreviewPlanChangeResponse holds proration details.
 type PreviewPlanChangeResponse struct {
-	NewPlan          *BillingPlan `json:"newPlan"`
-	OldPlan          *BillingPlan `json:"oldPlan,omitempty"`
-	ProrationCents   int64        `json:"prorationCents"`
-	CreditCents      int64        `json:"creditCents"`
-	NextChargeCents  int64        `json:"nextChargeCents"`
-	NextChargeAt     time.Time    `json:"nextChargeAt"`
-	EffectiveAt      time.Time    `json:"effectiveAt"`
+	NewPlan         *BillingPlan `json:"newPlan"`
+	OldPlan         *BillingPlan `json:"oldPlan,omitempty"`
+	ProrationCents  int64        `json:"prorationCents"`
+	CreditCents     int64        `json:"creditCents"`
+	NextChargeCents int64        `json:"nextChargeCents"`
+	NextChargeAt    time.Time    `json:"nextChargeAt"`
+	EffectiveAt     time.Time    `json:"effectiveAt"`
 }
 
 // BillingPaymentMethod represents a payment method on file for billing.
 type BillingPaymentMethod struct {
-	ID         string            `json:"id"`
-	Type       string            `json:"type"` // "card" | "wallet" | "bank"
-	IsDefault  bool              `json:"isDefault"`
-	CreatedAt  time.Time         `json:"createdAt"`
-	Card       *CardPaymentMethod   `json:"card,omitempty"`
-	Wallet     *WalletPaymentMethod `json:"wallet,omitempty"`
-	Metadata   map[string]string `json:"metadata,omitempty"`
+	ID        string               `json:"id"`
+	Type      string               `json:"type"` // "card" | "wallet" | "bank"
+	IsDefault bool                 `json:"isDefault"`
+	CreatedAt time.Time            `json:"createdAt"`
+	Card      *CardPaymentMethod   `json:"card,omitempty"`
+	Wallet    *WalletPaymentMethod `json:"wallet,omitempty"`
+	Metadata  map[string]string    `json:"metadata,omitempty"`
 }
 
 // AddBillingPaymentMethodRequest registers a new billing payment method.
@@ -478,27 +478,27 @@ type AddBillingPaymentMethodRequest struct {
 
 // BillingInvoice is an issued invoice for a tenant.
 type BillingInvoice struct {
-	ID            string            `json:"id"`
-	TenantID      string            `json:"tenantId"`
-	Number        string            `json:"number"`
-	Status        string            `json:"status"` // draft | open | paid | void | uncollectible
-	AmountCents   int64             `json:"amountCents"`
-	Currency      string            `json:"currency"`
-	IssuedAt      time.Time         `json:"issuedAt"`
-	DueAt         time.Time         `json:"dueAt"`
-	PaidAt        *time.Time        `json:"paidAt,omitempty"`
-	HostedPageURL string            `json:"hostedPageUrl,omitempty"`
-	PDFURL        string            `json:"pdfUrl,omitempty"`
+	ID            string               `json:"id"`
+	TenantID      string               `json:"tenantId"`
+	Number        string               `json:"number"`
+	Status        string               `json:"status"` // draft | open | paid | void | uncollectible
+	AmountCents   int64                `json:"amountCents"`
+	Currency      string               `json:"currency"`
+	IssuedAt      time.Time            `json:"issuedAt"`
+	DueAt         time.Time            `json:"dueAt"`
+	PaidAt        *time.Time           `json:"paidAt,omitempty"`
+	HostedPageURL string               `json:"hostedPageUrl,omitempty"`
+	PDFURL        string               `json:"pdfUrl,omitempty"`
 	Lines         []BillingInvoiceLine `json:"lines,omitempty"`
-	Metadata      map[string]string `json:"metadata,omitempty"`
+	Metadata      map[string]string    `json:"metadata,omitempty"`
 }
 
 // BillingInvoiceLine is one line item on an invoice.
 type BillingInvoiceLine struct {
-	Description string `json:"description"`
-	Quantity    int64  `json:"quantity"`
-	UnitCents   int64  `json:"unitCents"`
-	AmountCents int64  `json:"amountCents"`
+	Description string     `json:"description"`
+	Quantity    int64      `json:"quantity"`
+	UnitCents   int64      `json:"unitCents"`
+	AmountCents int64      `json:"amountCents"`
 	PeriodStart *time.Time `json:"periodStart,omitempty"`
 	PeriodEnd   *time.Time `json:"periodEnd,omitempty"`
 }
@@ -511,12 +511,12 @@ type CreditBalance struct {
 
 // RedeemPromoCodeResponse is returned after applying a promo code.
 type RedeemPromoCodeResponse struct {
-	Applied      bool          `json:"applied"`
-	CreditCents  int64         `json:"creditCents,omitempty"`
-	Currency     string        `json:"currency,omitempty"`
-	ValidUntil   *time.Time    `json:"validUntil,omitempty"`
+	Applied      bool           `json:"applied"`
+	CreditCents  int64          `json:"creditCents,omitempty"`
+	Currency     string         `json:"currency,omitempty"`
+	ValidUntil   *time.Time     `json:"validUntil,omitempty"`
 	Balance      *CreditBalance `json:"balance,omitempty"`
-	ErrorMessage string        `json:"errorMessage,omitempty"`
+	ErrorMessage string         `json:"errorMessage,omitempty"`
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -576,10 +576,10 @@ type FailureAnalysis struct {
 }
 
 type CustomerMetrics struct {
-	NewCustomers     int64   `json:"newCustomers"`
+	NewCustomers       int64 `json:"newCustomers"`
 	ReturningCustomers int64 `json:"returningCustomers"`
-	ChurnedCustomers int64   `json:"churnedCustomers"`
-	AvgLifetimeValue int64   `json:"avgLifetimeValueCents"`
+	ChurnedCustomers   int64 `json:"churnedCustomers"`
+	AvgLifetimeValue   int64 `json:"avgLifetimeValueCents"`
 }
 
 type CohortAnalysis struct {
@@ -592,8 +592,8 @@ type CohortAnalysis struct {
 }
 
 type CustomerSegment struct {
-	Segment string `json:"segment"` // VIP | casual | new | churned
-	Count   int64  `json:"count"`
+	Segment string  `json:"segment"` // VIP | casual | new | churned
+	Count   int64   `json:"count"`
 	Share   float64 `json:"share"`
 }
 
@@ -616,13 +616,13 @@ type CreateAddressRequest struct {
 }
 
 type ChainAddress struct {
-	AddressID    string    `json:"addressId"`
-	TenantID     string    `json:"tenantId"`
-	Network      string    `json:"network"`
-	Address      string    `json:"address"`
-	Label        string    `json:"label,omitempty"`
-	DerivationPath string  `json:"derivationPath,omitempty"`
-	CreatedAt    time.Time `json:"createdAt"`
+	AddressID      string    `json:"addressId"`
+	TenantID       string    `json:"tenantId"`
+	Network        string    `json:"network"`
+	Address        string    `json:"address"`
+	Label          string    `json:"label,omitempty"`
+	DerivationPath string    `json:"derivationPath,omitempty"`
+	CreatedAt      time.Time `json:"createdAt"`
 }
 
 type ChainBalance struct {
@@ -633,18 +633,18 @@ type ChainBalance struct {
 }
 
 type ChainTransaction struct {
-	TxID        string    `json:"txId"`
-	Hash        string    `json:"hash"`
-	Network     string    `json:"network"`
-	From        string    `json:"from"`
-	To          string    `json:"to"`
-	Amount      string    `json:"amount"`
-	Asset       string    `json:"asset"`
-	Status      string    `json:"status"` // pending | confirmed | failed
-	BlockHeight int64     `json:"blockHeight,omitempty"`
-	Confirmations int     `json:"confirmations,omitempty"`
-	FeeAmount   string    `json:"feeAmount,omitempty"`
-	CreatedAt   time.Time `json:"createdAt"`
+	TxID          string    `json:"txId"`
+	Hash          string    `json:"hash"`
+	Network       string    `json:"network"`
+	From          string    `json:"from"`
+	To            string    `json:"to"`
+	Amount        string    `json:"amount"`
+	Asset         string    `json:"asset"`
+	Status        string    `json:"status"` // pending | confirmed | failed
+	BlockHeight   int64     `json:"blockHeight,omitempty"`
+	Confirmations int       `json:"confirmations,omitempty"`
+	FeeAmount     string    `json:"feeAmount,omitempty"`
+	CreatedAt     time.Time `json:"createdAt"`
 }
 
 type EstimateFeeRequest struct {
@@ -693,22 +693,22 @@ type ChainNetwork struct {
 // ────────────────────────────────────────────────────────────────────────────
 
 type DeveloperActivity struct {
-	APICalls24h     int64 `json:"apiCalls24h"`
+	APICalls24h          int64 `json:"apiCalls24h"`
 	WebhookDeliveries24h int64 `json:"webhookDeliveries24h"`
 	WebhookFailures24h   int64 `json:"webhookFailures24h"`
-	LastAPIError    *struct {
-		Code        string    `json:"code"`
-		Message     string    `json:"message"`
-		Timestamp   time.Time `json:"timestamp"`
+	LastAPIError         *struct {
+		Code      string    `json:"code"`
+		Message   string    `json:"message"`
+		Timestamp time.Time `json:"timestamp"`
 	} `json:"lastApiError,omitempty"`
 }
 
 type IntegrationHealth struct {
-	APIKeysActive       int     `json:"apiKeysActive"`
-	WebhookEndpoints    int     `json:"webhookEndpoints"`
-	WebhookSuccessRate  float64 `json:"webhookSuccessRate"`
-	LastWebhookError    string  `json:"lastWebhookError,omitempty"`
-	OverallStatus       string  `json:"overallStatus"` // healthy | degraded | down
+	APIKeysActive      int     `json:"apiKeysActive"`
+	WebhookEndpoints   int     `json:"webhookEndpoints"`
+	WebhookSuccessRate float64 `json:"webhookSuccessRate"`
+	LastWebhookError   string  `json:"lastWebhookError,omitempty"`
+	OverallStatus      string  `json:"overallStatus"` // healthy | degraded | down
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -738,31 +738,31 @@ type InitiateLocalPaymentRequest struct {
 }
 
 type LocalPaymentInitiated struct {
-	PaymentID  string `json:"paymentId"`
-	Status     string `json:"status"` // pending_confirmation | pending_redirect | pending_ussd
-	NextStep   struct {
-		Type      string `json:"type"` // redirect | ussd | qr | otp
-		Value     string `json:"value"`
+	PaymentID string `json:"paymentId"`
+	Status    string `json:"status"` // pending_confirmation | pending_redirect | pending_ussd
+	NextStep  struct {
+		Type      string    `json:"type"` // redirect | ussd | qr | otp
+		Value     string    `json:"value"`
 		ExpiresAt time.Time `json:"expiresAt,omitempty"`
 	} `json:"nextStep"`
 }
 
 type LocalPayment struct {
-	PaymentID    string    `json:"paymentId"`
-	TenantID     string    `json:"tenantId"`
-	MethodID     string    `json:"methodId"`
-	Amount       Money     `json:"amount"`
-	Status       string    `json:"status"` // pending | succeeded | failed | cancelled
-	OrderID      string    `json:"orderId"`
-	ProviderRef  string    `json:"providerRef,omitempty"`
-	CreatedAt    time.Time `json:"createdAt"`
-	CompletedAt  *time.Time `json:"completedAt,omitempty"`
-	FailureReason string   `json:"failureReason,omitempty"`
+	PaymentID     string     `json:"paymentId"`
+	TenantID      string     `json:"tenantId"`
+	MethodID      string     `json:"methodId"`
+	Amount        Money      `json:"amount"`
+	Status        string     `json:"status"` // pending | succeeded | failed | cancelled
+	OrderID       string     `json:"orderId"`
+	ProviderRef   string     `json:"providerRef,omitempty"`
+	CreatedAt     time.Time  `json:"createdAt"`
+	CompletedAt   *time.Time `json:"completedAt,omitempty"`
+	FailureReason string     `json:"failureReason,omitempty"`
 }
 
 type ConfirmLocalPaymentRequest struct {
-	OTP        string `json:"otp,omitempty"`
-	UssdCode   string `json:"ussdCode,omitempty"`
+	OTP         string `json:"otp,omitempty"`
+	UssdCode    string `json:"ussdCode,omitempty"`
 	ProviderRef string `json:"providerRef,omitempty"`
 }
 
@@ -797,15 +797,15 @@ type ListUsageParams struct {
 }
 
 type UsageSummary struct {
-	TenantID string `json:"tenantId"`
+	TenantID string    `json:"tenantId"`
 	From     time.Time `json:"from"`
 	To       time.Time `json:"to"`
 	Meters   []struct {
-		MeterCode    string  `json:"meterCode"`
-		TotalQty     float64 `json:"totalQuantity"`
-		Unit         string  `json:"unit,omitempty"`
-		CostCents    int64   `json:"costCents,omitempty"`
-		Currency     string  `json:"currency,omitempty"`
+		MeterCode string  `json:"meterCode"`
+		TotalQty  float64 `json:"totalQuantity"`
+		Unit      string  `json:"unit,omitempty"`
+		CostCents int64   `json:"costCents,omitempty"`
+		Currency  string  `json:"currency,omitempty"`
 	} `json:"meters"`
 }
 
@@ -826,22 +826,22 @@ type AssessTransactionRequest struct {
 }
 
 type RiskAssessment struct {
-	AssessmentID       string            `json:"assessmentId"`
-	TenantID           string            `json:"tenantId"`
-	Score              int               `json:"score"` // 0-100
-	RiskLevel          string            `json:"riskLevel"` // low | medium | high
-	RecommendedAction  string            `json:"recommendedAction"` // approve | review | decline
-	TriggeredRules     []string          `json:"triggeredRules,omitempty"`
-	Reason             string            `json:"reason,omitempty"`
-	Metadata           map[string]string `json:"metadata,omitempty"`
-	CreatedAt          time.Time         `json:"createdAt"`
+	AssessmentID      string            `json:"assessmentId"`
+	TenantID          string            `json:"tenantId"`
+	Score             int               `json:"score"`             // 0-100
+	RiskLevel         string            `json:"riskLevel"`         // low | medium | high
+	RecommendedAction string            `json:"recommendedAction"` // approve | review | decline
+	TriggeredRules    []string          `json:"triggeredRules,omitempty"`
+	Reason            string            `json:"reason,omitempty"`
+	Metadata          map[string]string `json:"metadata,omitempty"`
+	CreatedAt         time.Time         `json:"createdAt"`
 }
 
 type AddBlocklistEntryRequest struct {
-	TenantID  string    `json:"tenantId"`
-	EntryType string    `json:"entryType"` // email | phone | card_bin | ip | country
-	Value     string    `json:"value"`
-	Reason    string    `json:"reason,omitempty"`
+	TenantID  string     `json:"tenantId"`
+	EntryType string     `json:"entryType"` // email | phone | card_bin | ip | country
+	Value     string     `json:"value"`
+	Reason    string     `json:"reason,omitempty"`
 	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
 }
 
@@ -864,14 +864,14 @@ type RiskRule struct {
 }
 
 type RiskProfile struct {
-	IdentifierType  string  `json:"identifierType"`
-	Identifier      string  `json:"identifier"`
-	TotalAttempts   int64   `json:"totalAttempts"`
-	SuccessfulPayments int64 `json:"successfulPayments"`
-	FailedPayments  int64   `json:"failedPayments"`
-	Chargebacks     int64   `json:"chargebacks"`
-	Score           int     `json:"score"`
-	RiskLevel       string  `json:"riskLevel"`
+	IdentifierType     string `json:"identifierType"`
+	Identifier         string `json:"identifier"`
+	TotalAttempts      int64  `json:"totalAttempts"`
+	SuccessfulPayments int64  `json:"successfulPayments"`
+	FailedPayments     int64  `json:"failedPayments"`
+	Chargebacks        int64  `json:"chargebacks"`
+	Score              int    `json:"score"`
+	RiskLevel          string `json:"riskLevel"`
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -879,17 +879,17 @@ type RiskProfile struct {
 // ────────────────────────────────────────────────────────────────────────────
 
 type AdminWallet struct {
-	WalletID         string    `json:"walletId"`
-	TenantID         string    `json:"tenantId"`
-	UserID           string    `json:"userId"`
-	Status           string    `json:"status"` // active | frozen | closed
-	BalanceCents     int64     `json:"balanceCents"`
-	Currency         string    `json:"currency"`
-	FrozenReason     string    `json:"frozenReason,omitempty"`
-	FrozenAt         *time.Time `json:"frozenAt,omitempty"`
-	KYCStatus        string    `json:"kycStatus,omitempty"`
-	CreatedAt        time.Time `json:"createdAt"`
-	LastActivityAt   *time.Time `json:"lastActivityAt,omitempty"`
+	WalletID       string     `json:"walletId"`
+	TenantID       string     `json:"tenantId"`
+	UserID         string     `json:"userId"`
+	Status         string     `json:"status"` // active | frozen | closed
+	BalanceCents   int64      `json:"balanceCents"`
+	Currency       string     `json:"currency"`
+	FrozenReason   string     `json:"frozenReason,omitempty"`
+	FrozenAt       *time.Time `json:"frozenAt,omitempty"`
+	KYCStatus      string     `json:"kycStatus,omitempty"`
+	CreatedAt      time.Time  `json:"createdAt"`
+	LastActivityAt *time.Time `json:"lastActivityAt,omitempty"`
 }
 
 type FreezeWalletRequest struct {
@@ -920,12 +920,12 @@ type WalletAdjustment struct {
 }
 
 type WalletAuditEntry struct {
-	EntryID    string                 `json:"entryId"`
-	WalletID   string                 `json:"walletId"`
-	Action     string                 `json:"action"` // freeze | unfreeze | adjust | close
-	OperatorID string                 `json:"operatorId"`
-	Reason     string                 `json:"reason,omitempty"`
-	Before     map[string]any         `json:"before,omitempty"`
-	After      map[string]any         `json:"after,omitempty"`
-	CreatedAt  time.Time              `json:"createdAt"`
+	EntryID    string         `json:"entryId"`
+	WalletID   string         `json:"walletId"`
+	Action     string         `json:"action"` // freeze | unfreeze | adjust | close
+	OperatorID string         `json:"operatorId"`
+	Reason     string         `json:"reason,omitempty"`
+	Before     map[string]any `json:"before,omitempty"`
+	After      map[string]any `json:"after,omitempty"`
+	CreatedAt  time.Time      `json:"createdAt"`
 }

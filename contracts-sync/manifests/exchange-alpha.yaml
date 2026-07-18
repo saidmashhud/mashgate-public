@@ -1,0 +1,22 @@
+version: 1
+status: external-alpha
+source: github.com/saidmashhud/mashgate
+source_ref: 8a8fbb025875fcb13068bc93650f20eac42f67f4
+generated_at: 2026-07-18
+
+contracts:
+  proto: exchange.proto
+  events:
+    - _envelope.v1.json
+    - exchange.order.updated.json
+    - exchange.trade.executed.json
+    - exchange.deposit.updated.json
+    - exchange.withdrawal.updated.json
+    - exchange.market.updated.json
+
+markets: [BTC/USDT, ETH/USDT, SOL/USDT]
+custody: testnet-software-adapter-only
+
+release_gate:
+  - Run CHECK_ONLY=1 contracts-sync/scripts/sync-exchange.sh.
+  - Pass scripts/external-alpha-smoke.sh with HookLine enabled.

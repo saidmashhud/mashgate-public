@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mashgate.io/contracts/events/exchange.market.updated.json",
+  "title": "ExchangeMarketUpdated",
+  "allOf": [
+    { "$ref": "./_envelope.v1.json" },
+    {
+      "type": "object",
+      "required": ["payload"],
+      "properties": {
+        "topic": { "const": "exchange.market.updated" },
+        "event_type": { "const": "exchange.market.updated" },
+        "payload": {
+          "type": "object",
+          "required": ["market", "status", "sequence"],
+          "properties": {
+            "market": { "enum": ["BTC/USDT", "ETH/USDT", "SOL/USDT"] },
+            "status": { "enum": ["active", "halted", "maintenance"] },
+            "sequence": { "type": "integer", "minimum": 0 },
+            "best_bid": { "type": ["string", "null"] },
+            "best_ask": { "type": ["string", "null"] },
+            "last_price": { "type": ["string", "null"] },
+            "reason": { "type": ["string", "null"] }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  ]
+}

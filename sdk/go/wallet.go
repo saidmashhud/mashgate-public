@@ -22,7 +22,7 @@ type WalletBalance struct {
 // repeat use at checkout.
 type SavedPaymentMethod struct {
 	PaymentMethodID string `json:"paymentMethodId"`
-	Brand           string `json:"brand"`    // "uzcard" | "humo" | "visa" | "mastercard" etc.
+	Brand           string `json:"brand"` // "uzcard" | "humo" | "visa" | "mastercard" etc.
 	Last4           string `json:"last4"`
 	ExpMonth        int    `json:"expMonth"`
 	ExpYear         int    `json:"expYear"`

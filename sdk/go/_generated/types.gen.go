@@ -300,6 +300,14 @@ type AuthorizeResponse struct {
 	ReasonMessage         *string   `json:"reasonMessage,omitempty"`
 }
 
+// Balance defines model for Balance.
+type Balance struct {
+	Asset     *string `json:"asset,omitempty"`
+	Available *string `json:"available,omitempty"`
+	Held      *string `json:"held,omitempty"`
+	Total     *string `json:"total,omitempty"`
+}
+
 // BatchPayout defines model for BatchPayout.
 type BatchPayout struct {
 	Completed       *int32  `json:"completed,omitempty"`
@@ -605,6 +613,11 @@ type BulkTenantActionRequest struct {
 type BulkTenantActionResponse struct {
 	AffectedCount *int32    `json:"affectedCount,omitempty"`
 	FailedIds     *[]string `json:"failedIds,omitempty"`
+}
+
+// CancelOrderRequest defines model for CancelOrderRequest.
+type CancelOrderRequest struct {
+	OrderId *string `json:"orderId,omitempty"`
 }
 
 // CancelPlanRequest defines model for CancelPlanRequest.
@@ -1457,6 +1470,20 @@ type DeliveryStatus struct {
 	Status         *int       `json:"status,omitempty"`
 }
 
+// Deposit defines model for Deposit.
+type Deposit struct {
+	Address       *string    `json:"address,omitempty"`
+	Amount        *string    `json:"amount,omitempty"`
+	Asset         *string    `json:"asset,omitempty"`
+	Confirmations *uint32    `json:"confirmations,omitempty"`
+	CreditedAt    *time.Time `json:"creditedAt,omitempty"`
+	DepositId     *string    `json:"depositId,omitempty"`
+	DetectedAt    *time.Time `json:"detectedAt,omitempty"`
+	Network       *string    `json:"network,omitempty"`
+	Status        *string    `json:"status,omitempty"`
+	TxHash        *string    `json:"txHash,omitempty"`
+}
+
 // DepositAddress defines model for DepositAddress.
 type DepositAddress struct {
 	Address   *string    `json:"address,omitempty"`
@@ -1718,6 +1745,14 @@ type EvaluateRequestResponse struct {
 	Decision      *int    `json:"decision,omitempty"`
 	MatchedRuleId *string `json:"matchedRuleId,omitempty"`
 	Reason        *string `json:"reason,omitempty"`
+}
+
+// ExchangeDepositAddress defines model for ExchangeDepositAddress.
+type ExchangeDepositAddress struct {
+	Address *string `json:"address,omitempty"`
+	Asset   *string `json:"asset,omitempty"`
+	Memo    *string `json:"memo,omitempty"`
+	Network *string `json:"network,omitempty"`
 }
 
 // ExchangeRate defines model for ExchangeRate.
@@ -2433,6 +2468,11 @@ type ListAuditLogResponse struct {
 	TotalCount *int32           `json:"totalCount,omitempty"`
 }
 
+// ListBalancesResponse defines model for ListBalancesResponse.
+type ListBalancesResponse struct {
+	Balances *[]Balance `json:"balances,omitempty"`
+}
+
 // ListBillingInvoicesResponse defines model for ListBillingInvoicesResponse.
 type ListBillingInvoicesResponse struct {
 	Invoices   *[]BillingInvoice `json:"invoices,omitempty"`
@@ -2470,6 +2510,12 @@ type ListCryptoPaymentsResponse struct {
 type ListDeliveriesResponse struct {
 	Deliveries *[]Delivery `json:"deliveries,omitempty"`
 	NextPage   *string     `json:"nextPage,omitempty"`
+}
+
+// ListDepositsResponse defines model for ListDepositsResponse.
+type ListDepositsResponse struct {
+	Deposits   *[]Deposit `json:"deposits,omitempty"`
+	NextCursor *string    `json:"nextCursor,omitempty"`
 }
 
 // ListDlqResponse defines model for ListDlqResponse.
@@ -2539,6 +2585,11 @@ type ListMailboxesResponse struct {
 	NextCursor *string    `json:"nextCursor,omitempty"`
 }
 
+// ListMarketsResponse defines model for ListMarketsResponse.
+type ListMarketsResponse struct {
+	Markets *[]Market `json:"markets,omitempty"`
+}
+
 // ListMerchantsResponse defines model for ListMerchantsResponse.
 type ListMerchantsResponse struct {
 	Merchants  *[]MerchantProfile `json:"merchants,omitempty"`
@@ -2566,6 +2617,12 @@ type ListOAuthClientsResponse struct {
 type ListObjectsResponse struct {
 	Objects    *[]StorageObject `json:"objects,omitempty"`
 	TotalCount *int32           `json:"totalCount,omitempty"`
+}
+
+// ListOrdersResponse defines model for ListOrdersResponse.
+type ListOrdersResponse struct {
+	NextCursor *string  `json:"nextCursor,omitempty"`
+	Orders     *[]Order `json:"orders,omitempty"`
 }
 
 // ListPaymentMethodsResponse defines model for ListPaymentMethodsResponse.
@@ -2706,6 +2763,12 @@ type ListTenantsResponse struct {
 	TotalCount *int32    `json:"totalCount,omitempty"`
 }
 
+// ListTradesResponse defines model for ListTradesResponse.
+type ListTradesResponse struct {
+	NextCursor *string  `json:"nextCursor,omitempty"`
+	Trades     *[]Trade `json:"trades,omitempty"`
+}
+
 // ListTransactionsResponse defines model for ListTransactionsResponse.
 type ListTransactionsResponse struct {
 	NextCursor   *string              `json:"nextCursor,omitempty"`
@@ -2745,6 +2808,12 @@ type ListWebAuthnCredentialsResponse struct {
 // ListWebhookEndpointsResponse defines model for ListWebhookEndpointsResponse.
 type ListWebhookEndpointsResponse struct {
 	Endpoints *[]WebhookEndpoint `json:"endpoints,omitempty"`
+}
+
+// ListWithdrawalsResponse defines model for ListWithdrawalsResponse.
+type ListWithdrawalsResponse struct {
+	NextCursor  *string       `json:"nextCursor,omitempty"`
+	Withdrawals *[]Withdrawal `json:"withdrawals,omitempty"`
 }
 
 // LocalCardPaymentRequest defines model for LocalCardPaymentRequest.
@@ -2861,6 +2930,18 @@ type Mailbox struct {
 	TenantId    *string    `json:"tenantId,omitempty"`
 	UpdatedAt   *time.Time `json:"updatedAt,omitempty"`
 	UsedBytes   *string    `json:"usedBytes,omitempty"`
+}
+
+// Market defines model for Market.
+type Market struct {
+	BaseAsset     *string `json:"baseAsset,omitempty"`
+	Market        *string `json:"market,omitempty"`
+	MinNotional   *string `json:"minNotional,omitempty"`
+	MinQuantity   *string `json:"minQuantity,omitempty"`
+	PriceScale    *uint32 `json:"priceScale,omitempty"`
+	QuantityScale *uint32 `json:"quantityScale,omitempty"`
+	QuoteAsset    *string `json:"quoteAsset,omitempty"`
+	Status        *string `json:"status,omitempty"`
 }
 
 // MerchantConfig defines model for MerchantConfig.
@@ -3134,6 +3215,32 @@ type OnboardMerchantRequest struct {
 	TenantId           *string         `json:"tenantId,omitempty"`
 }
 
+// Order defines model for Order.
+type Order struct {
+	AccountId         *string    `json:"accountId,omitempty"`
+	CreatedAt         *time.Time `json:"createdAt,omitempty"`
+	FilledQuantity    *string    `json:"filledQuantity,omitempty"`
+	Kind              *int       `json:"kind,omitempty"`
+	Market            *string    `json:"market,omitempty"`
+	OrderId           *string    `json:"orderId,omitempty"`
+	PostOnly          *bool      `json:"postOnly,omitempty"`
+	Price             *string    `json:"price,omitempty"`
+	Quantity          *string    `json:"quantity,omitempty"`
+	RemainingQuantity *string    `json:"remainingQuantity,omitempty"`
+	Side              *int       `json:"side,omitempty"`
+	Status            *int       `json:"status,omitempty"`
+	TimeInForce       *int       `json:"timeInForce,omitempty"`
+	UpdatedAt         *time.Time `json:"updatedAt,omitempty"`
+}
+
+// OrderBook defines model for OrderBook.
+type OrderBook struct {
+	Asks     *[]PriceLevel `json:"asks,omitempty"`
+	Bids     *[]PriceLevel `json:"bids,omitempty"`
+	Market   *string       `json:"market,omitempty"`
+	Sequence *string       `json:"sequence,omitempty"`
+}
+
 // OverrideCheckRequest defines model for OverrideCheckRequest.
 type OverrideCheckRequest struct {
 	CheckId      *string `json:"checkId,omitempty"`
@@ -3280,6 +3387,17 @@ type Permission struct {
 	ResourceType *string `json:"resourceType,omitempty"`
 }
 
+// PlaceOrderRequest defines model for PlaceOrderRequest.
+type PlaceOrderRequest struct {
+	Kind        *int    `json:"kind,omitempty"`
+	Market      *string `json:"market,omitempty"`
+	PostOnly    *bool   `json:"postOnly,omitempty"`
+	Price       *string `json:"price,omitempty"`
+	Quantity    *string `json:"quantity,omitempty"`
+	Side        *int    `json:"side,omitempty"`
+	TimeInForce *int    `json:"timeInForce,omitempty"`
+}
+
 // Plan defines model for Plan.
 type Plan struct {
 	Active    *bool   `json:"active,omitempty"`
@@ -3357,6 +3475,13 @@ type PreviewPlanChangeRequest struct {
 	Interval *int    `json:"interval,omitempty"`
 	PlanId   *string `json:"planId,omitempty"`
 	TenantId *string `json:"tenantId,omitempty"`
+}
+
+// PriceLevel defines model for PriceLevel.
+type PriceLevel struct {
+	OrderCount *uint32 `json:"orderCount,omitempty"`
+	Price      *string `json:"price,omitempty"`
+	Quantity   *string `json:"quantity,omitempty"`
 }
 
 // Promotion defines model for Promotion.
@@ -3664,6 +3789,16 @@ type RequestCheckRequest struct {
 type RequestCheckResponse struct {
 	Check       *KycCheck `json:"check,omitempty"`
 	RedirectUrl *string   `json:"redirectUrl,omitempty"`
+}
+
+// RequestWithdrawalRequest Requires Idempotency-Key metadata at the edge. The service persists scope
+//
+//	tenant + subject + operation + key and rejects payload drift with ALREADY_EXISTS.
+type RequestWithdrawalRequest struct {
+	Amount      *string `json:"amount,omitempty"`
+	Asset       *string `json:"asset,omitempty"`
+	Destination *string `json:"destination,omitempty"`
+	Network     *string `json:"network,omitempty"`
 }
 
 // ResetPasswordRequest ResetPassword is the forgot-password completion. Caller has previously
@@ -4469,6 +4604,17 @@ type TopCustomersResponse struct {
 	Customers *[]TopCustomer `json:"customers,omitempty"`
 }
 
+// Trade defines model for Trade.
+type Trade struct {
+	ExecutedAt    *time.Time `json:"executedAt,omitempty"`
+	Market        *string    `json:"market,omitempty"`
+	Price         *string    `json:"price,omitempty"`
+	Quantity      *string    `json:"quantity,omitempty"`
+	QuoteQuantity *string    `json:"quoteQuantity,omitempty"`
+	TakerSide     *int       `json:"takerSide,omitempty"`
+	TradeId       *string    `json:"tradeId,omitempty"`
+}
+
 // TransferBetweenWalletsRequest defines model for TransferBetweenWalletsRequest.
 type TransferBetweenWalletsRequest struct {
 	// Amount Decimal string — see Wallet.balance notes. Must be > 0.
@@ -5100,6 +5246,19 @@ type WebhookEndpoint struct {
 	Url           *string   `json:"url,omitempty"`
 }
 
+// Withdrawal defines model for Withdrawal.
+type Withdrawal struct {
+	Amount       *string    `json:"amount,omitempty"`
+	Asset        *string    `json:"asset,omitempty"`
+	CreatedAt    *time.Time `json:"createdAt,omitempty"`
+	Destination  *string    `json:"destination,omitempty"`
+	Network      *string    `json:"network,omitempty"`
+	Status       *string    `json:"status,omitempty"`
+	TxHash       *string    `json:"txHash,omitempty"`
+	UpdatedAt    *time.Time `json:"updatedAt,omitempty"`
+	WithdrawalId *string    `json:"withdrawalId,omitempty"`
+}
+
 // OidcServiceAuthorizeParams defines parameters for OidcServiceAuthorize.
 type OidcServiceAuthorizeParams struct {
 	ResponseType        *string `form:"responseType,omitempty" json:"responseType,omitempty"`
@@ -5588,6 +5747,49 @@ type MgEventsServiceListSubscriptionsParams struct {
 // MgEventsServiceDeleteSubscriptionParams defines parameters for MgEventsServiceDeleteSubscription.
 type MgEventsServiceDeleteSubscriptionParams struct {
 	TenantId *string `form:"tenantId,omitempty" json:"tenantId,omitempty"`
+}
+
+// ExchangeServiceListDepositsParams defines parameters for ExchangeServiceListDeposits.
+type ExchangeServiceListDepositsParams struct {
+	Asset  *string `form:"asset,omitempty" json:"asset,omitempty"`
+	Status *string `form:"status,omitempty" json:"status,omitempty"`
+	Limit  *uint32 `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ExchangeServiceGetDepositAddressParams defines parameters for ExchangeServiceGetDepositAddress.
+type ExchangeServiceGetDepositAddressParams struct {
+	Asset   *string `form:"asset,omitempty" json:"asset,omitempty"`
+	Network *string `form:"network,omitempty" json:"network,omitempty"`
+}
+
+// ExchangeServiceGetOrderBookParams defines parameters for ExchangeServiceGetOrderBook.
+type ExchangeServiceGetOrderBookParams struct {
+	Market *string `form:"market,omitempty" json:"market,omitempty"`
+	Depth  *uint32 `form:"depth,omitempty" json:"depth,omitempty"`
+}
+
+// ExchangeServiceListOrdersParams defines parameters for ExchangeServiceListOrders.
+type ExchangeServiceListOrdersParams struct {
+	Market *string `form:"market,omitempty" json:"market,omitempty"`
+	Status *int    `form:"status,omitempty" json:"status,omitempty"`
+	Limit  *uint32 `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ExchangeServiceListTradesParams defines parameters for ExchangeServiceListTrades.
+type ExchangeServiceListTradesParams struct {
+	Market *string `form:"market,omitempty" json:"market,omitempty"`
+	Limit  *uint32 `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ExchangeServiceListWithdrawalsParams defines parameters for ExchangeServiceListWithdrawals.
+type ExchangeServiceListWithdrawalsParams struct {
+	Asset  *string `form:"asset,omitempty" json:"asset,omitempty"`
+	Status *string `form:"status,omitempty" json:"status,omitempty"`
+	Limit  *uint32 `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
 // FeatureFlagServiceListFlagsParams defines parameters for FeatureFlagServiceListFlags.
@@ -6500,6 +6702,15 @@ type MgEventsServiceTestEndpointJSONRequestBody = TestEndpointRequest
 
 // MgEventsServiceCreateSubscriptionJSONRequestBody defines body for MgEventsServiceCreateSubscription for application/json ContentType.
 type MgEventsServiceCreateSubscriptionJSONRequestBody = CreateSubscriptionRequest
+
+// ExchangeServicePlaceOrderJSONRequestBody defines body for ExchangeServicePlaceOrder for application/json ContentType.
+type ExchangeServicePlaceOrderJSONRequestBody = PlaceOrderRequest
+
+// ExchangeServiceCancelOrderJSONRequestBody defines body for ExchangeServiceCancelOrder for application/json ContentType.
+type ExchangeServiceCancelOrderJSONRequestBody = CancelOrderRequest
+
+// ExchangeServiceRequestWithdrawalJSONRequestBody defines body for ExchangeServiceRequestWithdrawal for application/json ContentType.
+type ExchangeServiceRequestWithdrawalJSONRequestBody = RequestWithdrawalRequest
 
 // FeatureFlagServiceCreateFlagJSONRequestBody defines body for FeatureFlagServiceCreateFlag for application/json ContentType.
 type FeatureFlagServiceCreateFlagJSONRequestBody = CreateFlagRequest

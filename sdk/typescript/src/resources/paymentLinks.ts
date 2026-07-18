@@ -3,6 +3,7 @@ import type { PaymentLink } from "../types.js";
 
 export interface CreatePaymentLinkRequest {
   tenantId: string;
+  merchantId?: string;
   amount: number;
   currency: string;
   description?: string;
@@ -16,8 +17,10 @@ export class PaymentLinksResource {
     return this.client.request<PaymentLink>("POST", "/v1/payment-links", { body: data });
   }
 
-  async list(tenantId: string): Promise<PaymentLink[]> {
-    return this.client.request<PaymentLink[]>("GET", "/v1/payment-links", { query: { tenantId } });
+  async list(tenantId: string, merchantId?: string): Promise<PaymentLink[]> {
+    return this.client.request<PaymentLink[]>("GET", "/v1/payment-links", {
+      query: { tenantId, ...(merchantId ? { merchantId } : {}) },
+    });
   }
 
   async get(id: string): Promise<PaymentLink> {

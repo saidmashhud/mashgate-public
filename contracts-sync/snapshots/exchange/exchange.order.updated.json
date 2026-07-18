@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mashgate.io/contracts/events/exchange.order.updated.json",
+  "title": "ExchangeOrderUpdated",
+  "allOf": [
+    { "$ref": "./_envelope.v1.json" },
+    {
+      "type": "object",
+      "required": ["payload"],
+      "properties": {
+        "topic": { "const": "exchange.order.updated" },
+        "event_type": { "const": "exchange.order.updated" },
+        "payload": {
+          "type": "object",
+          "required": ["order_id", "account_id", "market", "side", "kind", "time_in_force", "status", "quantity", "filled_quantity", "remaining_quantity", "sequence"],
+          "properties": {
+            "order_id": { "type": "string", "format": "uuid" },
+            "account_id": { "type": "string", "format": "uuid" },
+            "market": { "enum": ["BTC/USDT", "ETH/USDT", "SOL/USDT"] },
+            "side": { "enum": ["buy", "sell"] },
+            "kind": { "enum": ["limit", "market"] },
+            "time_in_force": { "enum": ["gtc", "ioc"] },
+            "status": { "enum": ["pending_reserve", "accepted", "partially_filled", "filled", "cancelled", "rejected"] },
+            "price": { "type": ["string", "null"] },
+            "quantity": { "type": "string" },
+            "filled_quantity": { "type": "string" },
+            "remaining_quantity": { "type": "string" },
+            "post_only": { "type": "boolean" },
+            "sequence": { "type": "integer", "minimum": 1 },
+            "reason": { "type": ["string", "null"] }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  ]
+}

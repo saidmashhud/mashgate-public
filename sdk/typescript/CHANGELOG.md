@@ -9,7 +9,12 @@ Aggregate changelog for all languages: [`../../CHANGELOG.md`](../../CHANGELOG.md
 
 ---
 
-## [Unreleased]
+## [1.8.0] - 2026-07-18
+
+### Added
+
+- Custodial spot `exchange` resource with idempotent trading and funding flows.
+- Structural `merchantId` ownership on payment links.
 
 ### Security
 

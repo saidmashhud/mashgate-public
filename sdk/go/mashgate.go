@@ -100,17 +100,26 @@ func WithHTTPClient(hc *http.Client) Option {
 	}
 }
 
+// WithAccessToken configures an end-user bearer token. Exchange operations
+// resolve account ownership from this authenticated subject.
+func WithAccessToken(token string) Option {
+	return func(c *Client) {
+		c.accessToken = token
+	}
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // Client
 // ────────────────────────────────────────────────────────────────────────────
 
 // Client is the Mashgate API client. Create one with New() or NewClient() and reuse it.
 type Client struct {
-	baseURL    string
-	apiKey     string
-	tenantID   string
-	httpClient *http.Client
-	maxRetries int
+	baseURL     string
+	apiKey      string
+	accessToken string
+	tenantID    string
+	httpClient  *http.Client
+	maxRetries  int
 
 	// Events is populated by calling client.WithEvents(cfg).
 	// It provides endpoint and delivery management for webhook infrastructure.
@@ -138,12 +147,14 @@ type Client struct {
 	// v1.7.0 — eight resources added to close TS-SDK gap.
 	Analytics     *AnalyticsClient
 	Chain         *ChainClient
+	ChainRPC      *ChainRPCClient
 	Developer     *DeveloperClient
 	LocalPayments *LocalPaymentsClient
 	Metering      *MeteringClient
 	Risk          *RiskClient
 	Settings      *SettingsClient
 	WalletAdmin   *WalletAdminClient
+	Exchange      *ExchangeClient
 
 	// Fintech capabilities — canonical wallet ledger / KYC / merchant acceptance /
 	// compliance. ADR-0015: these are first-class platform modules, NOT a separate
@@ -171,12 +182,14 @@ func initClients(c *Client) {
 	// v1.7.0 resources
 	c.Analytics = &AnalyticsClient{c: c}
 	c.Chain = &ChainClient{c: c}
+	c.ChainRPC = &ChainRPCClient{c: c}
 	c.Developer = &DeveloperClient{c: c}
 	c.LocalPayments = &LocalPaymentsClient{c: c}
 	c.Metering = &MeteringClient{c: c}
 	c.Risk = &RiskClient{c: c}
 	c.Settings = &SettingsClient{c: c}
 	c.WalletAdmin = &WalletAdminClient{c: c}
+	c.Exchange = &ExchangeClient{c: c}
 }
 
 // New creates a Mashgate API client.
@@ -297,6 +310,9 @@ func (c *Client) doRequest(ctx context.Context, method, path string, extraHeader
 
 		if c.apiKey != "" {
 			req.Header.Set("X-API-Key", c.apiKey)
+		}
+		if c.accessToken != "" {
+			req.Header.Set("Authorization", "Bearer "+c.accessToken)
 		}
 		req.Header.Set("Accept", "application/json")
 		if bodyBytes != nil {

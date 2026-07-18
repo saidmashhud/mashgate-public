@@ -144,17 +144,17 @@ mapfile -t GEN_FILES < <(git_repo ls-files -- "${GEN_PATHS[@]}")
 if [[ ${#GEN_FILES[@]} -gt 0 ]]; then
   git_repo update-index -q --refresh -- "${GEN_FILES[@]}" || true
 fi
-if git_repo diff --quiet -- "${GEN_PATHS[@]}"; then
+if git_repo diff --quiet HEAD -- "${GEN_PATHS[@]}"; then
   log "✓ no drift — committed artefacts already match snapshot $REF"
   exit 0
 fi
 
 if [[ -n "${CHECK_ONLY:-}" ]]; then
   echo "✗ DRIFT: committed _generated artefacts differ from snapshot $REF" >&2
-  git_repo --no-pager diff --stat -- "${GEN_PATHS[@]}" >&2
-  git_repo checkout -- "${GEN_PATHS[@]}"   # leave the tree clean
+  git_repo --no-pager diff HEAD --stat -- "${GEN_PATHS[@]}" >&2
+  git_repo restore --source=HEAD --staged --worktree -- "${GEN_PATHS[@]}"   # leave a clean CI tree
   exit 1
 fi
 
 log "✓ regenerated — _generated updated; review + commit:"
-git_repo --no-pager diff --stat -- "${GEN_PATHS[@]}"
+git_repo --no-pager diff HEAD --stat -- "${GEN_PATHS[@]}"

@@ -12,12 +12,12 @@ type ComplianceService struct{ c *Client }
 type AlertStatus string
 
 const (
-	AlertStatusOpen         AlertStatus = "ALERT_STATUS_OPEN"
-	AlertStatusUnderReview  AlertStatus = "ALERT_STATUS_UNDER_REVIEW"
-	AlertStatusResolved     AlertStatus = "ALERT_STATUS_RESOLVED"
-	AlertStatusEscalated    AlertStatus = "ALERT_STATUS_ESCALATED"
-	AlertStatusSARFiled     AlertStatus = "ALERT_STATUS_SAR_FILED"
-	AlertStatusClosed       AlertStatus = "ALERT_STATUS_CLOSED"
+	AlertStatusOpen        AlertStatus = "ALERT_STATUS_OPEN"
+	AlertStatusUnderReview AlertStatus = "ALERT_STATUS_UNDER_REVIEW"
+	AlertStatusResolved    AlertStatus = "ALERT_STATUS_RESOLVED"
+	AlertStatusEscalated   AlertStatus = "ALERT_STATUS_ESCALATED"
+	AlertStatusSARFiled    AlertStatus = "ALERT_STATUS_SAR_FILED"
+	AlertStatusClosed      AlertStatus = "ALERT_STATUS_CLOSED"
 )
 
 type AlertSeverity string

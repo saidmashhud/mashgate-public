@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mashgate.io/contracts/events/_envelope.v1.json",
+  "title": "EventEnvelopeV1",
+  "description": "Canonical event envelope shared between Mashgate and HookLine. See docs/specs/event-envelope-v1.md for the mapping rules from Mashgate event schemas, Kafka records, and HookLine stored events. Governed by ADR-0013.",
+  "type": "object",
+  "required": [
+    "id",
+    "event_id",
+    "topic",
+    "tenant_id",
+    "occurred_at",
+    "created_at",
+    "payload"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique envelope identifier (UUID v4). Canonical event id used across Mashgate and HookLine."
+    },
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Alias for `id`. Must equal `id`. Preserved for backward compatibility with Mashgate event schemas and Kafka `event_id` header."
+    },
+    "topic": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9]+(?:\\.[a-z0-9_]+)+$",
+      "description": "Routing key in the form `<product>.<resource>.<verb>` (e.g. `payments.payment.completed`, `crm.contact.created`). Same string used as Kafka topic segment and HookLine subscription pattern."
+    },
+    "tenant_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Owning tenant. Enforced at every storage/delivery boundary per ADR-0002 §8."
+    },
+    "occurred_at": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Unix epoch in milliseconds. When the event actually happened in the business domain (set by the producer)."
+    },
+    "created_at": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Unix epoch in milliseconds. When the envelope was serialized (server clock at the producer). Always >= occurred_at."
+    },
+    "payload": {
+      "type": "object",
+      "description": "Business-specific event data. Shape is defined per-topic by a sibling schema in contracts/events/. May be empty for marker events.",
+      "additionalProperties": true
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional producer-provided key for deduplication. Two events with the same (tenant_id, idempotency_key) must be treated as the same event."
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional symbolic name of the producing service (e.g. `ledger-core`, `checkout-service`). Used for observability and debugging."
+    },
+    "event_type": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional narrower event type within a topic (e.g. `payment.completed`). If omitted, consumers should assume topic is the event type."
+    },
+    "event_version": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1,
+      "description": "Optional version of the payload schema. Increment on breaking payload changes; topic naming should also bump if routing needs to fork."
+    },
+    "_trace": {
+      "type": "object",
+      "description": "Optional W3C Trace Context propagation. When present, consumers must propagate these values into downstream calls. Required when the producer received an upstream traceparent.",
+      "required": ["traceparent"],
+      "properties": {
+        "traceparent": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{2}-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$",
+          "description": "W3C Trace Context traceparent (version 00). See https://www.w3.org/TR/trace-context/#traceparent-header."
+        },
+        "tracestate": {
+          "type": "string",
+          "description": "W3C Trace Context tracestate. See https://www.w3.org/TR/trace-context/#tracestate-header."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true
+}

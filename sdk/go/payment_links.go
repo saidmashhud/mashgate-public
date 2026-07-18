@@ -15,6 +15,7 @@ import (
 type PaymentLink struct {
 	ID          string     `json:"id"`
 	TenantID    string     `json:"tenantId"`
+	MerchantID  string     `json:"merchantId,omitempty"`
 	LinkID      string     `json:"linkId"`
 	URL         string     `json:"url"`
 	Amount      int64      `json:"amount"`
@@ -33,6 +34,7 @@ type PaymentLink struct {
 // CreatePaymentLinkRequest creates a new payment link.
 type CreatePaymentLinkRequest struct {
 	TenantID    string     `json:"tenantId"`
+	MerchantID  string     `json:"merchantId,omitempty"`
 	Amount      int64      `json:"amount"`
 	Currency    string     `json:"currency"`
 	Description string     `json:"description,omitempty"`
@@ -59,7 +61,20 @@ func (p *PaymentLinksClient) Create(ctx context.Context, req CreatePaymentLinkRe
 
 // List returns all payment links for a tenant.
 func (p *PaymentLinksClient) List(ctx context.Context, tenantID string) ([]*PaymentLink, error) {
-	path := fmt.Sprintf("/v1/payment-links?tenantId=%s", url.QueryEscape(tenantID))
+	return p.list(ctx, tenantID, "")
+}
+
+// ListForMerchant returns payment links structurally owned by one merchant.
+func (p *PaymentLinksClient) ListForMerchant(ctx context.Context, tenantID, merchantID string) ([]*PaymentLink, error) {
+	return p.list(ctx, tenantID, merchantID)
+}
+
+func (p *PaymentLinksClient) list(ctx context.Context, tenantID, merchantID string) ([]*PaymentLink, error) {
+	query := url.Values{"tenantId": []string{tenantID}}
+	if merchantID != "" {
+		query.Set("merchantId", merchantID)
+	}
+	path := fmt.Sprintf("/v1/payment-links?%s", query.Encode())
 	var out []*PaymentLink
 	if err := p.c.do(ctx, "GET", path, nil, &out); err != nil {
 		return nil, err

@@ -641,6 +641,7 @@ export interface Invoice {
 export interface PaymentLink {
   id: string;
   tenantId: string;
+  merchantId?: string;
   linkId: string;
   url: string;
   amount: number;

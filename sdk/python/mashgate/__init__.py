@@ -38,6 +38,7 @@ from mashgate.resources.mail import (
 from mashgate.resources.guard import GuardResource
 from mashgate.resources.chain import ChainResource
 from mashgate.resources.local_payments import LocalPaymentsResource
+from mashgate.resources.exchange import ExchangeResource
 from mashgate.webhooks import verify_webhook_signature
 
 __all__ = [
@@ -46,6 +47,7 @@ __all__ = [
     "ChainResource",
     "Currency",
     "DomainStatus",
+    "ExchangeResource",
     "GuardResource",
     "IamResource",
     "InvoicesResource",

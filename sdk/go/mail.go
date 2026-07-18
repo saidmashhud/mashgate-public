@@ -111,18 +111,18 @@ type MailMessage struct {
 }
 
 type MailDomain struct {
-	DomainID            string       `json:"domain_id"`
-	TenantID            string       `json:"tenant_id"`
-	Name                string       `json:"name"`
-	Status              DomainStatus `json:"status"`
-	DKIMSelector        string       `json:"dkim_selector,omitempty"`
-	DKIMPublicKey       string       `json:"dkim_public_key,omitempty"`
-	MXRecords           []string     `json:"mx_records"`
-	SPFRecord           string       `json:"spf_record,omitempty"`
-	DMARCRecord         string       `json:"dmarc_record,omitempty"`
-	VerificationErrors  []string     `json:"verification_errors,omitempty"`
-	CreatedAt           time.Time    `json:"created_at"`
-	LastVerifiedAt      *time.Time   `json:"last_verified_at,omitempty"`
+	DomainID           string       `json:"domain_id"`
+	TenantID           string       `json:"tenant_id"`
+	Name               string       `json:"name"`
+	Status             DomainStatus `json:"status"`
+	DKIMSelector       string       `json:"dkim_selector,omitempty"`
+	DKIMPublicKey      string       `json:"dkim_public_key,omitempty"`
+	MXRecords          []string     `json:"mx_records"`
+	SPFRecord          string       `json:"spf_record,omitempty"`
+	DMARCRecord        string       `json:"dmarc_record,omitempty"`
+	VerificationErrors []string     `json:"verification_errors,omitempty"`
+	CreatedAt          time.Time    `json:"created_at"`
+	LastVerifiedAt     *time.Time   `json:"last_verified_at,omitempty"`
 }
 
 // ────────────────────────────────────────────────────────────────────────────

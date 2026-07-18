@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mashgate.io/contracts/events/exchange.deposit.updated.json",
+  "title": "ExchangeDepositUpdated",
+  "allOf": [
+    { "$ref": "./_envelope.v1.json" },
+    {
+      "type": "object",
+      "required": ["payload"],
+      "properties": {
+        "topic": { "const": "exchange.deposit.updated" },
+        "event_type": { "const": "exchange.deposit.updated" },
+        "payload": {
+          "type": "object",
+          "required": ["deposit_id", "account_id", "wallet_id", "asset", "network", "address", "amount", "tx_hash", "status", "confirmations"],
+          "properties": {
+            "deposit_id": { "type": "string", "format": "uuid" },
+            "account_id": { "type": "string", "format": "uuid" },
+            "wallet_id": { "type": "string", "format": "uuid" },
+            "asset": { "enum": ["BTC", "ETH", "SOL", "USDT"] },
+            "network": { "enum": ["BITCOIN", "ETHEREUM", "SOLANA", "TRON", "BTC_TESTNET", "ETH_SEPOLIA", "SOL_DEVNET", "TRON_NILE"] },
+            "address": { "type": "string" },
+            "amount": { "type": "string" },
+            "tx_hash": { "type": "string" },
+            "status": { "enum": ["detected", "confirming", "confirmed", "credited", "reorged", "reorg_review", "failed"] },
+            "confirmations": { "type": "integer", "minimum": 0 },
+            "block_hash": { "type": ["string", "null"] },
+            "checkpoint": { "type": ["string", "null"] }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  ]
+}

@@ -31,6 +31,7 @@ Mashgate is the shared backend for a family of products. Instead of every app re
 | **Storage** (mgStorage) | S3-compatible object storage. |
 | **Feature Flags** | Runtime flags & targeting. |
 | **Risk & Compliance** | KYC, compliance screening, fraud checks, and a policy guard. |
+| **Exchange Pack** | Custodial spot markets, ledger holds/settlement, deposits, reviewed withdrawals, and exchange events (testnet alpha). |
 | **Observability** | Structured logs, analytics, and usage metering per tenant. |
 
 ### How it fits together
@@ -53,6 +54,7 @@ New to building on Mashgate? Start here:
 - **[Data modeling & identity](docs/guides/data-modeling-and-identity.md)** — how your tables join to Mashgate ids (you don't extend Mashgate's users table — you key your own table by `user_id`).
 - **[Best practices](docs/best-practices.md)** — idempotency, money/ledger as source of truth, multi-tenancy, webhooks, error handling, versioning.
 - **[Service catalog](docs/modules/service-catalog.md)** — the full module/RPC reference.
+- **[Exchange Pack](docs/modules/exchange.md)** — account ownership, trading/funding commands, events, and production gates.
 
 ---
 
@@ -163,6 +165,7 @@ See [`docs/specs/sdk-repository-separation.md`](https://github.com/saidmashhud/m
 |-----------------------|--------|
 | A marketplace / commerce app on Mashgate (Zist, Vint) | Core `sdk/go` or `@mashgate/sdk` |
 | A fintech/crypto app (Kiro) | Core SDK + `sdk/go/fintech` (Fintech Pack types) |
+| A custodial spot product | Core SDK `exchange` resource + end-user access token (testnet alpha) |
 | Just webhook signature verification | Core SDK — `mashgate.VerifyWebhookSignature(...)` |
 | HookLine webhook delivery | **Not this repo** — see [`github.com/saidmashhud/hookline`](https://github.com/saidmashhud/hookline) (separate product) |
 

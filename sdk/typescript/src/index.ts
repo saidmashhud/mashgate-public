@@ -28,6 +28,20 @@ export { IamResource } from "./resources/iam.js";
 export { MeteringResource } from "./resources/metering.js";
 export { BillingResource } from "./resources/billing.js";
 export { AnalyticsResource } from "./resources/analytics.js";
+export { ExchangeResource } from "./resources/exchange.js";
+export type {
+  ExchangeMarket,
+  ExchangeOrderBook,
+  ExchangeTrade,
+  ExchangeBalance,
+  ExchangeOrder,
+  ExchangeDepositAddress,
+  ExchangeDeposit,
+  ExchangeWithdrawal,
+  PlaceExchangeOrder,
+  ExchangeOrderListQuery,
+  ExchangeTransferListQuery,
+} from "./resources/exchange.js";
 export {
   WalletAdminResource,
   Currency,

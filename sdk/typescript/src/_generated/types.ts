@@ -2243,6 +2243,182 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/exchange/balances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ExchangeService_ListBalances"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/exchange/deposits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ExchangeService_ListDeposits"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/exchange/deposits/address": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ExchangeService_GetDepositAddress"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/exchange/markets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ExchangeService_ListMarkets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/exchange/order-book": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ExchangeService_GetOrderBook"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/exchange/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ExchangeService_ListOrders"];
+        put?: never;
+        post: operations["ExchangeService_PlaceOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/exchange/orders/{orderId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ExchangeService_GetOrder"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/exchange/orders/{orderId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ExchangeService_CancelOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/exchange/trades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ExchangeService_ListTrades"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/exchange/withdrawals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ExchangeService_ListWithdrawals"];
+        put?: never;
+        post: operations["ExchangeService_RequestWithdrawal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/exchange/withdrawals/{withdrawalId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ExchangeService_GetWithdrawal"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/flags": {
         parameters: {
             query?: never;
@@ -5157,7 +5333,7 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * @description Create a non-custodial on-chain wallet (BIP-39 mnemonic generated
+         * @description Create a custodial managed on-chain wallet (BIP-39 mnemonic generated
          *      server-side, SLIP-0010 derivation, AES-256-GCM encrypted private key
          *      stored in the canonical `wallets` table). The mnemonic is returned in
          *      the response **once** — caller MUST surface it to the end user
@@ -5180,7 +5356,7 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * @description Import an existing non-custodial on-chain wallet from a caller-provided
+         * @description Import an existing wallet into Mashgate custody from a caller-provided
          *      BIP-39 mnemonic. Server validates the mnemonic, derives the address
          *      (SLIP-0010), AES-encrypts the private key, and stores in `wallets`.
          *      Mnemonic_hash is UNIQUE per tenant — re-importing the same phrase для
@@ -5300,7 +5476,7 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * @description Export the BIP-39 mnemonic phrase for a non-custodial on-chain wallet.
+         * @description Export the BIP-39 mnemonic phrase for a custodial managed on-chain wallet.
          *      Money-critical: returns the secret that grants full control of the
          *      chain wallet. Authorization:
          *        - tenant_id from JWT (the caller must belong to the wallet's tenant).
@@ -5761,6 +5937,12 @@ export interface components {
             card?: components["schemas"]["CardData"];
             processedAt?: string;
         };
+        Balance: {
+            asset?: string;
+            available?: string;
+            held?: string;
+            total?: string;
+        };
         BatchPayout: {
             payoutId?: string;
             status?: string;
@@ -6065,6 +6247,9 @@ export interface components {
             /** Format: int32 */
             affectedCount?: number;
             failedIds?: string[];
+        };
+        CancelOrderRequest: {
+            orderId?: string;
         };
         CancelPlanRequest: {
             tenantId?: string;
@@ -6792,6 +6977,21 @@ export interface components {
             /** Format: date-time */
             lastAttemptAt?: string;
         };
+        Deposit: {
+            depositId?: string;
+            asset?: string;
+            network?: string;
+            amount?: string;
+            address?: string;
+            txHash?: string;
+            /** Format: uint32 */
+            confirmations?: number;
+            status?: string;
+            /** Format: date-time */
+            detectedAt?: string;
+            /** Format: date-time */
+            creditedAt?: string;
+        };
         DepositAddress: {
             walletId?: string;
             currency?: string;
@@ -7020,6 +7220,12 @@ export interface components {
             decision?: number;
             matchedRuleId?: string;
             reason?: string;
+        };
+        ExchangeDepositAddress: {
+            asset?: string;
+            network?: string;
+            address?: string;
+            memo?: string;
         };
         ExchangeRate: {
             fromAsset?: string;
@@ -7640,6 +7846,9 @@ export interface components {
             /** Format: int32 */
             totalCount?: number;
         };
+        ListBalancesResponse: {
+            balances?: components["schemas"]["Balance"][];
+        };
         ListBillingInvoicesResponse: {
             invoices?: components["schemas"]["BillingInvoice"][];
             /** Format: int32 */
@@ -7666,6 +7875,10 @@ export interface components {
         ListDeliveriesResponse: {
             deliveries?: components["schemas"]["Delivery"][];
             nextPage?: string;
+        };
+        ListDepositsResponse: {
+            deposits?: components["schemas"]["Deposit"][];
+            nextCursor?: string;
         };
         ListDlqResponse: {
             entries?: components["schemas"]["DlqEntry"][];
@@ -7714,6 +7927,9 @@ export interface components {
             items?: components["schemas"]["Mailbox"][];
             nextCursor?: string;
         };
+        ListMarketsResponse: {
+            markets?: components["schemas"]["Market"][];
+        };
         ListMerchantsResponse: {
             merchants?: components["schemas"]["MerchantProfile"][];
             nextCursor?: string;
@@ -7735,6 +7951,10 @@ export interface components {
             objects?: components["schemas"]["StorageObject"][];
             /** Format: int32 */
             totalCount?: number;
+        };
+        ListOrdersResponse: {
+            orders?: components["schemas"]["Order"][];
+            nextCursor?: string;
         };
         ListPaymentMethodsResponse: {
             methods?: components["schemas"]["BillingPaymentMethod"][];
@@ -7836,6 +8056,10 @@ export interface components {
             /** Format: int32 */
             totalCount?: number;
         };
+        ListTradesResponse: {
+            trades?: components["schemas"]["Trade"][];
+            nextCursor?: string;
+        };
         ListTransactionsResponse: {
             transactions?: components["schemas"]["WalletTransaction"][];
             nextCursor?: string;
@@ -7867,6 +8091,10 @@ export interface components {
         };
         ListWebhookEndpointsResponse: {
             endpoints?: components["schemas"]["WebhookEndpoint"][];
+        };
+        ListWithdrawalsResponse: {
+            withdrawals?: components["schemas"]["Withdrawal"][];
+            nextCursor?: string;
         };
         LocalCardPaymentRequest: {
             tenantId?: string;
@@ -7976,6 +8204,18 @@ export interface components {
             createdAt?: string;
             /** Format: date-time */
             updatedAt?: string;
+        };
+        Market: {
+            market?: string;
+            baseAsset?: string;
+            quoteAsset?: string;
+            /** Format: uint32 */
+            priceScale?: number;
+            /** Format: uint32 */
+            quantityScale?: number;
+            minQuantity?: string;
+            minNotional?: string;
+            status?: string;
         };
         MerchantConfig: {
             acceptedCurrencies?: string[];
@@ -8249,6 +8489,34 @@ export interface components {
             config?: components["schemas"]["MerchantConfig"];
             idempotencyKey?: string;
         };
+        Order: {
+            orderId?: string;
+            accountId?: string;
+            market?: string;
+            /** Format: enum */
+            side?: number;
+            /** Format: enum */
+            kind?: number;
+            /** Format: enum */
+            timeInForce?: number;
+            price?: string;
+            quantity?: string;
+            filledQuantity?: string;
+            remainingQuantity?: string;
+            /** Format: enum */
+            status?: number;
+            postOnly?: boolean;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        OrderBook: {
+            market?: string;
+            sequence?: string;
+            bids?: components["schemas"]["PriceLevel"][];
+            asks?: components["schemas"]["PriceLevel"][];
+        };
         OverrideCheckRequest: {
             tenantId?: string;
             checkId?: string;
@@ -8376,6 +8644,18 @@ export interface components {
             ownerService?: string;
             resourceType?: string;
         };
+        PlaceOrderRequest: {
+            market?: string;
+            /** Format: enum */
+            side?: number;
+            /** Format: enum */
+            kind?: number;
+            /** Format: enum */
+            timeInForce?: number;
+            price?: string;
+            quantity?: string;
+            postOnly?: boolean;
+        };
         Plan: {
             id?: string;
             tenantId?: string;
@@ -8447,6 +8727,12 @@ export interface components {
             planId?: string;
             /** Format: enum */
             interval?: number;
+        };
+        PriceLevel: {
+            price?: string;
+            quantity?: string;
+            /** Format: uint32 */
+            orderCount?: number;
         };
         Promotion: {
             id?: string;
@@ -8706,6 +8992,16 @@ export interface components {
         RequestCheckResponse: {
             check?: components["schemas"]["KycCheck"];
             redirectUrl?: string;
+        };
+        /**
+         * @description Requires Idempotency-Key metadata at the edge. The service persists scope
+         *      tenant + subject + operation + key and rejects payload drift with ALREADY_EXISTS.
+         */
+        RequestWithdrawalRequest: {
+            asset?: string;
+            network?: string;
+            amount?: string;
+            destination?: string;
         };
         /**
          * @description ResetPassword is the forgot-password completion. Caller has previously
@@ -9416,6 +9712,17 @@ export interface components {
         TopCustomersResponse: {
             customers?: components["schemas"]["TopCustomer"][];
         };
+        Trade: {
+            tradeId?: string;
+            market?: string;
+            price?: string;
+            quantity?: string;
+            quoteQuantity?: string;
+            /** Format: enum */
+            takerSide?: number;
+            /** Format: date-time */
+            executedAt?: string;
+        };
         TransferBetweenWalletsRequest: {
             tenantId?: string;
             fromWalletId?: string;
@@ -9973,6 +10280,19 @@ export interface components {
             status?: string;
             signingSecret?: string;
             createdAt?: string;
+            updatedAt?: string;
+        };
+        Withdrawal: {
+            withdrawalId?: string;
+            asset?: string;
+            network?: string;
+            amount?: string;
+            destination?: string;
+            status?: string;
+            txHash?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
             updatedAt?: string;
         };
     };
@@ -15269,6 +15589,426 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteSubscriptionResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    ExchangeService_ListBalances: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListBalancesResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    ExchangeService_ListDeposits: {
+        parameters: {
+            query?: {
+                asset?: string;
+                status?: string;
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListDepositsResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    ExchangeService_GetDepositAddress: {
+        parameters: {
+            query?: {
+                asset?: string;
+                network?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExchangeDepositAddress"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    ExchangeService_ListMarkets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListMarketsResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    ExchangeService_GetOrderBook: {
+        parameters: {
+            query?: {
+                market?: string;
+                depth?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderBook"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    ExchangeService_ListOrders: {
+        parameters: {
+            query?: {
+                market?: string;
+                status?: number;
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListOrdersResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    ExchangeService_PlaceOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaceOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Order"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    ExchangeService_GetOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orderId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Order"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    ExchangeService_CancelOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orderId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Order"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    ExchangeService_ListTrades: {
+        parameters: {
+            query?: {
+                market?: string;
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListTradesResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    ExchangeService_ListWithdrawals: {
+        parameters: {
+            query?: {
+                asset?: string;
+                status?: string;
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListWithdrawalsResponse"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    ExchangeService_RequestWithdrawal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequestWithdrawalRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Withdrawal"];
+                };
+            };
+            /** @description Default error response */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    ExchangeService_GetWithdrawal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                withdrawalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Withdrawal"];
                 };
             };
             /** @description Default error response */

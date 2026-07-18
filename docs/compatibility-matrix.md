@@ -7,16 +7,20 @@ that contract major.
 
 | SDK | Package | Min runtime | Status | Contract snapshot |
 |-----|---------|-------------|--------|-------------------|
-| Go | `github.com/saidmashhud/mashgate-public/sdk/go` | Go 1.22 | stable (v0.x) | v1 |
-| TypeScript | `@mashgate/sdk` (npm) | Node 18 | stable (v0.x) | v1 |
-| Python | `mashgate` (PyPI) | Python 3.10+ | stable (v0.x) | v1 |
+| Go | `github.com/saidmashhud/mashgate-public/sdk/go` | Go 1.22 | external alpha | v1 + Exchange alpha |
+| TypeScript | `@mashgate/sdk` (npm) | Node 18 | external alpha | v1 + Exchange alpha |
+| Python | `mashgate` (PyPI) | Python 3.10+ | external alpha | v1 + Exchange alpha |
 
 ## Module coverage
 
 Go, TypeScript, and Python expose the full v1 resource namespace set. Python is
 hand-maintained rather than generated, so `sdk/python/tests/test_client_parity.py`
-is the parity gate: it fails if any of the 25 resource namespaces is missing,
+is the parity gate: it fails if any resource namespace is missing,
 renamed, or left unwired.
+
+Exchange is additive but remains testnet-only. Its exact proto and event set is
+pinned separately in `contracts-sync/manifests/exchange-alpha.yaml` until the
+next immutable full contract snapshot is cut.
 
 ## Contract snapshots
 
