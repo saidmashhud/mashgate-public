@@ -9,6 +9,15 @@ Aggregate changelog for all languages: [`../../CHANGELOG.md`](../../CHANGELOG.md
 
 ---
 
+## [v1.18.1] - 2026-07-22
+
+### Fixed
+
+- `GuardClient` now uses the canonical `/v1/guard/rules` and
+  `/v1/guard/evaluate` contracts instead of removed legacy routes.
+- HTTP method and client IP are preserved in rule/evaluation requests, so
+  rate-limit rules no longer fall through to the service default.
+
 ## [v1.18.0] - 2026-07-18 - `sdk/go/v1.18.0`
 
 ### Added

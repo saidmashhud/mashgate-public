@@ -2,8 +2,10 @@ package mashgate
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -77,32 +79,108 @@ type GuardClient struct {
 	c *Client
 }
 
+type guardConditionWire struct {
+	Field    string `json:"field"`
+	Operator string `json:"operator"`
+	Value    string `json:"value"`
+}
+
+type guardRuleWire struct {
+	ID         string               `json:"id"`
+	TenantID   string               `json:"tenantId"`
+	Name       string               `json:"name"`
+	Resource   string               `json:"resource"`
+	Action     string               `json:"action"`
+	Conditions []guardConditionWire `json:"conditions"`
+	Priority   int                  `json:"priority"`
+	CreatedAt  time.Time            `json:"createdAt"`
+	UpdatedAt  time.Time            `json:"updatedAt"`
+}
+
+func rateLimitFromGuardRule(rule guardRuleWire) *RateLimitConfig {
+	method := "ANY"
+	for _, condition := range rule.Conditions {
+		if strings.EqualFold(condition.Field, "method") && strings.TrimSpace(condition.Value) != "" {
+			method = strings.ToUpper(strings.TrimSpace(condition.Value))
+			break
+		}
+	}
+	return &RateLimitConfig{
+		ID: rule.ID, TenantID: rule.TenantID, Path: rule.Resource, Method: method,
+		RPM: rule.Priority, CreatedAt: rule.CreatedAt, UpdatedAt: rule.UpdatedAt,
+	}
+}
+
+func guardDecisionAllows(raw json.RawMessage) bool {
+	value := strings.Trim(strings.TrimSpace(string(raw)), `"`)
+	return value == "1" || value == "ALLOW" || value == "GUARD_ACTION_ALLOW"
+}
+
 // Check performs a rate-limit and IP-blocklist check.
 func (g *GuardClient) Check(ctx context.Context, req GuardCheckRequest) (*GuardCheckResult, error) {
-	var out GuardCheckResult
-	if err := g.c.do(ctx, "POST", "/v1/guard/check", req, &out); err != nil {
+	var out struct {
+		Decision json.RawMessage `json:"decision"`
+		Reason   string          `json:"reason"`
+	}
+	body := struct {
+		TenantID string            `json:"tenantId"`
+		Resource string            `json:"resource"`
+		Action   string            `json:"action"`
+		Context  map[string]string `json:"context"`
+	}{
+		TenantID: req.TenantID,
+		Resource: req.Path,
+		Action:   strings.ToUpper(req.Method),
+		Context:  map[string]string{"ip": req.IP},
+	}
+	if err := g.c.do(ctx, "POST", "/v1/guard/evaluate", body, &out); err != nil {
 		return nil, err
 	}
-	return &out, nil
+	return &GuardCheckResult{Allowed: guardDecisionAllows(out.Decision), Reason: out.Reason}, nil
 }
 
 // UpsertRateLimit creates or updates a rate limit config.
 func (g *GuardClient) UpsertRateLimit(ctx context.Context, req UpsertRateLimitRequest) (*RateLimitConfig, error) {
-	var out RateLimitConfig
-	if err := g.c.do(ctx, "POST", "/v1/guard/rate-limits", req, &out); err != nil {
+	method := strings.ToUpper(strings.TrimSpace(req.Method))
+	if method == "" {
+		method = "ANY"
+	}
+	body := struct {
+		TenantID   string               `json:"tenantId"`
+		Name       string               `json:"name"`
+		Resource   string               `json:"resource"`
+		Action     string               `json:"action"`
+		Conditions []guardConditionWire `json:"conditions"`
+		Priority   int                  `json:"priority"`
+	}{
+		TenantID:   req.TenantID,
+		Name:       req.Method + " " + req.Path,
+		Resource:   req.Path,
+		Action:     "ALLOW",
+		Conditions: []guardConditionWire{{Field: "method", Operator: "eq", Value: method}},
+		Priority:   req.RPM,
+	}
+	var out guardRuleWire
+	if err := g.c.do(ctx, "POST", "/v1/guard/rules", body, &out); err != nil {
 		return nil, err
 	}
-	return &out, nil
+	return rateLimitFromGuardRule(out), nil
 }
 
 // ListRateLimits returns all rate limit configs for a tenant.
 func (g *GuardClient) ListRateLimits(ctx context.Context, tenantID string) ([]*RateLimitConfig, error) {
-	path := fmt.Sprintf("/v1/guard/rate-limits?tenantId=%s", url.QueryEscape(tenantID))
-	var out []*RateLimitConfig
+	path := fmt.Sprintf("/v1/guard/rules?tenantId=%s", url.QueryEscape(tenantID))
+	var out struct {
+		Rules []guardRuleWire `json:"rules"`
+	}
 	if err := g.c.do(ctx, "GET", path, nil, &out); err != nil {
 		return nil, err
 	}
-	return out, nil
+	result := make([]*RateLimitConfig, 0, len(out.Rules))
+	for _, rule := range out.Rules {
+		result = append(result, rateLimitFromGuardRule(rule))
+	}
+	return result, nil
 }
 
 // BlockIP adds an IP to the tenant blocklist.
