@@ -22,6 +22,31 @@ mg = MashgateClient(base_url="https://api.mashgate.uz", api_key="mg_test_key")
 payment = mg.payments.create(amount="100.00", currency="UZS")
 ```
 
+## Fintech resources
+
+```python
+import uuid
+from mashgate import KycCheckType, KycSubjectType, MashgateClient
+
+mg = MashgateClient(
+    base_url="https://api.mashgate.uz",
+    api_key="mg_test_key",
+    tenant_id="tenant-123",
+)
+
+check = mg.kyc.request_check(
+    subject_id="user-123",
+    subject_type=KycSubjectType.INDIVIDUAL,
+    check_type=KycCheckType.FULL,
+    idempotency_key=str(uuid.uuid4()),
+)
+```
+
+The tenant-scoped namespaces are `mg.kyc`, `mg.compliance`, `mg.merchant`,
+and `mg.wallet_admin`. They fail before making a request when `tenant_id` is
+missing. Use a stable, unique idempotency key for KYC requests,
+compliance-alert creation, and merchant onboarding.
+
 ## Wallet APIs
 
 Two distinct wallet surfaces:

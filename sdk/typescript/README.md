@@ -28,6 +28,31 @@ const payment = await mg.payments.create({
 });
 ```
 
+## Fintech resources
+
+KYC, compliance, and merchant acceptance require a tenant-scoped client. The
+SDK sends `X-Tenant-ID` and includes the tenant in the canonical request body.
+
+```ts
+import { KycCheckType, KycSubjectType } from "@mashgate/sdk";
+
+const mg = new MashgateClient({
+  baseUrl: "https://api.mashgate.uz",
+  apiKey: process.env.MASHGATE_API_KEY!,
+  tenantId: process.env.MASHGATE_TENANT_ID!,
+});
+
+const check = await mg.kyc.request({
+  subjectId: "user-123",
+  subjectType: KycSubjectType.Individual,
+  checkType: KycCheckType.Full,
+}, crypto.randomUUID());
+```
+
+The tenant-scoped namespaces are `mg.kyc`, `mg.compliance`,
+`mg.merchant`, and `mg.walletAdmin`. Pass a stable, unique idempotency key to
+KYC requests, compliance-alert creation, and merchant onboarding.
+
 ## Wallet APIs
 
 The SDK exposes two distinct wallet surfaces:

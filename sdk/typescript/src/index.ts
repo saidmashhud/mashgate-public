@@ -29,6 +29,45 @@ export { MeteringResource } from "./resources/metering.js";
 export { BillingResource } from "./resources/billing.js";
 export { AnalyticsResource } from "./resources/analytics.js";
 export { ExchangeResource } from "./resources/exchange.js";
+export {
+  KycResource,
+  KycStatus,
+  KycSubjectType,
+  KycCheckType,
+} from "./resources/kyc.js";
+export type {
+  KycRiskSignal,
+  KycCheck,
+  RequestKycCheck,
+  RequestKycCheckResponse,
+  ListKycChecksQuery,
+  ListKycChecksResponse,
+} from "./resources/kyc.js";
+export {
+  ComplianceResource,
+  AlertStatus,
+  AlertSeverity,
+  AlertCategory,
+} from "./resources/compliance.js";
+export type {
+  AlertEvidence,
+  ComplianceAlert,
+  RaiseComplianceAlert,
+  ListComplianceAlertsQuery,
+  ListComplianceAlertsResponse,
+} from "./resources/compliance.js";
+export {
+  MerchantResource,
+  MerchantStatus,
+  MerchantType,
+} from "./resources/merchant.js";
+export type {
+  MerchantConfig,
+  MerchantProfile,
+  OnboardMerchant,
+  ListMerchantsQuery,
+  ListMerchantsResponse,
+} from "./resources/merchant.js";
 export type {
   ExchangeMarket,
   ExchangeOrderBook,

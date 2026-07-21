@@ -39,6 +39,19 @@ from mashgate.resources.guard import GuardResource
 from mashgate.resources.chain import ChainResource
 from mashgate.resources.local_payments import LocalPaymentsResource
 from mashgate.resources.exchange import ExchangeResource
+from mashgate.resources.kyc import (
+    KYCResource,
+    KycCheckType,
+    KycStatus,
+    KycSubjectType,
+)
+from mashgate.resources.compliance import (
+    AlertCategory,
+    AlertSeverity,
+    AlertStatus,
+    ComplianceResource,
+)
+from mashgate.resources.merchant import MerchantResource, MerchantStatus, MerchantType
 from mashgate.webhooks import verify_webhook_signature
 
 __all__ = [
@@ -48,6 +61,17 @@ __all__ = [
     "Currency",
     "DomainStatus",
     "ExchangeResource",
+    "KYCResource",
+    "KycCheckType",
+    "KycStatus",
+    "KycSubjectType",
+    "ComplianceResource",
+    "AlertCategory",
+    "AlertSeverity",
+    "AlertStatus",
+    "MerchantResource",
+    "MerchantStatus",
+    "MerchantType",
     "GuardResource",
     "IamResource",
     "InvoicesResource",

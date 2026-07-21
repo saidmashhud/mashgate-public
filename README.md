@@ -106,6 +106,45 @@ check, err := client.KYC.Request(ctx, fintech.RequestCheckRequest{
 }, idempotencyKey)
 ```
 
+The same tenant-scoped resources are available on the unified TypeScript and
+Python clients. KYC requests, compliance-alert creation, and merchant
+onboarding require an explicit idempotency key.
+
+```ts
+import { KycCheckType, KycSubjectType, MashgateClient } from "@mashgate/sdk";
+
+const client = new MashgateClient({
+  baseUrl: process.env.MASHGATE_API_URL!,
+  apiKey: process.env.MASHGATE_API_KEY!,
+  tenantId: process.env.MASHGATE_TENANT_ID!,
+});
+
+const check = await client.kyc.request({
+  subjectId: userId,
+  subjectType: KycSubjectType.Individual,
+  checkType: KycCheckType.Full,
+}, crypto.randomUUID());
+```
+
+```python
+import os
+import uuid
+from mashgate import KycCheckType, KycSubjectType, MashgateClient
+
+client = MashgateClient(
+    base_url=os.environ["MASHGATE_API_URL"],
+    api_key=os.environ["MASHGATE_API_KEY"],
+    tenant_id=os.environ["MASHGATE_TENANT_ID"],
+)
+
+check = client.kyc.request_check(
+    subject_id=user_id,
+    subject_type=KycSubjectType.INDIVIDUAL,
+    check_type=KycCheckType.FULL,
+    idempotency_key=str(uuid.uuid4()),
+)
+```
+
 ### TypeScript
 
 ```ts

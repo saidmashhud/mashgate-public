@@ -934,6 +934,8 @@ export interface MashgateClientOptions {
   baseUrl: string;
   apiKey?: string;
   accessToken?: string;
+  /** Tenant context for tenant-scoped platform modules such as KYC and compliance. */
+  tenantId?: string;
   fetch?: typeof globalThis.fetch;
   headers?: Record<string, string>;
   /** Request timeout in milliseconds. Default: 30 000. */

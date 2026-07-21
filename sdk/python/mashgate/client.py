@@ -33,6 +33,9 @@ from mashgate.resources.guard import GuardResource
 from mashgate.resources.chain import ChainResource
 from mashgate.resources.local_payments import LocalPaymentsResource
 from mashgate.resources.exchange import ExchangeResource
+from mashgate.resources.kyc import KYCResource
+from mashgate.resources.compliance import ComplianceResource
+from mashgate.resources.merchant import MerchantResource
 
 
 class MashgateClient:
@@ -53,12 +56,14 @@ class MashgateClient:
         base_url: str,
         api_key: str | None = None,
         access_token: str | None = None,
+        tenant_id: str | None = None,
         timeout: float = 30.0,
         headers: dict[str, str] | None = None,
     ) -> None:
         self._base_url = base_url.rstrip("/")
         self._api_key = api_key
         self._access_token = access_token
+        self._tenant_id = tenant_id
 
         default_headers = {"Content-Type": "application/json"}
         if headers:
@@ -111,11 +116,25 @@ class MashgateClient:
         self.local_payments = LocalPaymentsResource(self)
         # Custodial spot exchange. Account ownership comes from access_token.
         self.exchange = ExchangeResource(self)
+        # Tenant-scoped Fintech Pack capabilities.
+        self.kyc = KYCResource(self)
+        self.compliance = ComplianceResource(self)
+        self.merchant = MerchantResource(self)
 
     # ── Token management ──────────────────────────────────────────────
 
     def set_access_token(self, token: str) -> None:
         self._access_token = token
+
+    def require_tenant_id(self) -> str:
+        if not self._tenant_id:
+            raise MashgateError(
+                "tenant_id is required for this resource",
+                status=400,
+                code="tenant_id_required",
+                retryable=False,
+            )
+        return self._tenant_id
 
     # ── Internal request helper ───────────────────────────────────────
 
@@ -134,6 +153,8 @@ class MashgateClient:
             headers["Authorization"] = f"Bearer {self._access_token}"
         elif self._api_key:
             headers["X-API-Key"] = self._api_key
+        if self._tenant_id:
+            headers["X-Tenant-ID"] = self._tenant_id
 
         if extra_headers:
             headers.update(extra_headers)

@@ -11,9 +11,9 @@ Status: `planned` / `in-progress` / `shipped`.
 - ✅ Go `sdk/go/fintech` subpackage (KYC / compliance / merchant / wallet).
 - ✅ External alpha gate: SDK installability, quickstarts, contracts snapshot,
   and HookLine verifier parity.
-- ⏳ TypeScript `@mashgate/sdk/fintech` — port types from `@kiro/mashgate-types`.
-- ⏳ Python `mashgate.fintech` — port types + thin client.
-- ⏳ Contract-sync pipeline (pinned-snapshot mode).
+- ✅ TypeScript unified client: tenant-scoped KYC, compliance, merchant, and wallet resources.
+- ✅ Python unified client: tenant-scoped KYC, compliance, merchant, and wallet resources.
+- ✅ Contract-sync pipeline (pinned-snapshot mode with read-only source checkout).
 - ⏳ CI: lint + build + test per language.
 
 ## v1.0.0 — coordinated release (Mashgate Wave 4)

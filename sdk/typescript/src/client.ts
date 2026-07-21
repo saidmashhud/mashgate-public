@@ -26,6 +26,9 @@ import { AnalyticsResource } from "./resources/analytics.js";
 import { WalletAdminResource } from "./resources/walletAdmin.js";
 import { MailResource } from "./resources/mail.js";
 import { ExchangeResource } from "./resources/exchange.js";
+import { KycResource } from "./resources/kyc.js";
+import { ComplianceResource } from "./resources/compliance.js";
+import { MerchantResource } from "./resources/merchant.js";
 
 export class MashgateClient {
   private readonly baseUrl: string;
@@ -34,6 +37,7 @@ export class MashgateClient {
   private readonly timeout: number;
   private readonly maxRetries: number;
   private readonly idempotencyKeyFn?: () => string;
+  private readonly tenantId?: string;
   private accessToken?: string;
 
   readonly auth: AuthResource;
@@ -76,6 +80,9 @@ export class MashgateClient {
   readonly mail: MailResource;
   /** Custodial spot Exchange API. Ownership is resolved from accessToken. */
   readonly exchange: ExchangeResource;
+  readonly kyc: KycResource;
+  readonly compliance: ComplianceResource;
+  readonly merchant: MerchantResource;
 
   constructor(options: MashgateClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/+$/, "");
@@ -84,10 +91,12 @@ export class MashgateClient {
     this.maxRetries = options.maxRetries ?? 0;
     this.idempotencyKeyFn = options.idempotencyKey;
     this.accessToken = options.accessToken;
+    this.tenantId = options.tenantId;
 
     this.defaultHeaders = {
       "Content-Type": "application/json",
       ...(options.apiKey ? { "X-API-Key": options.apiKey } : {}),
+      ...(options.tenantId ? { "X-Tenant-ID": options.tenantId } : {}),
       ...options.headers,
     };
 
@@ -117,6 +126,21 @@ export class MashgateClient {
     this.walletAdmin = new WalletAdminResource(this);
     this.mail = new MailResource(this);
     this.exchange = new ExchangeResource(this);
+    this.kyc = new KycResource(this);
+    this.compliance = new ComplianceResource(this);
+    this.merchant = new MerchantResource(this);
+  }
+
+  requireTenantId(): string {
+    if (!this.tenantId) {
+      throw new MashgateError({
+        message: "tenantId is required for this resource",
+        status: 400,
+        code: "tenant_id_required",
+        retryable: false,
+      });
+    }
+    return this.tenantId;
   }
 
   setAccessToken(token: string | undefined): void {

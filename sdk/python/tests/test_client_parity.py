@@ -1,7 +1,7 @@
 """Structural parity test — guards the Python SDK against drift from the Go/TS SDKs.
 
 The three SDKs are generated from one source of truth and must expose the same
-26 resource namespaces. A constructed :class:`MashgateClient` is the canonical
+29 resource namespaces. A constructed :class:`MashgateClient` is the canonical
 surface, so we assert every namespace is wired, non-``None``, and an instance
 of a ``*Resource`` class. This fails loudly if a resource is dropped, renamed,
 left unwired in ``client.py``, or swapped for a non-resource value.
@@ -54,6 +54,9 @@ EXPECTED_RESOURCES: dict[str, str] = {
     "chain": "ChainResource",
     "local_payments": "LocalPaymentsResource",
     "exchange": "ExchangeResource",
+    "kyc": "KYCResource",
+    "compliance": "ComplianceResource",
+    "merchant": "MerchantResource",
 }
 
 
@@ -62,11 +65,11 @@ def client() -> MashgateClient:
     return MashgateClient(base_url=BASE, api_key="mg_test_key")
 
 
-def test_expected_resource_count_is_26():
+def test_expected_resource_count_is_29():
     """Tripwire — if the parity set itself shrinks/grows, the suite must notice."""
-    assert len(EXPECTED_RESOURCES) == 26
+    assert len(EXPECTED_RESOURCES) == 29
     # No accidental duplicate keys collapsing the dict.
-    assert len(set(EXPECTED_RESOURCES)) == 26
+    assert len(set(EXPECTED_RESOURCES)) == 29
 
 
 @pytest.mark.parametrize("attr", sorted(EXPECTED_RESOURCES))
