@@ -110,7 +110,52 @@ func ParseEvent(body []byte) (*WebhookEvent, error) {
 	if err := json.Unmarshal(body, &event); err != nil {
 		return nil, fmt.Errorf("mashgate: parse event: %w", err)
 	}
+	normalizeHooklineEnvelope(body, &event)
 	return &event, nil
+}
+
+// hooklineEnvelope is the delivery envelope HookLine POSTs to endpoints. It
+// nests the event one level deeper than the flat emissions above and carries
+// no tenant of its own — the receiver knows which tenant it serves.
+type hooklineEnvelope struct {
+	HooklineVersion string `json:"hookline_version"`
+	EventID         string `json:"event_id"`
+	JobID           string `json:"job_id"`
+	AttemptID       string `json:"attempt_id"`
+	Attempt         int    `json:"attempt"`
+	Event           *struct {
+		ID       string          `json:"id"`
+		Topic    string          `json:"topic"`
+		TenantID string          `json:"tenant_id"`
+		Payload  json.RawMessage `json:"payload"`
+	} `json:"event"`
+}
+
+// normalizeHooklineEnvelope flattens a HookLine delivery so callers see the
+// same shape no matter which emitter sent it. It only fills fields the flat
+// decode left empty, so a legacy or envelope-v1 body is untouched.
+func normalizeHooklineEnvelope(body []byte, event *WebhookEvent) {
+	if event.Topic != "" || event.EventType != "" {
+		return
+	}
+	var env hooklineEnvelope
+	if err := json.Unmarshal(body, &env); err != nil || env.Event == nil {
+		return
+	}
+	event.Topic = env.Event.Topic
+	event.EventType = env.Event.Topic
+	if event.ID == "" {
+		event.ID = env.Event.ID
+	}
+	if event.EventID == "" {
+		event.EventID = env.EventID
+	}
+	if event.TenantID == "" {
+		event.TenantID = env.Event.TenantID
+	}
+	if len(event.Payload) == 0 {
+		event.Payload = env.Event.Payload
+	}
 }
 
 // ────────────────────────────────────────────────────────────────────────────
