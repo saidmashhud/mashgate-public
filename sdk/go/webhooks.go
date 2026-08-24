@@ -131,6 +131,51 @@ type hooklineEnvelope struct {
 	} `json:"event"`
 }
 
+// normalizeHooklineTenant strips HookLine's own tenant prefix.
+//
+// HookLine keeps tenants under its own identifier and stamps it into every
+// delivered event: a Mashgate tenant 34cf595d-… arrives as mg-34cf595d-….
+// Handing that string on as a tenant id looks harmless — it is non-empty, so a
+// receiver's "fall back to my configured tenant" branch never fires — and then
+// every downstream call carries an id no Mashgate service can resolve.
+//
+// Strip the prefix only when what remains is a well-formed UUID, so an
+// unprefixed or unexpected value is passed through untouched rather than
+// silently truncated.
+func normalizeHooklineTenant(id string) string {
+	const prefix = "mg-"
+	if !strings.HasPrefix(id, prefix) {
+		return id
+	}
+	rest := id[len(prefix):]
+	if !looksLikeUUID(rest) {
+		return id
+	}
+	return rest
+}
+
+// looksLikeUUID checks the canonical 8-4-4-4-12 hex shape without pulling in a
+// UUID dependency: the SDK ships to callers and stays free of them on purpose.
+func looksLikeUUID(s string) bool {
+	if len(s) != 36 {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if i == 8 || i == 13 || i == 18 || i == 23 {
+			if c != '-' {
+				return false
+			}
+			continue
+		}
+		isHex := (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')
+		if !isHex {
+			return false
+		}
+	}
+	return true
+}
+
 // normalizeHooklineEnvelope flattens a HookLine delivery so callers see the
 // same shape no matter which emitter sent it. It only fills fields the flat
 // decode left empty, so a legacy or envelope-v1 body is untouched.
@@ -151,7 +196,7 @@ func normalizeHooklineEnvelope(body []byte, event *WebhookEvent) {
 		event.EventID = env.EventID
 	}
 	if event.TenantID == "" {
-		event.TenantID = env.Event.TenantID
+		event.TenantID = normalizeHooklineTenant(env.Event.TenantID)
 	}
 	if len(event.Payload) == 0 {
 		event.Payload = env.Event.Payload
