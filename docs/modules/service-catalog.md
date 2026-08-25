@@ -3,7 +3,7 @@
 > Источник правды о сервисах Mashgate платформы. Обновляется при добавлении/удалении сервисов или версионных бампах protos.
 
 Auto-generated baseline from k8s state + `contracts/proto/v1/*.proto` snapshot.
-Last regenerated: **2026-05-12** | Cluster: `srv2 (95.142.87.230)` | k3s v1.34.5
+Last regenerated: **2026-05-12** | Cluster: `srv2 (195.246.102.169)` | k3s v1.34.5
 
 ---
 
