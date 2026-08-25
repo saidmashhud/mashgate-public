@@ -11,6 +11,7 @@ import { SettingsResource } from "./resources/settings.js";
 import { ChatResource } from "./resources/chat.js";
 import { NotifyResource } from "./resources/notify.js";
 import { StorageResource } from "./resources/storage.js";
+import { AIResource } from "./resources/ai.js";
 import { FlagsResource } from "./resources/flags.js";
 import { LogsResource } from "./resources/logs.js";
 import { SubscriptionsResource } from "./resources/subscriptions.js";
@@ -51,6 +52,7 @@ export class MashgateClient {
   readonly chat: ChatResource;
   readonly notify: NotifyResource;
   readonly storage: StorageResource;
+  readonly ai: AIResource;
   readonly flags: FlagsResource;
   readonly logs: LogsResource;
   readonly subscriptions: SubscriptionsResource;
@@ -111,6 +113,7 @@ export class MashgateClient {
     this.chat = new ChatResource(this);
     this.notify = new NotifyResource(this);
     this.storage = new StorageResource(this);
+    this.ai = new AIResource(this);
     this.flags = new FlagsResource(this);
     this.logs = new LogsResource(this);
     this.subscriptions = new SubscriptionsResource(this);

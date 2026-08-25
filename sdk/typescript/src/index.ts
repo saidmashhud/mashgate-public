@@ -16,6 +16,7 @@ export { SettingsResource } from "./resources/settings.js";
 export { ChatResource } from "./resources/chat.js";
 export { NotifyResource } from "./resources/notify.js";
 export { StorageResource } from "./resources/storage.js";
+export { AIResource } from "./resources/ai.js";
 export { FlagsResource } from "./resources/flags.js";
 export { LogsResource } from "./resources/logs.js";
 export { SubscriptionsResource } from "./resources/subscriptions.js";
@@ -359,3 +360,13 @@ export type {
   TimeSeriesQuery,
   TopCustomersQuery,
 } from "./resources/analytics.js";
+export type {
+  AICompleteRequest,
+  AICompleteResponse,
+  AICompletionJob,
+  AIEmbedResponse,
+  AIJobState,
+  AIStatus,
+  AISubmitRequest,
+  AIWaitOptions,
+} from "./resources/ai.js";
