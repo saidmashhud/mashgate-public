@@ -715,6 +715,132 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /v1/ai/complete:
+        post:
+            tags:
+                - AIService
+            description: |-
+                Короткий синхронный вызов. Годится, пока вход укладывается в сотни
+                 токенов: классификация, извлечение полей, краткая сводка.
+            operationId: AIService_Complete
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CompleteRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CompleteResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/ai/embed:
+        post:
+            tags:
+                - AIService
+            description: |-
+                Векторы для семантического поиска. Отдельным вызовом, а не режимом
+                 Complete: у эмбеддингов другая модель, другая цена и другой результат.
+            operationId: AIService_Embed
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/EmbedRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/EmbedResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/ai/jobs:
+        post:
+            tags:
+                - AIService
+            description: |-
+                Длинная работа: возвращает идентификатор сразу, результат забирается
+                 отдельно. Разбор заметки идёт 10–30 секунд, ночной бриф — минуты.
+            operationId: AIService_SubmitCompletion
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SubmitCompletionRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CompletionJob'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/ai/jobs/{jobId}:
+        get:
+            tags:
+                - AIService
+            operationId: AIService_GetCompletion
+            parameters:
+                - name: jobId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CompletionJob'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/ai/status:
+        get:
+            tags:
+                - AIService
+            description: |-
+                Живость и текущая модель. Нужно, чтобы отличить «модель не ответила» от
+                 «модель ответила плохо» — без этого разбор жалоб идёт вслепую.
+            operationId: AIService_GetStatus
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AIStatus'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /v1/analytics/customers/cohorts:
         get:
             tags:
@@ -4166,6 +4292,50 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /v1/events:
+        get:
+            tags:
+                - MgEventsService
+            operationId: MgEventsService_ListEvents
+            parameters:
+                - name: tenantId
+                  in: query
+                  schema:
+                    type: string
+                - name: topic
+                  in: query
+                  schema:
+                    type: string
+                - name: fromMs
+                  in: query
+                  schema:
+                    type: string
+                - name: toMs
+                  in: query
+                  schema:
+                    type: string
+                - name: limit
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: cursor
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListEventsResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /v1/events/deliveries:
         get:
             tags:
@@ -4559,6 +4729,36 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /v1/events/publish:
+        post:
+            tags:
+                - MgEventsService
+            description: |-
+                ── События (ADR-0027) ────────────────────────────────────────────────
+                 Сам журнал событий живёт в HookLine; mg-events проксирует к нему, как и
+                 для эндпоинтов. Без этих трёх у консоли не было ни обозревателя событий,
+                 ни возможности отправить пробное — вкладки звали /v1/developer/*,
+                 которых не существует.
+            operationId: MgEventsService_PublishEvent
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/PublishEventRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PublishEventResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /v1/events/subscriptions:
         get:
             tags:
@@ -4632,6 +4832,34 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/DeleteSubscriptionResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/events/{eventId}:
+        get:
+            tags:
+                - MgEventsService
+            operationId: MgEventsService_GetEvent
+            parameters:
+                - name: eventId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: tenantId
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetEventResponse'
                 default:
                     description: Default error response
                     content:
@@ -8505,6 +8733,30 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /v1/notify/email:
+        post:
+            tags:
+                - NotifyService
+            operationId: NotifyService_SendEmail
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SendEmailRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/NotificationLog'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /v1/notify/history:
         get:
             tags:
@@ -8566,6 +8818,34 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/SendNotificationResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/notify/sms:
+        post:
+            tags:
+                - NotifyService
+            description: |-
+                Прямая отправка в канал, минуя выбор шаблона по каналу. SendNotification
+                 остаётся основным путём (шаблон решает и канал, и провайдера); эти два —
+                 для случаев, когда вызывающий уже знает канал: OTP, транзакционные письма.
+            operationId: NotifyService_SendSms
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SendSmsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/NotificationLog'
                 default:
                     description: Default error response
                     content:
@@ -10315,6 +10595,231 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /v1/search/collections:
+        get:
+            tags:
+                - SearchService
+            description: |-
+                Сколько документов в каждой коллекции и когда обновлялись. Нужно, чтобы
+                 отличить пустой ответ поиска от неналитого индекса — без этого первая же
+                 жалоба «ничего не находится» разбирается вслепую.
+            operationId: SearchService_ListCollections
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListCollectionsResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/search/collections/{collection}/reindex:
+        post:
+            tags:
+                - SearchService
+            description: |-
+                Полная переиндексация коллекции: помечает всё существующее устаревшим,
+                 ждёт загрузки нового, затем удаляет непришедшее. Без этого удалённые в
+                 источнике документы остаются в индексе навсегда.
+            operationId: SearchService_StartReindex
+            parameters:
+                - name: collection
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/StartReindexRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ReindexJob'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/search/documents:
+        post:
+            tags:
+                - SearchService
+            description: |-
+                Загрузка документов в индекс. Идемпотентна по (collection, doc_id):
+                 повторная загрузка того же документа перезаписывает его, а не создаёт
+                 второй. Вертикали шлют сюда по событию изменения, а не по расписанию.
+            operationId: SearchService_IndexDocuments
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/IndexDocumentsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IndexDocumentsResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/search/documents:delete:
+        post:
+            tags:
+                - SearchService
+            operationId: SearchService_DeleteDocuments
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DeleteDocumentsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DeleteDocumentsResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/search/query:
+        post:
+            tags:
+                - SearchService
+            operationId: SearchService_Search
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SearchRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SearchResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/search/reindex/{jobId}:
+        get:
+            tags:
+                - SearchService
+            operationId: SearchService_GetReindexJob
+            parameters:
+                - name: jobId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ReindexJob'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/search/reindex/{jobId}:finish:
+        post:
+            tags:
+                - SearchService
+            description: |-
+                Закрывает приём и удаляет документы, не пришедшие в рамках задания.
+                 Отдельным вызовом, а не по таймауту: только источник знает, что выгрузил
+                 всё, а снос по таймеру вычистил бы индекс при медленной выгрузке.
+            operationId: SearchService_FinishReindex
+            parameters:
+                - name: jobId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/FinishReindexRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ReindexJob'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /v1/search/suggest:
+        get:
+            tags:
+                - SearchService
+            description: |-
+                Подсказки при наборе. Отдельный вызов, а не режим Search: у подсказок
+                 другой бюджет задержки и другой результат — строки, а не документы.
+            operationId: SearchService_Suggest
+            parameters:
+                - name: collection
+                  in: query
+                  schema:
+                    type: string
+                - name: prefix
+                  in: query
+                  schema:
+                    type: string
+                - name: limit
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SuggestResponse'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /v1/settings:
         get:
             tags:
@@ -11893,6 +12398,22 @@ paths:
                                 $ref: '#/components/schemas/Status'
 components:
     schemas:
+        AIStatus:
+            type: object
+            properties:
+                available:
+                    type: boolean
+                model:
+                    type: string
+                contextSize:
+                    type: integer
+                    format: int32
+                queueDepth:
+                    type: integer
+                    description: |-
+                        Сколько заданий в очереди. Модель обслуживает один запрос за раз, и
+                         очередь — единственный честный признак того, сколько ждать.
+                    format: int32
         AcceptMerchantRequest:
             type: object
             properties:
@@ -12257,6 +12778,27 @@ components:
                 constraints:
                     $ref: '#/components/schemas/RefundConstraints'
             description: Attestation - Cryptographic proof from BFF
+        AttributeValue:
+            type: object
+            properties:
+                text:
+                    type: string
+                number:
+                    type: string
+                    description: |-
+                        Decimal строкой, а не double: цены и количества у bunyod дробные, и
+                         двоичное представление их искажает.
+                boolean:
+                    type: boolean
+                timestamp:
+                    type: string
+                    format: date-time
+                textList:
+                    $ref: '#/components/schemas/StringList'
+            description: |-
+                Значение атрибута. Тип задаётся явно, а не угадывается: от него зависит,
+                 какое сравнение допустимо. Строку «10» нельзя сравнивать как число, и
+                 молчаливое приведение дало бы неверную выборку по диапазону цен.
         AuditEvent:
             type: object
             properties:
@@ -13013,6 +13555,16 @@ components:
                     items:
                         type: number
                         format: double
+        CollectionStats:
+            type: object
+            properties:
+                collection:
+                    type: string
+                documentCount:
+                    type: string
+                lastIndexedAt:
+                    type: string
+                    format: date-time
         CommandError:
             type: object
             properties:
@@ -13088,6 +13640,61 @@ components:
                 walletRedirectUrl:
                     type: string
                 walletTransactionId:
+                    type: string
+        CompleteRequest:
+            type: object
+            properties:
+                system:
+                    type: string
+                    description: |-
+                        Системная часть промпта. Обязана быть неизменной между вызовами одного
+                         сценария: включено переиспользование кеша префилла, и совпадение
+                         системного промпта экономит около трети времени. Подстановка сюда даты
+                         или имени пользователя тихо ломает кеш.
+                user:
+                    type: string
+                jsonSchema:
+                    type: string
+                    description: |-
+                        Схема ответа в JSON Schema. Задаётся только так: попытка описать её на
+                         стороне модели через файл грамматики в этой сборке не работает.
+                maxTokens:
+                    type: integer
+                    format: int32
+                temperature:
+                    type: number
+                    description: |-
+                        Ноль означает значение по умолчанию, а не нулевую температуру: нулевую
+                         задать нельзя, и это осознанный размен на простоту поля.
+                    format: float
+        CompleteResponse:
+            type: object
+            properties:
+                text:
+                    type: string
+                promptTokens:
+                    type: integer
+                    format: int32
+                completionTokens:
+                    type: integer
+                    format: int32
+                cachedTokens:
+                    type: integer
+                    description: |-
+                        Сколько токенов префилла переиспользовано из кеша. Наблюдаемость важнее
+                         красоты ответа: без этого числа непонятно, работает ли кеш вообще.
+                    format: int32
+        CompletionJob:
+            type: object
+            properties:
+                jobId:
+                    type: string
+                state:
+                    type: integer
+                    format: enum
+                result:
+                    $ref: '#/components/schemas/CompleteResponse'
+                error:
                     type: string
         ComplianceAlert:
             type: object
@@ -14012,6 +14619,21 @@ components:
             properties:
                 success:
                     type: boolean
+        DeleteDocumentsRequest:
+            type: object
+            properties:
+                collection:
+                    type: string
+                docIds:
+                    type: array
+                    items:
+                        type: string
+        DeleteDocumentsResponse:
+            type: object
+            properties:
+                deleted:
+                    type: integer
+                    format: int32
         DeleteEndpointResponse:
             type: object
             properties:
@@ -14306,6 +14928,53 @@ components:
                 failedAt:
                     type: string
                     format: date-time
+        Document:
+            type: object
+            properties:
+                collection:
+                    type: string
+                    description: |-
+                        Логическая группа документов внутри тенанта: "products", "listings",
+                         "restaurants". Поиск всегда идёт в пределах одной коллекции.
+                docId:
+                    type: string
+                    description: Идентификатор в системе-источнике. Уникален в пределах (тенант, коллекция).
+                title:
+                    type: string
+                    description: 'Попадают в полнотекстовый индекс с разным весом: заголовок весит больше.'
+                body:
+                    type: string
+                attributes:
+                    type: object
+                    additionalProperties:
+                        $ref: '#/components/schemas/AttributeValue'
+                    description: Произвольные поля вертикали. По ним строятся фильтры и фасеты.
+                location:
+                    allOf:
+                        - $ref: '#/components/schemas/GeoPoint'
+                    description: Необязательно. Заполняется только там, где поиск идёт по расстоянию.
+                boost:
+                    type: number
+                    description: |-
+                        Ранжирующая добавка от источника: рейтинг, продажи, ручное продвижение.
+                         Складывается с текстовой релевантностью, а не заменяет её.
+                    format: double
+                url:
+                    type: string
+                    description: Ссылка на исходный объект, чтобы вызывающий не строил её сам.
+                version:
+                    type: string
+                    description: |-
+                        Версия документа в источнике. Загрузка более старой версии поверх более
+                         новой игнорируется — иначе гонка между обработчиком события и полной
+                         переиндексацией откатывала бы свежие данные.
+        DocumentError:
+            type: object
+            properties:
+                docId:
+                    type: string
+                message:
+                    type: string
         Domain:
             type: object
             properties:
@@ -14379,6 +15048,28 @@ components:
                     type: string
                 action:
                     type: string
+        EmbedRequest:
+            type: object
+            properties:
+                texts:
+                    type: array
+                    items:
+                        type: string
+        EmbedResponse:
+            type: object
+            properties:
+                embeddings:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Embedding'
+        Embedding:
+            type: object
+            properties:
+                values:
+                    type: array
+                    items:
+                        type: number
+                        format: float
         EnableModuleRequest:
             type: object
             properties:
@@ -14566,6 +15257,22 @@ components:
                     type: string
                 reason:
                     type: string
+        Event:
+            type: object
+            properties:
+                eventId:
+                    type: string
+                tenantId:
+                    type: string
+                topic:
+                    type: string
+                payload:
+                    type: string
+                traceparent:
+                    type: string
+                createdAt:
+                    type: string
+                    format: date-time
         ExchangeDepositAddress:
             type: object
             properties:
@@ -14683,6 +15390,22 @@ components:
                         ISO-8601 timestamp of this export (mirrored in the audit row /
                          outbox event so clients can correlate).
                     format: date-time
+        Facet:
+            type: object
+            properties:
+                attribute:
+                    type: string
+                values:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/FacetValue'
+        FacetValue:
+            type: object
+            properties:
+                value:
+                    type: string
+                count:
+                    type: string
         FailureAnalysisResponse:
             type: object
             properties:
@@ -14775,12 +15498,29 @@ components:
                     type: string
                 narrative:
                     type: string
+        Filter:
+            type: object
+            properties:
+                attribute:
+                    type: string
+                op:
+                    type: integer
+                    format: enum
+                values:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AttributeValue'
         FinalizeInvoiceRequest:
             type: object
             properties:
                 tenantId:
                     type: string
                 invoiceId:
+                    type: string
+        FinishReindexRequest:
+            type: object
+            properties:
+                jobId:
                     type: string
         FinishWebAuthnAssertionRequest:
             type: object
@@ -14948,6 +15688,23 @@ components:
                 percent:
                     type: number
                     format: double
+        GeoFilter:
+            type: object
+            properties:
+                center:
+                    $ref: '#/components/schemas/GeoPoint'
+                radiusKm:
+                    type: number
+                    format: double
+        GeoPoint:
+            type: object
+            properties:
+                lat:
+                    type: number
+                    format: double
+                lng:
+                    type: number
+                    format: double
         GetApplicationResponse:
             type: object
             properties:
@@ -15006,6 +15763,11 @@ components:
             properties:
                 endpoint:
                     $ref: '#/components/schemas/Endpoint'
+        GetEventResponse:
+            type: object
+            properties:
+                event:
+                    $ref: '#/components/schemas/Event'
         GetExchangeRateResponse:
             type: object
             properties:
@@ -15381,6 +16143,34 @@ components:
                          "recovered" / "originally imported" labels without re-parsing the
                          wallet object.
                     format: date-time
+        IndexDocumentsRequest:
+            type: object
+            properties:
+                documents:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Document'
+                reindexJobId:
+                    type: string
+                    description: |-
+                        Идентификатор задания переиндексации, если загрузка идёт в его рамках.
+                         Пустой — обычная точечная загрузка.
+        IndexDocumentsResponse:
+            type: object
+            properties:
+                indexed:
+                    type: integer
+                    format: int32
+                skippedStale:
+                    type: integer
+                    description: |-
+                        Документы, отклонённые из-за устаревшей версии. Не ошибка: штатный
+                         исход гонки, но вызывающему полезно знать, что его запись не применилась.
+                    format: int32
+                errors:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/DocumentError'
         InitiateWithdrawalRequest:
             type: object
             properties:
@@ -15710,6 +16500,13 @@ components:
                         $ref: '#/components/schemas/KycCheck'
                 nextCursor:
                     type: string
+        ListCollectionsResponse:
+            type: object
+            properties:
+                collections:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/CollectionStats'
         ListConsentsResponse:
             type: object
             properties:
@@ -15804,6 +16601,15 @@ components:
                 totalCount:
                     type: integer
                     format: int32
+        ListEventsResponse:
+            type: object
+            properties:
+                events:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Event'
+                nextCursor:
+                    type: string
         ListFlagsResponse:
             type: object
             properties:
@@ -16751,6 +17557,33 @@ components:
                 sentAt:
                     type: string
                     format: date-time
+        NotificationLog:
+            type: object
+            properties:
+                id:
+                    type: string
+                tenantId:
+                    type: string
+                channel:
+                    type: integer
+                    format: enum
+                recipient:
+                    type: string
+                templateKey:
+                    type: string
+                status:
+                    type: integer
+                    format: enum
+                provider:
+                    type: string
+                providerMsgId:
+                    type: string
+                error:
+                    type: string
+                sentAt:
+                    type: string
+                    format: date-time
+            description: Единая запись журнала отправки — форма совпадает с NotificationLog в SDK.
         NotificationTemplate:
             type: object
             properties:
@@ -17424,6 +18257,24 @@ components:
                     type: object
                     additionalProperties:
                         type: string
+        PublishEventRequest:
+            type: object
+            properties:
+                tenantId:
+                    type: string
+                topic:
+                    type: string
+                payload:
+                    type: string
+                idempotencyKey:
+                    type: string
+        PublishEventResponse:
+            type: object
+            properties:
+                eventId:
+                    type: string
+                traceparent:
+                    type: string
         PurgeDlqRequest:
             type: object
             properties:
@@ -17723,6 +18574,28 @@ components:
                 tenantId:
                     type: string
                 createdAt:
+                    type: string
+        ReindexJob:
+            type: object
+            properties:
+                jobId:
+                    type: string
+                collection:
+                    type: string
+                state:
+                    type: integer
+                    format: enum
+                documentsReceived:
+                    type: string
+                documentsRemoved:
+                    type: string
+                startedAt:
+                    type: string
+                    format: date-time
+                finishedAt:
+                    type: string
+                    format: date-time
+                error:
                     type: string
         ReinstateMerchantRequest:
             type: object
@@ -18395,6 +19268,70 @@ components:
                     type: string
                 screenedAt:
                     type: string
+        SearchHit:
+            type: object
+            properties:
+                document:
+                    $ref: '#/components/schemas/Document'
+                score:
+                    type: number
+                    format: double
+                distanceKm:
+                    type: number
+                    description: Заполняется только когда задан geo-фильтр или сортировка по расстоянию.
+                    format: double
+        SearchRequest:
+            type: object
+            properties:
+                collection:
+                    type: string
+                query:
+                    type: string
+                    description: 'Пустой запрос допустим: это просмотр коллекции с фильтрами, а не поиск.'
+                filters:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Filter'
+                geo:
+                    $ref: '#/components/schemas/GeoFilter'
+                sortBy:
+                    type: integer
+                    format: enum
+                sortAttribute:
+                    type: string
+                    description: Обязателен при сортировке по атрибуту, иначе игнорируется.
+                limit:
+                    type: integer
+                    format: int32
+                offset:
+                    type: integer
+                    format: int32
+                facetAttributes:
+                    type: array
+                    items:
+                        type: string
+                    description: |-
+                        Атрибуты, по которым вернуть распределение значений. Считаются по всей
+                         выборке фильтра, а не по текущей странице.
+        SearchResponse:
+            type: object
+            properties:
+                hits:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/SearchHit'
+                total:
+                    type: string
+                facets:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Facet'
+                limit:
+                    type: integer
+                    format: int32
+                offset:
+                    type: integer
+                    format: int32
         Secret:
             type: object
             properties:
@@ -18446,6 +19383,23 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/Segment'
+        SendEmailRequest:
+            type: object
+            properties:
+                tenantId:
+                    type: string
+                to:
+                    type: string
+                templateKey:
+                    type: string
+                vars:
+                    type: object
+                    additionalProperties:
+                        type: string
+                subject:
+                    type: string
+                idempotencyKey:
+                    type: string
         SendEmailVerificationRequest:
             type: object
             properties:
@@ -18543,6 +19497,30 @@ components:
             properties:
                 success:
                     type: boolean
+        SendSmsRequest:
+            type: object
+            properties:
+                tenantId:
+                    type: string
+                to:
+                    type: string
+                templateKey:
+                    type: string
+                vars:
+                    type: object
+                    additionalProperties:
+                        type: string
+                text:
+                    type: string
+                    description: |-
+                        Свободный текст в обход шаблона. Взаимоисключающ с template_key: без
+                         шаблона нет ни локализации, ни маршрутизации провайдера по каналу.
+                idempotencyKey:
+                    type: string
+            description: |-
+                Поля названы под уже существующий проводной формат SDK (`vars`, а не
+                 `variables`): транскодер сопоставляет JSON по lowerCamelCase имени поля,
+                 поэтому переименование здесь молча разошлось бы с клиентами.
         SendTelegramRequest:
             type: object
             properties:
@@ -18769,6 +19747,11 @@ components:
                     $ref: '#/components/schemas/ImpersonationSession'
                 impersonationToken:
                     type: string
+        StartReindexRequest:
+            type: object
+            properties:
+                collection:
+                    type: string
         Status:
             type: object
             properties:
@@ -18801,6 +19784,21 @@ components:
                 createdAt:
                     type: string
                     format: date-time
+        StringList:
+            type: object
+            properties:
+                values:
+                    type: array
+                    items:
+                        type: string
+        SubmitCompletionRequest:
+            type: object
+            properties:
+                request:
+                    $ref: '#/components/schemas/CompleteRequest'
+                callbackUrl:
+                    type: string
+                    description: Куда сообщить о готовности. Пусто — вызывающий опрашивает сам.
         Subscription:
             type: object
             properties:
@@ -18822,6 +19820,13 @@ components:
             description: |-
                 A subscription binds an endpoint to a set of event types for a tenant.
                  Multiple subscriptions can point to the same endpoint (fan-out).
+        SuggestResponse:
+            type: object
+            properties:
+                suggestions:
+                    type: array
+                    items:
+                        type: string
         SuspendMerchantRequest:
             type: object
             properties:
@@ -20170,6 +21175,23 @@ components:
                     type: string
                     format: date-time
 tags:
+    - name: AIService
+      description: |-
+        Доступ к языковой модели как платформенная возможность.
+
+         Модель одна на установку и живёт на самом сервере (llama.cpp,
+         Qwen3-30B-A3B). Ключ к ней не покидает платформу: вертикали обращаются
+         сюда, а не к модели напрямую, и ни один ключ не попадает во фронт.
+
+         Главное ограничение, определяющее форму контракта: **префилл дороже
+         генерации**. На этом железе обработка промпта идёт 21.8 токена в секунду,
+         генерация — 9.8; контекст в 1400 токенов обрабатывается около полутора
+         минут. Отсюда два следствия, вшитых в контракт:
+
+           1. Есть асинхронный путь (Submit/Get). Синхронный вызов держал бы
+              соединение минуту и упирался бы в таймауты шлюза.
+           2. Контекст для RAG передаётся отрывками, а не документами: платить
+              надо за длину входа, и двадцать фрагментов дороже ответа.
     - name: AnalyticsService
     - name: AuthService
     - name: BillingService
@@ -20204,6 +21226,21 @@ tags:
     - name: PlatformService
     - name: ReportsService
     - name: RiskService
+    - name: SearchService
+      description: |-
+        Поиск по произвольным документам.
+
+         Ключевое решение: сервис **не знает предметной области**. Он не оперирует
+         товарами, объявлениями или ресторанами — только документами с заголовком,
+         текстом и набором именованных атрибутов. Причина в том, что три
+         существующих поиска (аренда в zist, стройматериалы в bunyod, рестораны в
+         vint) не имеют общих полей вообще: у одного даты заезда и гости, у другого
+         сечение и ГОСТ, у третьего кухня и время доставки. Любая попытка описать их
+         одной типизированной схемой означала бы объединение всех вертикальных полей
+         в одном сообщении, и каждая новая вертикаль его расширяла бы.
+
+         Отсюда же следует, что приход модуля commerce этот контракт не ломает:
+         каталог будет просто ещё одним источником документов.
     - name: StorageService
     - name: SubscriptionService
     - name: WalletService

@@ -9,6 +9,17 @@ import (
 	"time"
 )
 
+// AIStatus defines model for AIStatus.
+type AIStatus struct {
+	Available   *bool   `json:"available,omitempty"`
+	ContextSize *int32  `json:"contextSize,omitempty"`
+	Model       *string `json:"model,omitempty"`
+
+	// QueueDepth Сколько заданий в очереди. Модель обслуживает один запрос за раз, и
+	//  очередь — единственный честный признак того, сколько ждать.
+	QueueDepth *int32 `json:"queueDepth,omitempty"`
+}
+
 // AcceptMerchantRequest defines model for AcceptMerchantRequest.
 type AcceptMerchantRequest struct {
 	MerchantId *string `json:"merchantId,omitempty"`
@@ -246,6 +257,21 @@ type Attestation struct {
 	ExpiresAt   *string            `json:"expiresAt,omitempty"`
 	Nonce       *string            `json:"nonce,omitempty"`
 	Token       *string            `json:"token,omitempty"`
+}
+
+// AttributeValue Значение атрибута. Тип задаётся явно, а не угадывается: от него зависит,
+//
+//	какое сравнение допустимо. Строку «10» нельзя сравнивать как число, и
+//	молчаливое приведение дало бы неверную выборку по диапазону цен.
+type AttributeValue struct {
+	Boolean *bool `json:"boolean,omitempty"`
+
+	// Number Decimal строкой, а не double: цены и количества у bunyod дробные, и
+	//  двоичное представление их искажает.
+	Number    *string     `json:"number,omitempty"`
+	Text      *string     `json:"text,omitempty"`
+	TextList  *StringList `json:"textList,omitempty"`
+	Timestamp *time.Time  `json:"timestamp,omitempty"`
 }
 
 // AuditEvent defines model for AuditEvent.
@@ -761,6 +787,13 @@ type CohortRow struct {
 	Retention    *[]float64 `json:"retention,omitempty"`
 }
 
+// CollectionStats defines model for CollectionStats.
+type CollectionStats struct {
+	Collection    *string    `json:"collection,omitempty"`
+	DocumentCount *string    `json:"documentCount,omitempty"`
+	LastIndexedAt *time.Time `json:"lastIndexedAt,omitempty"`
+}
+
 // CommandError defines model for CommandError.
 type CommandError struct {
 	Code      *string            `json:"code,omitempty"`
@@ -808,6 +841,43 @@ type CompleteCheckoutSessionResponse struct {
 	Success             *bool   `json:"success,omitempty"`
 	WalletRedirectUrl   *string `json:"walletRedirectUrl,omitempty"`
 	WalletTransactionId *string `json:"walletTransactionId,omitempty"`
+}
+
+// CompleteRequest defines model for CompleteRequest.
+type CompleteRequest struct {
+	// JsonSchema Схема ответа в JSON Schema. Задаётся только так: попытка описать её на
+	//  стороне модели через файл грамматики в этой сборке не работает.
+	JsonSchema *string `json:"jsonSchema,omitempty"`
+	MaxTokens  *int32  `json:"maxTokens,omitempty"`
+
+	// System Системная часть промпта. Обязана быть неизменной между вызовами одного
+	//  сценария: включено переиспользование кеша префилла, и совпадение
+	//  системного промпта экономит около трети времени. Подстановка сюда даты
+	//  или имени пользователя тихо ломает кеш.
+	System *string `json:"system,omitempty"`
+
+	// Temperature Ноль означает значение по умолчанию, а не нулевую температуру: нулевую
+	//  задать нельзя, и это осознанный размен на простоту поля.
+	Temperature *float32 `json:"temperature,omitempty"`
+	User        *string  `json:"user,omitempty"`
+}
+
+// CompleteResponse defines model for CompleteResponse.
+type CompleteResponse struct {
+	// CachedTokens Сколько токенов префилла переиспользовано из кеша. Наблюдаемость важнее
+	//  красоты ответа: без этого числа непонятно, работает ли кеш вообще.
+	CachedTokens     *int32  `json:"cachedTokens,omitempty"`
+	CompletionTokens *int32  `json:"completionTokens,omitempty"`
+	PromptTokens     *int32  `json:"promptTokens,omitempty"`
+	Text             *string `json:"text,omitempty"`
+}
+
+// CompletionJob defines model for CompletionJob.
+type CompletionJob struct {
+	Error  *string           `json:"error,omitempty"`
+	JobId  *string           `json:"jobId,omitempty"`
+	Result *CompleteResponse `json:"result,omitempty"`
+	State  *int              `json:"state,omitempty"`
 }
 
 // ComplianceAlert defines model for ComplianceAlert.
@@ -1384,6 +1454,17 @@ type DeleteApplicationResponse struct {
 	Success *bool `json:"success,omitempty"`
 }
 
+// DeleteDocumentsRequest defines model for DeleteDocumentsRequest.
+type DeleteDocumentsRequest struct {
+	Collection *string   `json:"collection,omitempty"`
+	DocIds     *[]string `json:"docIds,omitempty"`
+}
+
+// DeleteDocumentsResponse defines model for DeleteDocumentsResponse.
+type DeleteDocumentsResponse struct {
+	Deleted *int32 `json:"deleted,omitempty"`
+}
+
 // DeleteEndpointResponse defines model for DeleteEndpointResponse.
 type DeleteEndpointResponse struct {
 	Success *bool `json:"success,omitempty"`
@@ -1587,6 +1668,44 @@ type DlqEntry struct {
 	Payload      *string    `json:"payload,omitempty"`
 }
 
+// Document defines model for Document.
+type Document struct {
+	// Attributes Произвольные поля вертикали. По ним строятся фильтры и фасеты.
+	Attributes *map[string]AttributeValue `json:"attributes,omitempty"`
+	Body       *string                    `json:"body,omitempty"`
+
+	// Boost Ранжирующая добавка от источника: рейтинг, продажи, ручное продвижение.
+	//  Складывается с текстовой релевантностью, а не заменяет её.
+	Boost *float64 `json:"boost,omitempty"`
+
+	// Collection Логическая группа документов внутри тенанта: "products", "listings",
+	//  "restaurants". Поиск всегда идёт в пределах одной коллекции.
+	Collection *string `json:"collection,omitempty"`
+
+	// DocId Идентификатор в системе-источнике. Уникален в пределах (тенант, коллекция).
+	DocId *string `json:"docId,omitempty"`
+
+	// Location Необязательно. Заполняется только там, где поиск идёт по расстоянию.
+	Location *GeoPoint `json:"location,omitempty"`
+
+	// Title Попадают в полнотекстовый индекс с разным весом: заголовок весит больше.
+	Title *string `json:"title,omitempty"`
+
+	// Url Ссылка на исходный объект, чтобы вызывающий не строил её сам.
+	Url *string `json:"url,omitempty"`
+
+	// Version Версия документа в источнике. Загрузка более старой версии поверх более
+	//  новой игнорируется — иначе гонка между обработчиком события и полной
+	//  переиндексацией откатывала бы свежие данные.
+	Version *string `json:"version,omitempty"`
+}
+
+// DocumentError defines model for DocumentError.
+type DocumentError struct {
+	DocId   *string `json:"docId,omitempty"`
+	Message *string `json:"message,omitempty"`
+}
+
 // Domain defines model for Domain.
 type Domain struct {
 	CreatedAt          *time.Time `json:"createdAt,omitempty"`
@@ -1626,6 +1745,21 @@ type DunningAccount struct {
 type DunningActionRequest struct {
 	Action   *string `json:"action,omitempty"`
 	TenantId *string `json:"tenantId,omitempty"`
+}
+
+// EmbedRequest defines model for EmbedRequest.
+type EmbedRequest struct {
+	Texts *[]string `json:"texts,omitempty"`
+}
+
+// EmbedResponse defines model for EmbedResponse.
+type EmbedResponse struct {
+	Embeddings *[]Embedding `json:"embeddings,omitempty"`
+}
+
+// Embedding defines model for Embedding.
+type Embedding struct {
+	Values *[]float32 `json:"values,omitempty"`
 }
 
 // EnableModuleRequest defines model for EnableModuleRequest.
@@ -1747,6 +1881,16 @@ type EvaluateRequestResponse struct {
 	Reason        *string `json:"reason,omitempty"`
 }
 
+// Event defines model for Event.
+type Event struct {
+	CreatedAt   *time.Time `json:"createdAt,omitempty"`
+	EventId     *string    `json:"eventId,omitempty"`
+	Payload     *string    `json:"payload,omitempty"`
+	TenantId    *string    `json:"tenantId,omitempty"`
+	Topic       *string    `json:"topic,omitempty"`
+	Traceparent *string    `json:"traceparent,omitempty"`
+}
+
 // ExchangeDepositAddress defines model for ExchangeDepositAddress.
 type ExchangeDepositAddress struct {
 	Address *string `json:"address,omitempty"`
@@ -1831,6 +1975,18 @@ type ExportChainWalletMnemonicResponse struct {
 	WalletId *string `json:"walletId,omitempty"`
 }
 
+// Facet defines model for Facet.
+type Facet struct {
+	Attribute *string       `json:"attribute,omitempty"`
+	Values    *[]FacetValue `json:"values,omitempty"`
+}
+
+// FacetValue defines model for FacetValue.
+type FacetValue struct {
+	Count *string `json:"count,omitempty"`
+	Value *string `json:"value,omitempty"`
+}
+
 // FailureAnalysisResponse defines model for FailureAnalysisResponse.
 type FailureAnalysisResponse struct {
 	Entries          *[]FailureEntry `json:"entries,omitempty"`
@@ -1881,10 +2037,22 @@ type FileSarRequest struct {
 	TenantId    *string   `json:"tenantId,omitempty"`
 }
 
+// Filter defines model for Filter.
+type Filter struct {
+	Attribute *string           `json:"attribute,omitempty"`
+	Op        *int              `json:"op,omitempty"`
+	Values    *[]AttributeValue `json:"values,omitempty"`
+}
+
 // FinalizeInvoiceRequest defines model for FinalizeInvoiceRequest.
 type FinalizeInvoiceRequest struct {
 	InvoiceId *string `json:"invoiceId,omitempty"`
 	TenantId  *string `json:"tenantId,omitempty"`
+}
+
+// FinishReindexRequest defines model for FinishReindexRequest.
+type FinishReindexRequest struct {
+	JobId *string `json:"jobId,omitempty"`
 }
 
 // FinishWebAuthnAssertionRequest defines model for FinishWebAuthnAssertionRequest.
@@ -1992,6 +2160,18 @@ type GeoEntry struct {
 	Volume      *float64 `json:"volume,omitempty"`
 }
 
+// GeoFilter defines model for GeoFilter.
+type GeoFilter struct {
+	Center   *GeoPoint `json:"center,omitempty"`
+	RadiusKm *float64  `json:"radiusKm,omitempty"`
+}
+
+// GeoPoint defines model for GeoPoint.
+type GeoPoint struct {
+	Lat *float64 `json:"lat,omitempty"`
+	Lng *float64 `json:"lng,omitempty"`
+}
+
 // GetApplicationResponse defines model for GetApplicationResponse.
 type GetApplicationResponse struct {
 	Application *Application `json:"application,omitempty"`
@@ -2038,6 +2218,11 @@ type GetEffectiveScopesResponse struct {
 // GetEndpointResponse defines model for GetEndpointResponse.
 type GetEndpointResponse struct {
 	Endpoint *Endpoint `json:"endpoint,omitempty"`
+}
+
+// GetEventResponse defines model for GetEventResponse.
+type GetEventResponse struct {
+	Event *Event `json:"event,omitempty"`
 }
 
 // GetExchangeRateResponse defines model for GetExchangeRateResponse.
@@ -2294,6 +2479,25 @@ type ImportChainWalletResponse struct {
 	WasExisting *bool `json:"wasExisting,omitempty"`
 }
 
+// IndexDocumentsRequest defines model for IndexDocumentsRequest.
+type IndexDocumentsRequest struct {
+	Documents *[]Document `json:"documents,omitempty"`
+
+	// ReindexJobId Идентификатор задания переиндексации, если загрузка идёт в его рамках.
+	//  Пустой — обычная точечная загрузка.
+	ReindexJobId *string `json:"reindexJobId,omitempty"`
+}
+
+// IndexDocumentsResponse defines model for IndexDocumentsResponse.
+type IndexDocumentsResponse struct {
+	Errors  *[]DocumentError `json:"errors,omitempty"`
+	Indexed *int32           `json:"indexed,omitempty"`
+
+	// SkippedStale Документы, отклонённые из-за устаревшей версии. Не ошибка: штатный
+	//  исход гонки, но вызывающему полезно знать, что его запись не применилась.
+	SkippedStale *int32 `json:"skippedStale,omitempty"`
+}
+
 // InitiateWithdrawalRequest defines model for InitiateWithdrawalRequest.
 type InitiateWithdrawalRequest struct {
 	Amount          *string `json:"amount,omitempty"`
@@ -2495,6 +2699,11 @@ type ListChecksResponse struct {
 	NextCursor *string     `json:"nextCursor,omitempty"`
 }
 
+// ListCollectionsResponse defines model for ListCollectionsResponse.
+type ListCollectionsResponse struct {
+	Collections *[]CollectionStats `json:"collections,omitempty"`
+}
+
 // ListConsentsResponse defines model for ListConsentsResponse.
 type ListConsentsResponse struct {
 	Consents *[]Consent `json:"consents,omitempty"`
@@ -2555,6 +2764,12 @@ type ListEndpointsResponse struct {
 type ListEscrowsResponse struct {
 	Escrows    *[]Escrow `json:"escrows,omitempty"`
 	TotalCount *int32    `json:"totalCount,omitempty"`
+}
+
+// ListEventsResponse defines model for ListEventsResponse.
+type ListEventsResponse struct {
+	Events     *[]Event `json:"events,omitempty"`
+	NextCursor *string  `json:"nextCursor,omitempty"`
 }
 
 // ListFlagsResponse defines model for ListFlagsResponse.
@@ -3124,6 +3339,20 @@ type Notification struct {
 	TenantId   *string    `json:"tenantId,omitempty"`
 }
 
+// NotificationLog Единая запись журнала отправки — форма совпадает с NotificationLog в SDK.
+type NotificationLog struct {
+	Channel       *int       `json:"channel,omitempty"`
+	Error         *string    `json:"error,omitempty"`
+	Id            *string    `json:"id,omitempty"`
+	Provider      *string    `json:"provider,omitempty"`
+	ProviderMsgId *string    `json:"providerMsgId,omitempty"`
+	Recipient     *string    `json:"recipient,omitempty"`
+	SentAt        *time.Time `json:"sentAt,omitempty"`
+	Status        *int       `json:"status,omitempty"`
+	TemplateKey   *string    `json:"templateKey,omitempty"`
+	TenantId      *string    `json:"tenantId,omitempty"`
+}
+
 // NotificationTemplate defines model for NotificationTemplate.
 type NotificationTemplate struct {
 	Body         *string    `json:"body,omitempty"`
@@ -3508,6 +3737,20 @@ type ProviderConfig struct {
 	ServiceId   *string            `json:"serviceId,omitempty"`
 }
 
+// PublishEventRequest defines model for PublishEventRequest.
+type PublishEventRequest struct {
+	IdempotencyKey *string `json:"idempotencyKey,omitempty"`
+	Payload        *string `json:"payload,omitempty"`
+	TenantId       *string `json:"tenantId,omitempty"`
+	Topic          *string `json:"topic,omitempty"`
+}
+
+// PublishEventResponse defines model for PublishEventResponse.
+type PublishEventResponse struct {
+	EventId     *string `json:"eventId,omitempty"`
+	Traceparent *string `json:"traceparent,omitempty"`
+}
+
 // PurgeDlqRequest defines model for PurgeDlqRequest.
 type PurgeDlqRequest struct {
 	EndpointId *string `json:"endpointId,omitempty"`
@@ -3699,6 +3942,18 @@ type RegisterResponse struct {
 	Email     *string `json:"email,omitempty"`
 	TenantId  *string `json:"tenantId,omitempty"`
 	UserId    *string `json:"userId,omitempty"`
+}
+
+// ReindexJob defines model for ReindexJob.
+type ReindexJob struct {
+	Collection        *string    `json:"collection,omitempty"`
+	DocumentsReceived *string    `json:"documentsReceived,omitempty"`
+	DocumentsRemoved  *string    `json:"documentsRemoved,omitempty"`
+	Error             *string    `json:"error,omitempty"`
+	FinishedAt        *time.Time `json:"finishedAt,omitempty"`
+	JobId             *string    `json:"jobId,omitempty"`
+	StartedAt         *time.Time `json:"startedAt,omitempty"`
+	State             *int       `json:"state,omitempty"`
 }
 
 // ReinstateMerchantRequest defines model for ReinstateMerchantRequest.
@@ -4138,6 +4393,43 @@ type ScreenTransactionResponse struct {
 	ScreenedAt *string   `json:"screenedAt,omitempty"`
 }
 
+// SearchHit defines model for SearchHit.
+type SearchHit struct {
+	// DistanceKm Заполняется только когда задан geo-фильтр или сортировка по расстоянию.
+	DistanceKm *float64  `json:"distanceKm,omitempty"`
+	Document   *Document `json:"document,omitempty"`
+	Score      *float64  `json:"score,omitempty"`
+}
+
+// SearchRequest defines model for SearchRequest.
+type SearchRequest struct {
+	Collection *string `json:"collection,omitempty"`
+
+	// FacetAttributes Атрибуты, по которым вернуть распределение значений. Считаются по всей
+	//  выборке фильтра, а не по текущей странице.
+	FacetAttributes *[]string  `json:"facetAttributes,omitempty"`
+	Filters         *[]Filter  `json:"filters,omitempty"`
+	Geo             *GeoFilter `json:"geo,omitempty"`
+	Limit           *int32     `json:"limit,omitempty"`
+	Offset          *int32     `json:"offset,omitempty"`
+
+	// Query Пустой запрос допустим: это просмотр коллекции с фильтрами, а не поиск.
+	Query *string `json:"query,omitempty"`
+
+	// SortAttribute Обязателен при сортировке по атрибуту, иначе игнорируется.
+	SortAttribute *string `json:"sortAttribute,omitempty"`
+	SortBy        *int    `json:"sortBy,omitempty"`
+}
+
+// SearchResponse defines model for SearchResponse.
+type SearchResponse struct {
+	Facets *[]Facet     `json:"facets,omitempty"`
+	Hits   *[]SearchHit `json:"hits,omitempty"`
+	Limit  *int32       `json:"limit,omitempty"`
+	Offset *int32       `json:"offset,omitempty"`
+	Total  *string      `json:"total,omitempty"`
+}
+
 // Secret Returned by List/Create/Rotate. Value preview is the last <=4 chars of the
 //
 //	plaintext for visual hint; the actual secret is only available via Reveal.
@@ -4167,6 +4459,16 @@ type Segment struct {
 // SegmentsResponse defines model for SegmentsResponse.
 type SegmentsResponse struct {
 	Segments *[]Segment `json:"segments,omitempty"`
+}
+
+// SendEmailRequest defines model for SendEmailRequest.
+type SendEmailRequest struct {
+	IdempotencyKey *string            `json:"idempotencyKey,omitempty"`
+	Subject        *string            `json:"subject,omitempty"`
+	TemplateKey    *string            `json:"templateKey,omitempty"`
+	TenantId       *string            `json:"tenantId,omitempty"`
+	To             *string            `json:"to,omitempty"`
+	Vars           *map[string]string `json:"vars,omitempty"`
 }
 
 // SendEmailVerificationRequest defines model for SendEmailVerificationRequest.
@@ -4240,6 +4542,22 @@ type SendOtpRequest struct {
 // SendOtpResponse defines model for SendOtpResponse.
 type SendOtpResponse struct {
 	Success *bool `json:"success,omitempty"`
+}
+
+// SendSmsRequest Поля названы под уже существующий проводной формат SDK (`vars`, а не
+//
+//	`variables`): транскодер сопоставляет JSON по lowerCamelCase имени поля,
+//	поэтому переименование здесь молча разошлось бы с клиентами.
+type SendSmsRequest struct {
+	IdempotencyKey *string `json:"idempotencyKey,omitempty"`
+	TemplateKey    *string `json:"templateKey,omitempty"`
+	TenantId       *string `json:"tenantId,omitempty"`
+
+	// Text Свободный текст в обход шаблона. Взаимоисключающ с template_key: без
+	//  шаблона нет ни локализации, ни маршрутизации провайдера по каналу.
+	Text *string            `json:"text,omitempty"`
+	To   *string            `json:"to,omitempty"`
+	Vars *map[string]string `json:"vars,omitempty"`
 }
 
 // SendTelegramRequest defines model for SendTelegramRequest.
@@ -4385,6 +4703,11 @@ type StartImpersonationResponse struct {
 	Session            *ImpersonationSession `json:"session,omitempty"`
 }
 
+// StartReindexRequest defines model for StartReindexRequest.
+type StartReindexRequest struct {
+	Collection *string `json:"collection,omitempty"`
+}
+
 // Status The `Status` type defines a logical error model that is suitable for different programming environments, including REST APIs and RPC APIs. It is used by [gRPC](https://github.com/grpc). Each `Status` message contains three pieces of data: error code, error message, and error details. You can find out more about this error model and how to work with it in the [API Design Guide](https://cloud.google.com/apis/design/errors).
 type Status struct {
 	// Code The status code, which should be an enum value of [google.rpc.Code][google.rpc.Code].
@@ -4407,6 +4730,18 @@ type StorageObject struct {
 	SizeBytes   *string    `json:"sizeBytes,omitempty"`
 }
 
+// StringList defines model for StringList.
+type StringList struct {
+	Values *[]string `json:"values,omitempty"`
+}
+
+// SubmitCompletionRequest defines model for SubmitCompletionRequest.
+type SubmitCompletionRequest struct {
+	// CallbackUrl Куда сообщить о готовности. Пусто — вызывающий опрашивает сам.
+	CallbackUrl *string          `json:"callbackUrl,omitempty"`
+	Request     *CompleteRequest `json:"request,omitempty"`
+}
+
 // Subscription A subscription binds an endpoint to a set of event types for a tenant.
 //
 //	Multiple subscriptions can point to the same endpoint (fan-out).
@@ -4417,6 +4752,11 @@ type Subscription struct {
 	Status         *string    `json:"status,omitempty"`
 	SubscriptionId *string    `json:"subscriptionId,omitempty"`
 	TenantId       *string    `json:"tenantId,omitempty"`
+}
+
+// SuggestResponse defines model for SuggestResponse.
+type SuggestResponse struct {
+	Suggestions *[]string `json:"suggestions,omitempty"`
 }
 
 // SuspendMerchantRequest defines model for SuspendMerchantRequest.
@@ -5697,6 +6037,16 @@ type DeveloperServiceDeleteSecretParams struct {
 	AuditReason *string `form:"auditReason,omitempty" json:"auditReason,omitempty"`
 }
 
+// MgEventsServiceListEventsParams defines parameters for MgEventsServiceListEvents.
+type MgEventsServiceListEventsParams struct {
+	TenantId *string `form:"tenantId,omitempty" json:"tenantId,omitempty"`
+	Topic    *string `form:"topic,omitempty" json:"topic,omitempty"`
+	FromMs   *string `form:"fromMs,omitempty" json:"fromMs,omitempty"`
+	ToMs     *string `form:"toMs,omitempty" json:"toMs,omitempty"`
+	Limit    *int32  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor   *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
 // MgEventsServiceListDeliveriesParams defines parameters for MgEventsServiceListDeliveries.
 type MgEventsServiceListDeliveriesParams struct {
 	EndpointId *string `form:"endpointId,omitempty" json:"endpointId,omitempty"`
@@ -5746,6 +6096,11 @@ type MgEventsServiceListSubscriptionsParams struct {
 
 // MgEventsServiceDeleteSubscriptionParams defines parameters for MgEventsServiceDeleteSubscription.
 type MgEventsServiceDeleteSubscriptionParams struct {
+	TenantId *string `form:"tenantId,omitempty" json:"tenantId,omitempty"`
+}
+
+// MgEventsServiceGetEventParams defines parameters for MgEventsServiceGetEvent.
+type MgEventsServiceGetEventParams struct {
 	TenantId *string `form:"tenantId,omitempty" json:"tenantId,omitempty"`
 }
 
@@ -6293,6 +6648,13 @@ type RiskServiceDeleteRiskRuleParams struct {
 	TenantId *string `form:"tenantId,omitempty" json:"tenantId,omitempty"`
 }
 
+// SearchServiceSuggestParams defines parameters for SearchServiceSuggest.
+type SearchServiceSuggestParams struct {
+	Collection *string `form:"collection,omitempty" json:"collection,omitempty"`
+	Prefix     *string `form:"prefix,omitempty" json:"prefix,omitempty"`
+	Limit      *int32  `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // PaymentsServiceGetSettingsParams defines parameters for PaymentsServiceGetSettings.
 type PaymentsServiceGetSettingsParams struct {
 	TenantId *string `form:"tenantId,omitempty" json:"tenantId,omitempty"`
@@ -6499,6 +6861,15 @@ type BillingServiceCreatePromotionJSONRequestBody = CreatePromotionRequest
 // BillingServiceUpdatePromotionJSONRequestBody defines body for BillingServiceUpdatePromotion for application/json ContentType.
 type BillingServiceUpdatePromotionJSONRequestBody = UpdatePromotionRequest
 
+// AIServiceCompleteJSONRequestBody defines body for AIServiceComplete for application/json ContentType.
+type AIServiceCompleteJSONRequestBody = CompleteRequest
+
+// AIServiceEmbedJSONRequestBody defines body for AIServiceEmbed for application/json ContentType.
+type AIServiceEmbedJSONRequestBody = EmbedRequest
+
+// AIServiceSubmitCompletionJSONRequestBody defines body for AIServiceSubmitCompletion for application/json ContentType.
+type AIServiceSubmitCompletionJSONRequestBody = SubmitCompletionRequest
+
 // AuthServiceConfirmEmailVerificationJSONRequestBody defines body for AuthServiceConfirmEmailVerification for application/json ContentType.
 type AuthServiceConfirmEmailVerificationJSONRequestBody = ConfirmEmailVerificationRequest
 
@@ -6700,6 +7071,9 @@ type MgEventsServiceRotateSecretJSONRequestBody = RotateSecretRequest
 // MgEventsServiceTestEndpointJSONRequestBody defines body for MgEventsServiceTestEndpoint for application/json ContentType.
 type MgEventsServiceTestEndpointJSONRequestBody = TestEndpointRequest
 
+// MgEventsServicePublishEventJSONRequestBody defines body for MgEventsServicePublishEvent for application/json ContentType.
+type MgEventsServicePublishEventJSONRequestBody = PublishEventRequest
+
 // MgEventsServiceCreateSubscriptionJSONRequestBody defines body for MgEventsServiceCreateSubscription for application/json ContentType.
 type MgEventsServiceCreateSubscriptionJSONRequestBody = CreateSubscriptionRequest
 
@@ -6886,8 +7260,14 @@ type MerchantServiceUpdateSettlementConfigJSONRequestBody = UpdateSettlementConf
 // MerchantServiceSuspendMerchantJSONRequestBody defines body for MerchantServiceSuspendMerchant for application/json ContentType.
 type MerchantServiceSuspendMerchantJSONRequestBody = SuspendMerchantRequest
 
+// NotifyServiceSendEmailJSONRequestBody defines body for NotifyServiceSendEmail for application/json ContentType.
+type NotifyServiceSendEmailJSONRequestBody = SendEmailRequest
+
 // NotifyServiceSendNotificationJSONRequestBody defines body for NotifyServiceSendNotification for application/json ContentType.
 type NotifyServiceSendNotificationJSONRequestBody = SendNotificationRequest
+
+// NotifyServiceSendSmsJSONRequestBody defines body for NotifyServiceSendSms for application/json ContentType.
+type NotifyServiceSendSmsJSONRequestBody = SendSmsRequest
 
 // NotifyServiceSendTelegramJSONRequestBody defines body for NotifyServiceSendTelegram for application/json ContentType.
 type NotifyServiceSendTelegramJSONRequestBody = SendTelegramRequest
@@ -6984,6 +7364,21 @@ type RiskServiceCreateRiskRuleJSONRequestBody = CreateRiskRuleRequest
 
 // RiskServiceUpdateRiskRuleJSONRequestBody defines body for RiskServiceUpdateRiskRule for application/json ContentType.
 type RiskServiceUpdateRiskRuleJSONRequestBody = UpdateRiskRuleRequest
+
+// SearchServiceStartReindexJSONRequestBody defines body for SearchServiceStartReindex for application/json ContentType.
+type SearchServiceStartReindexJSONRequestBody = StartReindexRequest
+
+// SearchServiceIndexDocumentsJSONRequestBody defines body for SearchServiceIndexDocuments for application/json ContentType.
+type SearchServiceIndexDocumentsJSONRequestBody = IndexDocumentsRequest
+
+// SearchServiceDeleteDocumentsJSONRequestBody defines body for SearchServiceDeleteDocuments for application/json ContentType.
+type SearchServiceDeleteDocumentsJSONRequestBody = DeleteDocumentsRequest
+
+// SearchServiceSearchJSONRequestBody defines body for SearchServiceSearch for application/json ContentType.
+type SearchServiceSearchJSONRequestBody = SearchRequest
+
+// SearchServiceFinishReindexJSONRequestBody defines body for SearchServiceFinishReindex for application/json ContentType.
+type SearchServiceFinishReindexJSONRequestBody = FinishReindexRequest
 
 // PaymentsServiceUpdateSettingsJSONRequestBody defines body for PaymentsServiceUpdateSettings for application/json ContentType.
 type PaymentsServiceUpdateSettingsJSONRequestBody = UpdateSettingsCommand
