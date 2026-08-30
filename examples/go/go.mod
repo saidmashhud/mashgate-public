@@ -1,6 +1,6 @@
 module github.com/saidmashhud/mashgate-public/examples/go
 
-go 1.22
+go 1.24.0
 
 require github.com/saidmashhud/mashgate-public/sdk/go v0.0.0
 
