@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -113,9 +114,38 @@ func (f *FlagsClient) Update(ctx context.Context, flagKey, tenantID string, req 
 }
 
 // Evaluate evaluates a flag for a user.
+//
+// Ключ признака идёт в ПУТИ, а не в теле: контракт объявляет
+// `post: "/v1/flags/{flag_key}/evaluate"`. До 12.09.2026 здесь стоял
+// `/v1/flags/evaluate` — такого маршрута у платформы нет, и шлюз отвечал
+// `403 REST route not in authorization map` (проверка прав fail-closed).
+// Вызывающие при этом трактовали отказ как «признак выключен», поэтому
+// механизм признаков не работал НИ РАЗУ и выглядел как настройка.
+//
+// UserID и Groups уходят в `context`: в контракте у запроса три поля —
+// tenant_id, flag_key и map<string,string> context. Отдельных userId/groups
+// там нет, и раньше они просто не доезжали.
 func (f *FlagsClient) Evaluate(ctx context.Context, req EvaluateFlagRequest) (*FlagEvaluation, error) {
+	if req.FlagKey == "" {
+		return nil, fmt.Errorf("mashgate: flags.Evaluate: пустой ключ признака")
+	}
+	body := struct {
+		TenantID string            `json:"tenantId"`
+		FlagKey  string            `json:"flagKey"`
+		Context  map[string]string `json:"context,omitempty"`
+	}{TenantID: req.TenantID, FlagKey: req.FlagKey}
+	if req.UserID != "" || len(req.Groups) > 0 {
+		body.Context = map[string]string{}
+		if req.UserID != "" {
+			body.Context["userId"] = req.UserID
+		}
+		if len(req.Groups) > 0 {
+			body.Context["groups"] = strings.Join(req.Groups, ",")
+		}
+	}
+	path := fmt.Sprintf("/v1/flags/%s/evaluate", url.PathEscape(req.FlagKey))
 	var out FlagEvaluation
-	if err := f.c.do(ctx, "POST", "/v1/flags/evaluate", req, &out); err != nil {
+	if err := f.c.do(ctx, "POST", path, body, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
