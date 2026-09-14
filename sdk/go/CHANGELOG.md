@@ -9,6 +9,13 @@ Aggregate changelog for all languages: [`../../CHANGELOG.md`](../../CHANGELOG.md
 
 ---
 
+## [v1.21.1] - 2026-09-14 - `sdk/go/v1.21.1`
+
+### Changed
+
+- `Notify.TestSmsProvider(ctx, tenantID, testPhone)` — optional test SMS to a
+  phone number after the balance check; `TestSmsProviderResponse.TestMessageID`.
+
 ## [v1.21.0] - 2026-09-14 - `sdk/go/v1.21.0`
 
 ### Added

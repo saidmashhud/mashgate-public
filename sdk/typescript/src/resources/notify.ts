@@ -60,6 +60,8 @@ export interface TestSmsProviderResponse {
   ok: boolean;
   balance?: string;
   error?: string;
+  /** Operator message id when a test SMS was sent. */
+  testMessageId?: string;
 }
 
 export interface ListLogsOptions {
@@ -119,9 +121,10 @@ export class NotifyResource {
     });
   }
 
-  async testSmsProvider(tenantId: string): Promise<TestSmsProviderResponse> {
+  /** Balance check; with testPhone also sends one test SMS (billed by the operator). */
+  async testSmsProvider(tenantId: string, testPhone?: string): Promise<TestSmsProviderResponse> {
     return this.client.request<TestSmsProviderResponse>("POST", "/v1/notify/sms-provider/test", {
-      body: { tenantId },
+      body: testPhone ? { tenantId, testPhone } : { tenantId },
     });
   }
 }

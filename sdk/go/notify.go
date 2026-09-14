@@ -199,11 +199,13 @@ type SmsProviderInfo struct {
 	LastBalance    string    `json:"lastBalance,omitempty"`
 }
 
-// TestSmsProviderResponse is the result of a live balance check at the operator.
+// TestSmsProviderResponse is the result of a live balance check at the operator
+// (and of the optional test SMS).
 type TestSmsProviderResponse struct {
-	Ok      bool   `json:"ok"`
-	Balance string `json:"balance,omitempty"`
-	Error   string `json:"error,omitempty"`
+	Ok            bool   `json:"ok"`
+	Balance       string `json:"balance,omitempty"`
+	Error         string `json:"error,omitempty"`
+	TestMessageID string `json:"testMessageId,omitempty"`
 }
 
 // GetSmsProvider returns the tenant's SMS provider (masked). 404 when none.
@@ -231,10 +233,16 @@ func (n *NotifyClient) DeleteSmsProvider(ctx context.Context, tenantID string) e
 	return n.c.do(ctx, "DELETE", path, nil, nil)
 }
 
-// TestSmsProvider checks the stored credentials live (balance query, sends nothing).
-func (n *NotifyClient) TestSmsProvider(ctx context.Context, tenantID string) (*TestSmsProviderResponse, error) {
+// TestSmsProvider checks the stored credentials live (balance query). With a
+// non-empty testPhone it also sends one test SMS to that number (billed by the
+// operator, recorded in the delivery log).
+func (n *NotifyClient) TestSmsProvider(ctx context.Context, tenantID, testPhone string) (*TestSmsProviderResponse, error) {
+	body := map[string]string{"tenantId": tenantID}
+	if testPhone != "" {
+		body["testPhone"] = testPhone
+	}
 	var out TestSmsProviderResponse
-	if err := n.c.do(ctx, "POST", "/v1/notify/sms-provider/test", map[string]string{"tenantId": tenantID}, &out); err != nil {
+	if err := n.c.do(ctx, "POST", "/v1/notify/sms-provider/test", body, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil

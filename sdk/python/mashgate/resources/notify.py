@@ -119,6 +119,9 @@ class NotifyResource:
     def delete_sms_provider(self, *, tenant_id: str) -> None:
         self._c.request("DELETE", "/v1/notify/sms-provider", query={"tenantId": tenant_id})
 
-    def test_sms_provider(self, *, tenant_id: str) -> dict[str, Any]:
-        """Live balance check at the operator; sends nothing."""
-        return self._c.request("POST", "/v1/notify/sms-provider/test", body={"tenantId": tenant_id})
+    def test_sms_provider(self, *, tenant_id: str, test_phone: str | None = None) -> dict[str, Any]:
+        """Live balance check at the operator; with test_phone also sends one test SMS."""
+        body: dict[str, Any] = {"tenantId": tenant_id}
+        if test_phone:
+            body["testPhone"] = test_phone
+        return self._c.request("POST", "/v1/notify/sms-provider/test", body=body)
