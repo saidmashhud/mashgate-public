@@ -11,6 +11,12 @@ Top-level entry is the aggregate snapshot.
 
 ## [Unreleased]
 
+### Tenant SMS provider (Go 1.21.0, TypeScript 1.10.0, Python 0.9.0)
+
+- Added `notify` methods to connect, inspect, test and disconnect the tenant's
+  own SMS operator account (OsonSMS). Credentials are encrypted by
+  notify-service and never returned by the API.
+
 ### Exchange external alpha
 
 - Added custodial spot Exchange resources to Go 1.18.0, TypeScript 1.8.0,

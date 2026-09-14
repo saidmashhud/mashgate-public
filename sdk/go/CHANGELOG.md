@@ -9,6 +9,16 @@ Aggregate changelog for all languages: [`../../CHANGELOG.md`](../../CHANGELOG.md
 
 ---
 
+## [v1.21.0] - 2026-09-14 - `sdk/go/v1.21.0`
+
+### Added
+
+- `Notify.GetSmsProvider` / `SetSmsProvider` / `DeleteSmsProvider` /
+  `TestSmsProvider` — tenant's own SMS operator account (OsonSMS). The secret
+  is stored encrypted by notify-service and never returned; `TestSmsProvider`
+  is a live balance check that sends nothing. Requires the
+  `notify:providers:manage` scope.
+
 ## [v1.20.0] - 2026-08-30 - `sdk/go/v1.20.0`
 
 ### Fixed

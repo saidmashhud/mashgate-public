@@ -159,3 +159,83 @@ func (n *NotifyClient) SendTelegram(ctx context.Context, req SendTelegramRequest
 	}
 	return &out, nil
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+// Tenant SMS provider (added v1.21.0)
+// ────────────────────────────────────────────────────────────────────────────
+//
+// The tenant owner connects their OWN operator account (e.g. OsonSMS); SMS
+// from that tenant is then sent with those credentials. The secret is stored
+// encrypted by notify-service and is never returned — only SecretPreview.
+// Requires the notify:providers:manage scope.
+
+// SetSmsProviderRequest connects or updates the tenant's SMS provider.
+// An empty Secret on update keeps the previously stored secret.
+type SetSmsProviderRequest struct {
+	TenantID       string `json:"tenantId"`
+	Provider       string `json:"provider"` // "osonsms"
+	Login          string `json:"login"`
+	Secret         string `json:"secret,omitempty"`
+	Sender         string `json:"sender"`
+	BaseURL        string `json:"baseUrl,omitempty"`
+	IsConfidential bool   `json:"isConfidential,omitempty"`
+}
+
+// SmsProviderInfo is the masked view of the tenant's SMS provider.
+type SmsProviderInfo struct {
+	TenantID       string    `json:"tenantId"`
+	Provider       string    `json:"provider"`
+	Login          string    `json:"login"`
+	Sender         string    `json:"sender"`
+	BaseURL        string    `json:"baseUrl,omitempty"`
+	IsConfidential bool      `json:"isConfidential"`
+	HasSecret      bool      `json:"hasSecret"`
+	SecretPreview  string    `json:"secretPreview,omitempty"`
+	CreatedAt      time.Time `json:"createdAt"`
+	UpdatedAt      time.Time `json:"updatedAt"`
+	LastCheckAt    *time.Time `json:"lastCheckAt,omitempty"`
+	LastCheckOk    bool      `json:"lastCheckOk"`
+	LastCheckError string    `json:"lastCheckError,omitempty"`
+	LastBalance    string    `json:"lastBalance,omitempty"`
+}
+
+// TestSmsProviderResponse is the result of a live balance check at the operator.
+type TestSmsProviderResponse struct {
+	Ok      bool   `json:"ok"`
+	Balance string `json:"balance,omitempty"`
+	Error   string `json:"error,omitempty"`
+}
+
+// GetSmsProvider returns the tenant's SMS provider (masked). 404 when none.
+func (n *NotifyClient) GetSmsProvider(ctx context.Context, tenantID string) (*SmsProviderInfo, error) {
+	path := fmt.Sprintf("/v1/notify/sms-provider?tenantId=%s", url.QueryEscape(tenantID))
+	var out SmsProviderInfo
+	if err := n.c.do(ctx, "GET", path, nil, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// SetSmsProvider connects or updates the tenant's SMS provider credentials.
+func (n *NotifyClient) SetSmsProvider(ctx context.Context, req SetSmsProviderRequest) (*SmsProviderInfo, error) {
+	var out SmsProviderInfo
+	if err := n.c.do(ctx, "PUT", "/v1/notify/sms-provider", req, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// DeleteSmsProvider disconnects the tenant's SMS provider and erases the secret.
+func (n *NotifyClient) DeleteSmsProvider(ctx context.Context, tenantID string) error {
+	path := fmt.Sprintf("/v1/notify/sms-provider?tenantId=%s", url.QueryEscape(tenantID))
+	return n.c.do(ctx, "DELETE", path, nil, nil)
+}
+
+// TestSmsProvider checks the stored credentials live (balance query, sends nothing).
+func (n *NotifyClient) TestSmsProvider(ctx context.Context, tenantID string) (*TestSmsProviderResponse, error) {
+	var out TestSmsProviderResponse
+	if err := n.c.do(ctx, "POST", "/v1/notify/sms-provider/test", map[string]string{"tenantId": tenantID}, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}

@@ -9,6 +9,14 @@ Aggregate changelog for all languages: [`../../CHANGELOG.md`](../../CHANGELOG.md
 
 ---
 
+## [0.9.0] - 2026-09-14
+
+### Added
+
+- `notify.get_sms_provider` / `set_sms_provider` / `delete_sms_provider` /
+  `test_sms_provider` — tenant's own SMS operator account (OsonSMS); secret is
+  never returned. Requires `notify:providers:manage`.
+
 ## [0.8.0] - 2026-07-18
 
 ### Added

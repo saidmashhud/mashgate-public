@@ -26,6 +26,42 @@ export interface CreateTemplateRequest {
   vars?: string[];
 }
 
+export interface SetSmsProviderRequest {
+  tenantId: string;
+  /** "osonsms" */
+  provider: string;
+  login: string;
+  /** Empty on update keeps the stored secret. */
+  secret?: string;
+  sender: string;
+  baseUrl?: string;
+  isConfidential?: boolean;
+}
+
+/** Masked view — the secret itself is never returned. */
+export interface SmsProviderInfo {
+  tenantId: string;
+  provider: string;
+  login: string;
+  sender: string;
+  baseUrl?: string;
+  isConfidential: boolean;
+  hasSecret: boolean;
+  secretPreview?: string;
+  createdAt: string;
+  updatedAt: string;
+  lastCheckAt?: string;
+  lastCheckOk: boolean;
+  lastCheckError?: string;
+  lastBalance?: string;
+}
+
+export interface TestSmsProviderResponse {
+  ok: boolean;
+  balance?: string;
+  error?: string;
+}
+
 export interface ListLogsOptions {
   tenantId: string;
   from?: string;
@@ -62,6 +98,30 @@ export class NotifyResource {
         to: options.to,
         page: options.page,
       },
+    });
+  }
+
+  // ── Tenant SMS provider (v1.10.0) — requires notify:providers:manage ──────
+
+  async getSmsProvider(tenantId: string): Promise<SmsProviderInfo> {
+    return this.client.request<SmsProviderInfo>("GET", "/v1/notify/sms-provider", {
+      query: { tenantId },
+    });
+  }
+
+  async setSmsProvider(data: SetSmsProviderRequest): Promise<SmsProviderInfo> {
+    return this.client.request<SmsProviderInfo>("PUT", "/v1/notify/sms-provider", { body: data });
+  }
+
+  async deleteSmsProvider(tenantId: string): Promise<void> {
+    await this.client.request<unknown>("DELETE", "/v1/notify/sms-provider", {
+      query: { tenantId },
+    });
+  }
+
+  async testSmsProvider(tenantId: string): Promise<TestSmsProviderResponse> {
+    return this.client.request<TestSmsProviderResponse>("POST", "/v1/notify/sms-provider/test", {
+      body: { tenantId },
     });
   }
 }

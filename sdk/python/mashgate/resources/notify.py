@@ -84,3 +84,41 @@ class NotifyResource:
         return self._c.request(
             "GET", "/v1/notify/logs", query={"tenantId": tenant_id, "page": page}
         )
+
+    # ── Tenant SMS provider (0.9.0) — requires notify:providers:manage ──────
+
+    def get_sms_provider(self, *, tenant_id: str) -> dict[str, Any]:
+        """Masked view of the tenant's SMS provider; the secret is never returned."""
+        return self._c.request("GET", "/v1/notify/sms-provider", query={"tenantId": tenant_id})
+
+    def set_sms_provider(
+        self,
+        *,
+        tenant_id: str,
+        login: str,
+        sender: str,
+        secret: str | None = None,
+        provider: str = "osonsms",
+        base_url: str | None = None,
+        is_confidential: bool = False,
+    ) -> dict[str, Any]:
+        """Connect or update the tenant's own operator account. Empty secret keeps the stored one."""
+        body: dict[str, Any] = {
+            "tenantId": tenant_id,
+            "provider": provider,
+            "login": login,
+            "sender": sender,
+            "isConfidential": is_confidential,
+        }
+        if secret:
+            body["secret"] = secret
+        if base_url:
+            body["baseUrl"] = base_url
+        return self._c.request("PUT", "/v1/notify/sms-provider", body=body)
+
+    def delete_sms_provider(self, *, tenant_id: str) -> None:
+        self._c.request("DELETE", "/v1/notify/sms-provider", query={"tenantId": tenant_id})
+
+    def test_sms_provider(self, *, tenant_id: str) -> dict[str, Any]:
+        """Live balance check at the operator; sends nothing."""
+        return self._c.request("POST", "/v1/notify/sms-provider/test", body={"tenantId": tenant_id})
